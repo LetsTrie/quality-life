@@ -1,0 +1,6 @@
+[x] User :: Forget Password
+[x] User :: Reset Password
+[x] User :: Register [Confirm Password]
+[x] PROF :: Register [Duplicate Mail Check]
+[x] USER && PROF :: Update logout logic
+[x] USER && PROF :: REMOVE goToBack URL

@@ -1,0 +1,10 @@
+Kill port 
+>> sudo kill -9 $(sudo lsof -t -i:3000)
+
+Error: EMFILE: too many open files, watch
+at FSEvent.FSWatcher._handle.onchange (node:internal/fs/watchers:207:21)
+
+>> https://stackoverflow.com/a/58675202
+
+in client-side, use npm version 18.18.0
+nvm use v18.18.0

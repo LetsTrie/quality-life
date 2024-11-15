@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "qlife",
+    "slug": "qlife",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.letstrie.qlife"
+    },
+    "android": {
+      "package": "com.letstrie.qlife",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "com.letstrie.qlife",
+    "extra": {
+      "eas": {
+        "projectId": "ccd95a40-c9ca-4176-8dd6-39257d7da520"
+      }
+    }
+  }
+}

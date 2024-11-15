@@ -1,0 +1,1 @@
+module.exports.profValidation = require('./prof.validation');
