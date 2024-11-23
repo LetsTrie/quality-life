@@ -1,24 +1,14 @@
 const asyncHandler = require("../middlewares/asyncHandler");
 const User = require("../models/user");
-const Prof = require("../models/prof");
 const moment = require("moment");
 const Rating = require("../models/rating");
 const ProfNotification = require("../models/profNotification");
 const AssessmentResult = require("../models/profAssessmentResult");
 const Test = require("../models/test");
 const Error = require("../models/error");
-const Appointment = require("../models/appointment");
 const ProfAssessment = require("../models/profAssessment");
 const UserNotification = require("../models/userNotification");
-const AppointmentMeta = require("../models/appointmentMeta");
-const {
-  sendJSONresponse,
-  sendErrorResponse,
-} = require("../utils/jsonResponse");
-const { constants } = require("../utils/constants");
-const httpStatus = require("http-status");
 const { MODEL_NAME } = require("../models/model_name");
-const ProfsClient = require("../models/myClient");
 
 // TODO:
 // 1) Move to utils/datetime.js
@@ -395,6 +385,7 @@ exports.unreadNotifications = asyncHandler(async (req, res, next) => {
       extraId: p.assessmentId,
     });
   });
+
   const userNotification = await UserNotification.find({
     user: userId,
     hasSeen: false,
@@ -508,90 +499,6 @@ let days = [
     genId: 2,
   },
 ];
-
-exports.appointmentStatus = asyncHandler(async (req, res, next) => {
-  const { appointmentId } = req.params;
-
-  // Making sure, that this appointment ID is valid one
-  const meta = await AppointmentMeta.findOne({ appointmentId });
-  if (!meta) return res.sendStatus(404);
-
-  const appointment = await Appointment.findById(appointmentId).populate([
-    {
-      path: MODEL_NAME.USER,
-      select: "name",
-    },
-    {
-      path: "prof",
-      select: "name email telephone",
-    },
-  ]);
-  if (!appointment.hasProfRespondedToClient) return res.sendStatus(403);
-  let timeTable = [appointment.profDay, appointment.profTime];
-  if (!timeTable[0]) timeTable[0] = appointment.day;
-  if (!timeTable[1]) timeTable[1] = appointment.time;
-
-  // date, day
-  const nextDateTargetDay = (date, day) => {
-    let dateObj = new Date(date);
-    let respondingTime = dateObj.getDay();
-
-    let targetDay;
-    targetDay = days.find((d) => d.value === day)?.id;
-    if (!targetDay) targetDay = days.find((d) => d.label === day)?.id;
-
-    let counter = 0;
-    while (targetDay !== respondingTime) {
-      counter++;
-      respondingTime++;
-      respondingTime %= 7;
-    }
-
-    let someDate = new Date();
-    someDate.setDate(someDate.getDate() + counter);
-    let dd = someDate.getDate();
-    let mm = someDate.getMonth() + 1;
-    let y = someDate.getFullYear();
-
-    let pd = (a) => a.toString().padStart(2, "0");
-    return `${pd(dd)}/${pd(mm)}/${y}`;
-  };
-
-  let appointmentTime = nextDateTargetDay(
-    appointment.recProfRespondedTime,
-    timeTable[0]
-  );
-
-  let targetDay;
-  targetDay = days.find((d) => d.value === timeTable[0])?.label;
-  if (!targetDay) targetDay = days.find((d) => d.label === timeTable[0])?.label;
-  appointmentTime = `${targetDay} at ${timeTable[1]} [${appointmentTime}]`;
-
-  let scaleCompleted;
-  if (appointment.profInitAssessmentDbId) {
-    scaleCompleted = await ProfAssessment.findById(
-      appointment.profInitAssessmentDbId
-    ).select("hasSeen");
-    if (!scaleCompleted) return res.sendStatus(404);
-    scaleCompleted = scaleCompleted.hasSeen;
-  }
-  const app = {
-    _id: appointment._id,
-    profName: appointment.prof.name,
-    profEmail: appointment.prof.email,
-    profPhoneNumber: appointment.prof.telephone,
-    userName: appointment.user.name,
-    appointmentTime,
-    appointmentMessage: appointment.profMessage,
-    scaleCompleted,
-    appointmentScale: appointment.profInitAssessmentId,
-    appointmentScaleDbId: appointment.profInitAssessmentDbId,
-  };
-
-  return res.json({
-    appointment: app,
-  });
-});
 
 exports.seenNotification = asyncHandler(async (req, res, next) => {
   const { notification_id } = req.body;

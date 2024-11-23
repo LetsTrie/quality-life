@@ -11,7 +11,7 @@ const userNotificationSchema = Schema(
       type: String,
       enum: [
         constants.APPOINTMENT_ACCEPTED,
-        "SUGGESTED_SCALE",
+        constants.SUGGEST_A_SCALE,
         "ADDED_AS_CLIENT",
       ],
     }, // SUGGESTED_SCALE, ADDED_AS_CLIENT

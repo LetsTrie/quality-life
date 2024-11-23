@@ -19,8 +19,6 @@ router.post("/submitAVideo", M.verifyToken("user"), C.submitAVideo);
 router.post("/rating", M.verifyToken("user"), C.rating);
 router.post("/update/profile", M.verifyToken("user"), C.updateProfile);
 
-
-
 router.get("/notifications", M.verifyToken("user"), C.userNotifications);
 router.get(
   "/notifications/unread/h/",
@@ -28,7 +26,6 @@ router.get(
   C.numberOfNotifications
 );
 
-router.get("/appointment/status/:appointmentId", C.appointmentStatus);
 router.get("/all", C.allUsers);
 router.post("/userInfo", C.userInfo);
 router.post("/delete", C.userDelete);
@@ -64,9 +61,14 @@ router.post(
   userProfCtrl.takeAppointment
 );
 
-// ****************************************************************
-// ****************************************************************
-// ****************************************************************
+router.get(
+  "/appointment-details/:appointmentId",
+  M.verifyToken("user"),
+  userProfCtrl.getAppointmentDetailsForUser
+);
 
+// ****************************************************************
+// ****************************************************************
+// ****************************************************************
 
 module.exports = router;

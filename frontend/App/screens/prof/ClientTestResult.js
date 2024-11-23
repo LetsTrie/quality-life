@@ -1,15 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-  ActivityIndicator,
-} from 'react-native';
+import { ScrollView, StyleSheet, View, ActivityIndicator } from 'react-native';
 import Text from '../../components/Text';
-import Box from '../../components/Homepage/Box';
-import Button from '../../components/Button';
 import colors from '../../config/colors';
 import BaseUrl from '../../config/BaseUrl';
 import axios from 'axios';
@@ -23,8 +15,11 @@ import coronaProfile from '../../data/coronaProfile';
 import domesticViolence from '../../data/domesticViolence';
 import psychoticProfile from '../../data/psychoticProfile';
 import suicideIdeation from '../../data/suicideIdeation';
+import { useRoute } from '@react-navigation/native';
 
-const ClientTestResult = ({ navigation, route, ...props }) => {
+const ClientTestResult = () => {
+  const route = useRoute();
+
   const [answers, setAnswers] = useState([]);
   const [testInfo, setTestInfo] = useState([]);
   const [isLoading, setLoading] = useState(true);
@@ -76,7 +71,7 @@ const ClientTestResult = ({ navigation, route, ...props }) => {
               paddingTop: 10,
             }}
           >
-            <ActivityIndicator size='large' color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : (
           <View style={styles.questionAllStyle}>
@@ -86,10 +81,7 @@ const ClientTestResult = ({ navigation, route, ...props }) => {
                   {index + 1}. {q}
                 </Text>
                 <View style={styles.responseStyle}>
-                  <MaterialCommunityIcons
-                    name={'arrow-right'}
-                    style={styles.responseIconStyle}
-                  />
+                  <MaterialCommunityIcons name={'arrow-right'} style={styles.responseIconStyle} />
                   <Text style={styles.responseTextStyle}>{answers[index]}</Text>
                 </View>
               </View>

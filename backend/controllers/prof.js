@@ -1,5 +1,5 @@
 const asyncHandler = require("../middlewares/asyncHandler");
-const Prof = require("../models/prof");
+const Professional = require("../models/prof");
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const Appointment = require("../models/appointment");
@@ -29,6 +29,16 @@ const hbs = require("nodemailer-express-handlebars");
 const logger = require("../config/winston");
 const Test = require("../models/test");
 const LIMIT = 10;
+
+const { getProgress } = require("./helpers");
+const {
+  sendErrorResponse,
+  sendJSONresponse,
+  logInfo,
+  logWarn,
+  logError,
+} = require("../utils");
+const httpStatus = require("http-status");
 
 const { constants } = require("../utils/constants");
 
@@ -90,31 +100,18 @@ const sendVerificationCode = async (code, emailID) => {
   });
 };
 
-exports.profRegStep1 = asyncHandler(async (req, res, _next) => {
-  // TODO: What about old rejected/non-validated professors?
-  const checkDuplicate = await Prof.findOne({ email: req.body.email });
-  if (checkDuplicate) {
-    // TODO: Handle Errors differently... log and send error from there
-    return res.status(400).json({
-      success: false,
-      message: "এই ইমেলটি ইতোমধ্যেই ব্যবহার করা হয়েছে",
-    });
-  }
-  req.body.password = await bcrypt.hash(req.body.password, 10);
-  const prof = new Prof(req.body);
-  await prof.save();
-  return res.status(201).json({ success: true });
-});
-
 // PATH = /prof/all
 exports.getAllProfs = asyncHandler(async (req, res, next) => {
-  const profs = await Prof.find({ isVerified: false, hasRejected: false });
+  const profs = await Professional.find({
+    isVerified: false,
+    hasRejected: false,
+  });
   return res.status(200).json({ success: true, profs });
 });
 
 exports.profAction = asyncHandler(async (req, res, next) => {
   // id, action
-  const prof = await Prof.findById(req.body.id);
+  const prof = await Professional.findById(req.body.id);
   if (req.body.action === "pos") {
     prof.isVerified = true;
     prof.hasRejected = false;
@@ -127,23 +124,63 @@ exports.profAction = asyncHandler(async (req, res, next) => {
   return res.json({ success: true });
 });
 
-exports.profRegStep2 = asyncHandler(async (req, res) => {
+// TODO: Need scope to update everything..
+// TODO::(ADMIN_PANEL) - Handle approval of unverified or rejected users in the admin panel..
+exports.registerProfessionalStep1 = asyncHandler(async (req, res, _next) => {
+  const existingProfessional = await Professional.findOne({
+    email: req.body.email,
+  });
+  if (existingProfessional) {
+    if (!existingProfessional.isVerified) {
+      logError("Attempt to register with an unverified email", {
+        email: req.body.email,
+      });
+    } else if (existingProfessional.hasRejected) {
+      logError("Attempt to register with a previously rejected email", {
+        email: req.body.email,
+      });
+    }
+
+    return sendErrorResponse(res, 400, "BAD_REQUEST", {
+      message: "এই ইমেলটি ইতোমধ্যেই ব্যবহার করা হয়েছে",
+    });
+  }
+
+  req.body.password = await bcrypt.hash(req.body.password, 10);
+  const professional = await Professional.create(req.body);
+
+  logInfo("Professional registration successful", { email: req.body.email });
+
+  return sendJSONresponse(res, 201, {
+    data: { id: professional._id, email: professional.email },
+  });
+});
+
+// TODO: Need scope to update everything..
+exports.registerProfessionalStep2 = asyncHandler(async (req, res) => {
   for (let key in req.body) {
     req.user[key] = req.body[key];
   }
   req.user.step = 2;
   await req.user.save();
-  return res.json({ success: true, data: { user: req.user } });
+
+  return sendJSONresponse(res, 200, {
+    data: { user: req.user },
+  });
 });
 
-exports.profRegStep3 = asyncHandler(async (req, res) => {
+// TODO: Need scope to update everything..
+// TODO:: Add Joi Validation
+exports.registerProfessionalStep3 = asyncHandler(async (req, res) => {
   req.user.availableTime = req.body.availableTime;
   req.user.step = 3;
   await req.user.save();
   return res.json({ success: true, data: { user: req.user } });
 });
 
-exports.profRegStep4 = asyncHandler(async (req, res) => {
+// TODO: Need scope to update everything..
+// TODO:: Add Joi Validation
+exports.registerProfessionalStep4 = asyncHandler(async (req, res) => {
   for (let key in req.body) {
     req.user[key] = req.body[key];
   }
@@ -153,7 +190,7 @@ exports.profRegStep4 = asyncHandler(async (req, res) => {
 });
 
 exports.profLogin = asyncHandler(async (req, res, next) => {
-  const prof = await Prof.findOne({ email: req.body.email });
+  const prof = await Professional.findOne({ email: req.body.email });
   if (!prof) {
     return sendErrorResponse(res, 401, httpStatus.UNAUTHORIZED, {
       message: "ব্যবহারকারী পাওয়া যায়নি",
@@ -383,62 +420,73 @@ exports.AddasClient = asyncHandler(async (req, res, next) => {
   return res.status(201).json({ client: makeClientObject(clientDetails) });
 });
 
-exports.myClients = asyncHandler(async (req, res, next) => {
-  const profId = req.user._id;
-  let clients = await MyClient.find({
-    prof: profId,
+exports.myClients = asyncHandler(async (req, res, _next) => {
+  const clients = await MyClient.find({
+    prof: req.user._id,
     isActive: true,
-  }).populate({
-    path: "user",
-    select: "name location",
-  });
+  })
+    .populate({ path: "user", select: "name location" })
+    .lean();
 
-  return res.json({ clients: clients.map(makeClientObject) });
+  return sendJSONresponse(res, httpStatus.OK, {
+    data: {
+      clients,
+    },
+  });
 });
 
-exports.suggestAscale = asyncHandler(async (req, res, next) => {
+exports.suggestAscale = asyncHandler(async (req, res, _next) => {
   const profId = req.user._id;
-  const { userId, assessmentId } = req.body;
-  if (!userId || !assessmentId) return res.sendStatus(400);
-  const ass = await ProfAssessment.create({
+  const { userId, assessmentSlug } = req.body;
+
+  if (!userId || !assessmentSlug) {
+    return sendErrorResponse(res, 400, httpStatus.BAD_REQUEST, {
+      message: "Invalid request",
+    });
+  }
+
+  const assessment = await ProfAssessment.create({
     user: userId,
     prof: profId,
-    assessmentId,
+    assessmentSlug,
   });
 
   await UserNotification.create({
     user: userId,
     prof: profId,
-    type: "SUGGESTED_SCALE",
-    someId: {
-      assessmentId,
-      assessmentDbId: ass._id,
-    },
+    type: constants.SUGGEST_A_SCALE,
+    assessmentId: assessment._id,
   });
-  return res.sendStatus(200);
-});
 
-const { getProgress } = require("./helpers");
-const { sendErrorResponse, sendJSONresponse } = require("../utils");
-const httpStatus = require("http-status");
+  return sendJSONresponse(res, httpStatus.OK, {
+    data: {},
+  });
+});
 
 exports.getUserCompleteProfile = asyncHandler(async (req, res, next) => {
   const { userId } = req.params;
 
-  const userDB = await User.findById(userId);
-  if (!userDB) return res.sendStatus(404);
+  const user = await User.findById(userId);
+  if (!user) {
+    return sendErrorResponse(res, 404, httpStatus.NOT_FOUND, {
+      message: "User not found",
+    });
+  }
 
-  const { name, age, email, gender, isMarried, location } = userDB;
+  const { name, age, email, gender, isMarried, location } = user;
   const { union, zila, upazila } = location;
   let address = [union, upazila, zila].filter(Boolean).join(", ");
   if (address === "") address = null;
-  const user = {
-    name: name,
-    age: age,
-    gender: gender,
-    isMarried: isMarried ? "Married" : "Unmarried",
-    address,
-    email,
+
+  const response = {
+    user: {
+      name: name,
+      age: age,
+      gender: gender,
+      isMarried: isMarried ? "Married" : "Unmarried",
+      address,
+      email,
+    },
   };
 
   const [
@@ -452,18 +500,19 @@ exports.getUserCompleteProfile = asyncHandler(async (req, res, next) => {
     suicideIdeation,
   ] = await getProgress(userId, req, res, next, "format-date");
 
-  return res.json({
-    user,
-    progress: {
-      manoshikObosthaJachaikoron,
-      manoshikChapNirnoy,
-      duschintaNirnoy,
-      childCare,
-      coronaProfile,
-      domesticViolence,
-      psychoticProfile,
-      suicideIdeation,
-    },
+  response.progress = {
+    manoshikObosthaJachaikoron,
+    manoshikChapNirnoy,
+    duschintaNirnoy,
+    childCare,
+    coronaProfile,
+    domesticViolence,
+    psychoticProfile,
+    suicideIdeation,
+  };
+
+  return sendJSONresponse(res, httpStatus.OK, {
+    data: response,
   });
 });
 
@@ -492,7 +541,7 @@ exports.getScaleResult = asyncHandler(async (req, res, next) => {
 
 exports.allProf = asyncHandler(async (req, res, next) => {
   try {
-    const prof = await Prof.find({});
+    const prof = await Professional.find({});
     return res.status(200).json(prof);
   } catch (err) {
     return res.status(400).json({ err });
@@ -503,7 +552,7 @@ exports.deleteProfessionalAccount = asyncHandler(async (req, res, _next) => {
   try {
     const { profId } = req.params;
 
-    const prof = await Prof.findByIdAndDelete(profId);
+    const prof = await Professional.findByIdAndDelete(profId);
     if (!prof) {
       return sendErrorResponse(res, httpStatus.NOT_FOUND, {
         message: "Professional not found",
@@ -531,7 +580,7 @@ exports.deleteProfessionalAccount = asyncHandler(async (req, res, _next) => {
 });
 
 exports.profVisibility = asyncHandler(async (req, res, _next) => {
-  const prof = await Prof.findById(req.params.profId);
+  const prof = await Professional.findById(req.params.profId);
   if (!prof) {
     return sendErrorResponse(res, httpStatus.NOT_FOUND, {
       message: "Professional not found",
@@ -544,7 +593,7 @@ exports.profVisibility = asyncHandler(async (req, res, _next) => {
 });
 
 exports.updateProfile = asyncHandler(async (req, res) => {
-  const professional = await Prof.findById(req.params.profId);
+  const professional = await Professional.findById(req.params.profId);
 
   for (let key in req.body) {
     professional[key] = req.body[key];
@@ -559,7 +608,7 @@ exports.updateProfile = asyncHandler(async (req, res) => {
 });
 
 exports.getVerificationCode = async (req, res) => {
-  const prof = await Prof.findOne({ email: req.body.email });
+  const prof = await Professional.findOne({ email: req.body.email });
   try {
     if (prof) {
       const code = Math.round(Math.random() * 100000 + 1);
@@ -587,7 +636,7 @@ exports.changePassword = async (req, res) => {
     if (verificationCode && verificationCode.isVerified === true) {
       verificationCode.isVerified = false;
       await verificationCode.save();
-      const prof = await Prof.findOne({ email: req.body.email });
+      const prof = await Professional.findOne({ email: req.body.email });
       prof.password = await bcrypt.hash(req.body.newPassword, 10);
       await prof.save();
       const [accessToken, refreshToken] = await prof.generateTokens(prof._id);

@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,35 +9,39 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { connect } from 'react-redux';
 import Text from '../../components/Text';
-import BaseUrl from '../../config/BaseUrl';
 import colors from '../../config/colors';
-import { logoutAction } from '../../redux/actions/auth';
+import { findAppointmentById } from '../../services/api';
+import { useSelector } from 'react-redux';
+import { formatDateTime } from '../../utils/date';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useBackPress, useHelper } from '../../hooks';
+import constants from '../../navigation/constants';
 
-const AppointmentStatus = ({ navigation, route, ...props }) => {
+const SCREEN_NAME = constants.APPOINTMENT_STATUS;
+const AppointmentStatus = () => {
+  useBackPress(SCREEN_NAME);
+
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { processApiError } = useHelper();
+  const { jwtToken } = useSelector((state) => state.auth);
+
   const [isLoading, setIsLoading] = useState(true);
-  const [data, setData] = useState(null);
-  const [appointmentScale, setAppointmentScale] = useState();
-  const { appointmentId, questionId, profId, notificationId, stage } = route.params;
+  const [curAppointment, setCurAppointment] = useState(null);
+
+  const { appointmentId, notificationId } = route.params;
 
   const getAppointmentDetails = async () => {
-    try {
-      const { data: response } = await axios.get(
-        `${BaseUrl}/user/appointment/status/${appointmentId}`
-      );
-      setData(response.appointment);
-      if (questionId) {
-        await setAppointmentScale(questionId)
-      }
-      else {
-        await setAppointmentScale(response?.appointment?.appointmentScale)
-      }
-    } catch (err) {
-      console.log(err?.response);
-    } finally {
-      setIsLoading(false);
+    const response = await findAppointmentById({ appointmentId, jwtToken });
+    if (response.success) {
+      const { appointment } = response.data;
+      setCurAppointment(appointment);
+    } else {
+      processApiError(response);
     }
+
+    setIsLoading(false);
   };
 
   const dialCall = async (number) => {
@@ -51,222 +54,149 @@ const AppointmentStatus = ({ navigation, route, ...props }) => {
   }, []);
 
   return (
-    <ScrollView style={{ backgroundColor: 'white' }}>
+    <ScrollView style={styles.container}>
       <View>
         {isLoading ? (
-          <>
-            <View
-              style={{
-                textAlign: 'center',
-                width: '100%',
-                paddingTop: 10,
-              }}
-            >
-              <ActivityIndicator size='large' color={colors.primary} />
-            </View>
-          </>
+          <View style={styles.loader}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
         ) : (
           <>
-            <View>
-              <Text
-                style={{
-                  textAlign: 'center',
-                  fontSize: 28,
-                  fontWeight: 'bold',
-                  paddingTop: 10,
-                }}
-              >
-                {data.profName}
-              </Text>
-              <Text
-                style={{
-                  textAlign: 'center',
-                  fontSize: 16,
-                  paddingTop: 4,
-                  color: '#444',
-                }}
-              >
-                {data.profEmail}
-              </Text>
-              <TouchableOpacity onPress={() => dialCall(data.profPhoneNumber)}>
-                <Text
-                  style={{
-                    textAlign: 'center',
-                    fontSize: 14,
-                    paddingTop: 5,
-                    color: '#444',
-                  }}
-                >
-                  {data.profPhoneNumber}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View>
-              <Text
-                style={{
-                  fontSize: 13,
-                  padding: 10,
-                  paddingTop: 5,
-                  lineHeight: 17,
-                  textAlign: 'center',
-                  color: 'gray',
-                }}
-              >
-                আপনি এখন প্রফেশনালের সাথে কল বা ইমেইলের মাধ্যমে সরাসরি যোগাযোগ
-                করতে পারবেন
-              </Text>
-            </View>
-            {stage !== 'is_a_client' && <>
-              < View style={{ padding: 10 }}>
-                <View style={{ paddingBottom: 7 }}>
-                  <Text style={{ fontSize: 15, fontWeight: 'bold' }}>
-                    Patient:
-                  </Text>
-                  <Text style={{ color: '#222', fontSize: 17 }}>
-                    {data.userName}
-                  </Text>
+            {curAppointment && (
+              <>
+                <View>
+                  <Text style={styles.headingLarge}>{curAppointment.prof.name}</Text>
+                  <Text style={styles.textSecondary}>{curAppointment.prof.email}</Text>
+                  <TouchableOpacity onPress={() => dialCall(curAppointment.prof.telephone)}>
+                    <Text style={styles.textSecondary}>{curAppointment.prof.telephone}</Text>
+                  </TouchableOpacity>
                 </View>
-                <View style={{ paddingBottom: 7 }}>
-                  <Text
-                    style={{ fontSize: 15, fontWeight: 'bold', paddingBottom: 2 }}
-                  >
-                    Appointmnet schedule:
-                  </Text>
-                  <Text style={{ color: '#222', fontSize: 17 }}>
-                    {data.appointmentTime}
+
+                <View>
+                  <Text style={styles.infoText}>
+                    আপনি এখন প্রফেশনালের সাথে কল বা ইমেইলের মাধ্যমে সরাসরি যোগাযোগ করতে পারবেন
                   </Text>
                 </View>
 
-                {data.appointmentMessage && (
-                  <View style={{ paddingBottom: 7 }}>
-                    <Text
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 'bold',
-                        paddingBottom: 2,
-                      }}
-                    >
-                      Message:
-                    </Text>
-                    <Text style={{ color: '#222', fontSize: 17 }}>
-                      {data.appointmentMessage}
+                <View style={styles.section}>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Patient:</Text>
+                    <Text style={styles.value}>{curAppointment.user.name}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Text style={styles.label}>Appointment schedule:</Text>
+                    <Text style={styles.value}>
+                      {formatDateTime(
+                        curAppointment.dateByProfessional || curAppointment.dateByClient
+                      )}
                     </Text>
                   </View>
-                )}
-                {data.appointmentScale && (
-                  <TouchableOpacity
-                    style={{
-                      padding: 10,
-                      backgroundColor: colors.primary,
-                      borderRadius: 5,
-                      paddingVertical: 15,
-                      marginTop: 10,
-                    }}
-                    onPress={() =>
-                      navigation.navigate('ProfSuggestedScale', {
-                        questionId: appointmentScale,
-                        profId,
-                        notificationId, appointmentId,
-                      })
-                    }
-                  >
-                    <View
-                      style={{ flexDirection: 'row', justifyContent: 'center' }}
-                    >
-                      <Text
-                        style={{
-                          textAlign: 'center',
-                          color: 'white',
-                          fontSize: 20,
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        স্কেলটি পূরণ করুন
-                      </Text>
-                      <MaterialCommunityIcons
-                        name='arrow-right-circle'
-                        color='white'
-                        size={25}
-                        style={{ paddingLeft: 10, paddingTop: 3 }}
-                      />
+
+                  {curAppointment.messageFromProf && (
+                    <View style={styles.row}>
+                      <Text style={styles.label}>Message:</Text>
+                      <Text style={styles.value}>{curAppointment.messageFromProf}</Text>
                     </View>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </>
-            }
+                  )}
+
+                  {curAppointment.initAssessmentId && (
+                    <TouchableOpacity
+                      style={styles.buttonPrimary}
+                      onPress={() =>
+                        navigation.navigate('ProfSuggestedScale', {
+                          questionId: curAppointment.initAssessmentId,
+                          profId: curAppointment.prof._id,
+                          notificationId,
+                          appointmentId: curAppointment._id,
+                        })
+                      }
+                    >
+                      <View style={styles.buttonContent}>
+                        <Text style={styles.buttonText}>স্কেলটি পূরণ করুন</Text>
+                        <MaterialCommunityIcons
+                          name="arrow-right-circle"
+                          color="white"
+                          size={25}
+                          style={styles.buttonIcon}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </>
+            )}
           </>
-        )
-        }
-      </View >
-    </ScrollView >
+        )}
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  generalInformationContainer: {
-    padding: 10,
-    paddingBottom: 15,
+  container: {
+    backgroundColor: 'white',
   },
-  gIName: {
+  loader: {
     textAlign: 'center',
+    width: '100%',
+    paddingTop: 10,
+  },
+  headingLarge: {
+    textAlign: 'center',
+    fontSize: 28,
     fontWeight: 'bold',
-    fontSize: 24,
-    textTransform: 'uppercase',
+    paddingTop: 10,
   },
-  gIOther: {
+  textSecondary: {
     textAlign: 'center',
+    fontSize: 16,
+    paddingTop: 4,
+    color: '#444',
+  },
+  infoText: {
+    fontSize: 13,
+    padding: 10,
+    paddingTop: 5,
+    lineHeight: 17,
+    textAlign: 'center',
+    color: 'gray',
+  },
+  section: {
+    padding: 10,
+  },
+  row: {
+    paddingBottom: 7,
+  },
+  label: {
     fontSize: 15,
-    color: '#555',
-    fontWeight: '300',
-    paddingTop: 2,
+    fontWeight: 'bold',
+    paddingBottom: 2,
   },
-  blockContainer: {
-    padding: 5,
+  value: {
+    color: '#222',
+    fontSize: 17,
   },
-  bigHeader: {
+  buttonPrimary: {
+    padding: 10,
+    backgroundColor: colors.primary,
+    borderRadius: 5,
+    paddingVertical: 15,
+    marginTop: 10,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    textAlign: 'center',
+    color: 'white',
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
-    paddingBottom: 4,
   },
-  block: {},
-  blockHeader: {
-    fontSize: 18,
-    color: '#333',
-    paddingBottom: 3.5,
-  },
-  allBlocks: {
-    display: 'flex',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 5,
-  },
-  eachBlock: {
-    backgroundColor: colors.primary,
-    color: 'white',
-    margin: 2,
-    padding: 4,
-    fontSize: 14,
-    borderRadius: 3,
-    marginBottom: 3,
-  },
-  pickerContainer: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  appointmentFee: {
-    color: '#444',
-    fontSize: 16.5,
-    paddingTop: 5,
-    paddingLeft: 5,
+  buttonIcon: {
+    paddingLeft: 10,
+    paddingTop: 3,
   },
 });
 
-const mapStateToProps = (state) => ({
-  isAuthenticated: state.auth.isAuthenticated,
-  jwtToken: state.auth.jwtToken,
-});
-
-export default connect(mapStateToProps, { logoutAction })(AppointmentStatus);
+export default AppointmentStatus;

@@ -79,7 +79,7 @@ export const updateUserProfile = async ({ payload, jwtToken }) => {
   }
 };
 
-export const getUserProfile = async ({ jwtToken }) => {
+export const FromProfessional = async ({ jwtToken }) => {
   try {
     console.log('API: ', endpoints.USER_PROFILE);
     const response = await axios.get(endpoints.USER_PROFILE, {
@@ -133,7 +133,7 @@ export const seenAppointmentRequest = async ({ jwtToken, appointmentId }) => {
   try {
     const endpoint = endpoints.SEEN_APPOINTMENT_REQUEST + '/' + appointmentId;
     console.log('API: ', endpoint);
-    const response = await axios.post(endpoint, {}, { headers: configHeaders({ jwtToken }) })
+    const response = await axios.post(endpoint, {}, { headers: configHeaders({ jwtToken }) });
     return sendSuccessResponse(response.data.data);
   } catch (error) {
     return sendErrorResponseV2(error);
@@ -144,7 +144,7 @@ export const respondToClientRequest = async ({ jwtToken, appointmentId, payload 
   try {
     const endpoint = endpoints.RESPOND_TO_CLIENT_REQUEST + '/' + appointmentId;
     console.log('API: ', endpoint);
-    const response = await axios.post(endpoint, payload, { headers: configHeaders({ jwtToken }) })
+    const response = await axios.post(endpoint, payload, { headers: configHeaders({ jwtToken }) });
     return sendSuccessResponse(response.data.data);
   } catch (error) {
     console.log(error);
@@ -227,5 +227,58 @@ export const updateProfProfile = async ({ _id, payload, jwtToken }) => {
     return sendSuccessResponse(response.data.data.professional);
   } catch (error) {
     return sendErrorResponse(error);
+  }
+};
+
+export const findAppointmentById = async ({ appointmentId, jwtToken }) => {
+  try {
+    const endpoint = endpoints.APPOINTMENT_DETAILS + '/' + appointmentId;
+    console.log('API: ', endpoint);
+    const response = await axios.get(endpoint, {
+      headers: configHeaders({ jwtToken }),
+    });
+    return sendSuccessResponse(response.data.data);
+  } catch (error) {
+    return sendErrorResponse(error);
+  }
+};
+
+export const getProfessionalsClient = async ({ jwtToken }) => {
+  try {
+    const endpoint = endpoints.GET_PROFESSIONALS_CLIENT;
+    console.log('API: ', endpoint);
+    const response = await axios.get(endpoint, {
+      headers: configHeaders({ jwtToken }),
+    });
+    return sendSuccessResponse(response.data.data);
+  } catch (error) {
+    return sendErrorResponse(error);
+  }
+};
+
+export const getUserProfileFromProfessional = async ({ jwtToken, userId }) => {
+  try {
+    const endpoint = endpoints.GET_USER_PROFILE_FOR_PROFESSIONAL + '/' + userId;
+    console.log('API: ', endpoint);
+    const response = await axios.get(endpoint, {
+      headers: configHeaders({ jwtToken }),
+    });
+    return sendSuccessResponse(response.data.data);
+  } catch (error) {
+    return sendErrorResponseV2(error);
+  }
+};
+
+export const suggestScaleToClient = async ({ jwtToken, payload }) => {
+  try {
+    const endpoint = endpoints.SUGGEST_SCALE_TO_CLIENT;
+    console.log('API: ', endpoint);
+    console.log('Payload: ', payload);
+    const response = await axios.post(endpoint, payload, {
+      headers: configHeaders({ jwtToken }),
+    });
+    return sendSuccessResponse(response.data.data);
+  } catch (error) {
+    return sendErrorResponseV2(error);
   }
 };

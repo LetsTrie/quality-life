@@ -27,6 +27,8 @@ export default {
   [constants.PROF_ASSESSMENT_TOOL_DETAILS]: constants.PROF_ASSESSMENT_TOOLS,
   [constants.PROF_CLIENT_REQUEST]: constants.PROF_HOMEPAGE,
   [constants.PROF_RESPONSE_CLIENT_REQUEST]: constants.PROF_HOMEPAGE,
+  [constants.PROFESSIONALS_CLIENT]: constants.PROF_HOMEPAGE,
+  [constants.CLIENT_PROFILE]: constants.PROFESSIONALS_CLIENT,
 
   [constants.USER_APPOINTMENT_TAKEN]: constants.HOMEPAGE,
 };

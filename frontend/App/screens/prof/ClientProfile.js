@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -8,129 +7,104 @@ import {
   StyleSheet,
   TouchableOpacity,
   View,
-  BackHandler,
 } from 'react-native';
-import { connect } from 'react-redux';
+import { useSelector } from 'react-redux';
 import AppButton from '../../components/Button';
 import Picker from '../../components/Picker';
 import Text from '../../components/Text';
-import BaseUrl from '../../config/BaseUrl';
 import colors from '../../config/colors';
 import assessments from '../../data/profScales';
-import { logoutAction } from '../../redux/actions/prof';
+import constants from '../../navigation/constants';
+import { useBackPress, useHelper } from '../../hooks';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { getUserProfileFromProfessional, suggestScaleToClient } from '../../services/api';
 
 const wait = (timeout) => {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 };
 
-const routeName = 'ClientProfile';
+let assessmentList = assessments.map((assessment) => ({
+  label: assessment.name,
+  value: assessment.name,
+  id: assessment.id,
+}));
 
-const ClientProfile = ({ navigation, route, ...props }) => {
-  let goToBack = route.params.goToBack ?? 'ProHomepage';
-  const { userId } = route.params;
+const SCREEN_NAME = constants.CLIENT_PROFILE;
 
-  const [refreshing, setRefreshing] = React.useState(false);
-  const [scaleLoading, setScaleLoading] = useState(false);
+const ClientProfile = () => {
+  const route = useRoute();
+  const navigation = useNavigation();
+  const { processApiError } = useHelper();
+
+  const { jwtToken } = useSelector((state) => state.auth);
+
+  const { goToBack, userId } = route.params;
+
+  useBackPress(SCREEN_NAME, goToBack);
+
+  const [refreshing, setRefreshing] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
+  const [scaleLoading, setScaleLoading] = useState(false);
 
-  // Remove
+  const [showAdviceToDoTest, setShowAdviceToDoTest] = useState(false);
+
   const [userData, setUserData] = useState(null);
   const [userStatus, setUserStatus] = useState(null);
   const [assessment, setAssessment] = useState(null);
 
-  const { jwtToken, isAuthenticated, clients, logoutAction, addAllMyClient } =
-    props;
-
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${jwtToken}`,
-  };
-
-  const signOutHandler = () => {
-    logoutAction();
-    navigation.navigate('LoginPro');
-  };
-
-  let asList = assessments.map((ap) => ({
-    label: ap.name,
-    value: ap.name,
-    id: ap.id,
-  }));
-
   const getProfileDetails = async () => {
-    if (!isAuthenticated) {
-      signOutHandler();
-      return;
-    }
     setIsLoading(true);
 
-    try {
-      const response = await axios.get(
-        `${BaseUrl}/prof/user-profile/${userId}`,
-        { headers }
-      );
+    const response = await getUserProfileFromProfessional({
+      jwtToken,
+      userId,
+    });
+
+    if (!response.success) {
+      processApiError(response);
+    } else {
       setUserData(response.data);
       setUserStatus(
         response.data.user.isMarried === 'Unmarried'
           ? `অবিবাহিত, বয়স - ${response.data.user.age}`
           : `বিবাহিত, বয়স - ${response.data.user.age}`
       );
-    } catch (err) {
-      if (err?.response?.status === 401) signOutHandler();
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   };
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     getProfileDetails();
-    wait(2000).then(() => setRefreshing(false));
+    wait(1000).then(() => setRefreshing(false));
   }, []);
-
-  function handleBackButtonClick() {
-    navigation.navigate(goToBack);
-    return true;
-  }
 
   useEffect(() => {
     getProfileDetails();
-    BackHandler.addEventListener('hardwareBackPress', handleBackButtonClick);
-    return () => {
-      BackHandler.removeEventListener(
-        'hardwareBackPress',
-        handleBackButtonClick
-      );
-    };
   }, []);
 
   const suggestScaleHandler = async () => {
-    if (!isAuthenticated) {
-      signOutHandler();
-      return;
-    }
     if (!userId || !assessment) return;
-    setSuccess(false);
-    setScaleLoading(true);
-    const assessmentId = assessment.id;
-    const data = { userId, assessmentId };
 
-    try {
-      await axios.post(`${BaseUrl}/prof/suggest-scale`, data, {
-        headers,
-      });
-      setScaleLoading(false);
-      setSuccess(true);
-      setAssessment(null);
+    setShowAdviceToDoTest(false);
+    setScaleLoading(true);
+
+    const assessmentSlug = assessment.id;
+    const payload = { userId, assessmentSlug };
+
+    const response = await suggestScaleToClient({ jwtToken, payload });
+    if (!response.success) {
+      processApiError(response);
+    } else {
+      setShowAdviceToDoTest(true);
       setTimeout(function () {
-        setSuccess(false);
+        setShowAdviceToDoTest(false);
       }, 2000);
-    } catch (err) {
-      if (err?.response?.status === 401) signOutHandler();
-    } finally {
-      setScaleLoading(false);
     }
+
+    setScaleLoading(false);
   };
 
   const ThreeScaleTestBlock = (props) => {
@@ -139,10 +113,7 @@ const ClientProfile = ({ navigation, route, ...props }) => {
       navigation.navigate('ClientTestResult', { ...data, testname: name });
     };
     return (
-      <TouchableOpacity
-        style={styles.testBlock}
-        onPress={data ? onPress : undefined}
-      >
+      <TouchableOpacity style={styles.testBlock} onPress={data ? onPress : undefined}>
         <Text style={styles.testName}> {name} </Text>
         {data ? (
           <View>
@@ -150,10 +121,7 @@ const ClientProfile = ({ navigation, route, ...props }) => {
               <Text style={styles.matraStyle}>{data.stage}</Text>
               <View style={styles.seeResult}>
                 <Text style={styles.seeResultText}> রেজাল্ট দেখুন </Text>
-                <MaterialCommunityIcons
-                  name={'arrow-right'}
-                  style={styles.seeResultIcon}
-                />
+                <MaterialCommunityIcons name={'arrow-right'} style={styles.seeResultIcon} />
               </View>
             </View>
           </View>
@@ -176,9 +144,8 @@ const ClientProfile = ({ navigation, route, ...props }) => {
 
   return (
     <ScrollView
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      style={styles.scrollView}
     >
       {isLoading ? (
         <>
@@ -189,7 +156,7 @@ const ClientProfile = ({ navigation, route, ...props }) => {
               paddingTop: 10,
             }}
           >
-            <ActivityIndicator size='large' color={colors.primary} />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         </>
       ) : (
@@ -200,29 +167,20 @@ const ClientProfile = ({ navigation, route, ...props }) => {
             </View>
             <View style={styles.someDetails}>
               <View style={styles.iconBlockStyle}>
-                <MaterialCommunityIcons
-                  name={'card-account-details'}
-                  style={styles.iconStyle}
-                />
+                <MaterialCommunityIcons name={'card-account-details'} style={styles.iconStyle} />
                 <Text style={styles.descStyle}> {userStatus} </Text>
               </View>
               <View style={styles.iconBlockStyle}>
-                <MaterialCommunityIcons
-                  name={'map-marker-radius'}
-                  style={styles.iconStyle}
-                />
+                <MaterialCommunityIcons name={'map-marker-radius'} style={styles.iconStyle} />
                 <Text style={styles.descStyle}>{userData.user.address}</Text>
               </View>
               <View style={styles.iconBlockStyle}>
-                <MaterialCommunityIcons
-                  name={'email'}
-                  style={styles.iconStyle}
-                />
+                <MaterialCommunityIcons name={'email'} style={styles.iconStyle} />
                 <Text style={styles.descStyle}>{userData.user.email}</Text>
               </View>
             </View>
           </View>
-          {goToBack === 'ProMyClients' && (
+          {(true || goToBack === 'ProMyClients') && (
             <View style={styles.oneBigBlock}>
               <View style={styles.heading}>
                 <Text style={styles.headingTextStyle}> Suggest Scale </Text>
@@ -230,11 +188,11 @@ const ClientProfile = ({ navigation, route, ...props }) => {
               <View>
                 <View style={styles.pickerContainer}>
                   <Picker
-                    width='100%'
-                    placeholder='Assessment Tools'     
+                    width="100%"
+                    placeholder="Assessment Tools"
                     selectedItem={assessment}
-                    onSelectItem={(g) => setAssessment(g)}
-                    items={asList}
+                    onSelectItem={(item) => setAssessment(item)}
+                    items={assessmentList}
                     style={{
                       borderRadius: 5,
                       borderWidth: 1,
@@ -253,11 +211,11 @@ const ClientProfile = ({ navigation, route, ...props }) => {
                       paddingTop: 5,
                     }}
                   >
-                    <ActivityIndicator size='large' color={colors.primary} />
+                    <ActivityIndicator size="large" color={colors.primary} />
                   </View>
                 ) : (
                   <>
-                    {success && (
+                    {showAdviceToDoTest && (
                       <Text
                         style={{
                           textAlign: 'center',
@@ -270,7 +228,7 @@ const ClientProfile = ({ navigation, route, ...props }) => {
                         "{userData.user.name}" has been adviced to do this test
                       </Text>
                     )}
-                    <AppButton title='Send' onPress={suggestScaleHandler} />
+                    <AppButton title="Send" onPress={suggestScaleHandler} />
                   </>
                 )}
               </View>
@@ -298,10 +256,7 @@ const ClientProfile = ({ navigation, route, ...props }) => {
           </View>
           <View style={styles.oneBigBlock}>
             <View style={styles.heading}>
-              <Text style={styles.headingTextStyle}>
-                {' '}
-                গুরুত্বপূর্ণ তথ্যাবলী{' '}
-              </Text>
+              <Text style={styles.headingTextStyle}> গুরুত্বপূর্ণ তথ্যাবলী </Text>
             </View>
             <View style={styles.testDetails}>
               <ThreeScaleTestBlock
@@ -333,104 +288,103 @@ const ClientProfile = ({ navigation, route, ...props }) => {
 };
 
 const styles = StyleSheet.create({
-  timeStyle: {},
-  timeStyleIcon: {
-    fontSize: 16,
-    color: '#666',
-  },
-  timeTextStyle: {
-    fontSize: 16,
-    color: '#666',
-    marginLeft: 10,
-    paddingLeft: 10,
-  },
-  testDetails: {},
-  testBlock: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginBottom: 8,
-    borderRadius: 4,
-    elevation: 1,
-    padding: 4,
-    paddingVertical: 6,
-  },
-  testName: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: 'bold',
-  },
-  matraResultBlock: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 3,
-  },
-  matraStyle: {
-    fontSize: 15,
-    color: '#666',
-  },
-  seeResult: {
-    flexDirection: 'row',
-  },
-  seeResultText: {
-    fontSize: 16,
-    color: colors.primary,
-    fontWeight: 'bold',
-  },
-  seeResultIcon: {
-    fontSize: 18,
-    marginRight: 4,
-    color: colors.primary,
-    alignSelf: 'center',
-    fontWeight: 'bold',
-  },
-  someDetails: {
-    paddingTop: 10,
-  },
-  iconBlockStyle: {
-    display: 'flex',
-    flexDirection: 'row',
-    paddingBottom: 5,
-  },
-  iconStyle: {
-    fontSize: 20,
-    marginRight: 4,
-    color: '#444',
-  },
-  descStyle: {
-    color: '#333',
-    fontSize: 16.5,
-    paddingLeft: 3.5,
+  scrollView: {
+    marginTop: 10,
   },
   oneBigBlock: {
-    margin: 10,
+    margin: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
-    elevation: 2,
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 0,
-    backgroundColor: 'white',
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 14,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    marginTop: 0,
   },
   heading: {
     paddingBottom: 12,
   },
   headingTextStyle: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: '700',
     textAlign: 'center',
+    color: '#333',
+  },
+  someDetails: {
+    paddingTop: 12,
+    paddingHorizontal: 8,
+  },
+  iconBlockStyle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  iconStyle: {
+    fontSize: 22,
+    marginRight: 8,
+    color: '#f44336',
+  },
+  descStyle: {
+    fontSize: 16,
+    color: '#555',
+    fontWeight: '500',
+  },
+  testDetails: {
+    paddingTop: 8,
+  },
+  testBlock: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+    backgroundColor: '#f9f9f9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  testName: {
+    fontSize: 16.5,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 6,
+  },
+  matraResultBlock: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 4,
+  },
+  matraStyle: {
+    fontSize: 15,
+    color: '#666',
+    fontWeight: '500',
+  },
+  seeResult: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  seeResultText: {
+    fontSize: 16,
+    color: '#f44336',
+    fontWeight: '600',
+  },
+  seeResultIcon: {
+    fontSize: 20,
+    marginLeft: 6,
+    color: '#f44336',
   },
   pickerContainer: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 16,
+    marginTop: 8,
   },
 });
 
-const mapStateToProps = (state) => ({
-  jwtToken: state.prof.jwtToken,
-  isAuthenticated: state.prof.isAuthenticated,
-});
-
-const mapActionToProps = { logoutAction };
-
-export default connect(mapStateToProps, mapActionToProps)(ClientProfile);
+export default ClientProfile;

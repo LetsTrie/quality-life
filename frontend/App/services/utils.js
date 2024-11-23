@@ -24,7 +24,7 @@ export const sendErrorResponseV2 = (error) => {
   try {
     console.log(error.response.data.message);
     const { errors, status, type, message } = error.response.data;
-    
+
     const errorMessage = isNotEmptyArray(errors)
       ? errors.map((e) => e.message).join(', ')
       : message;

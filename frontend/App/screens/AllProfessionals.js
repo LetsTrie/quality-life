@@ -111,16 +111,16 @@ const AllProfessionals = () => {
 
   const RequestAppointmentBtn = ({ prof }) => {
     const isClient = professionalsClient.find((c) => c.prof === prof._id);
-    const exists = contactedProfessionals.find((c) => c.prof === prof._id);
+    const existingAp = contactedProfessionals.find((c) => c.prof === prof._id);
 
     let message = 'অ্যাপয়েন্টমেন্ট নিন';
 
     if (isClient) {
       message = 'যোগাযোগ করুন';
-    } else if (exists) {
-      if (exists.status === constants.APPOINTMENT_REQUESTED) {
+    } else if (existingAp) {
+      if (existingAp.status === constants.APPOINTMENT_REQUESTED) {
         message = 'ইতোমধ্যেই অনুরোধ করা হয়েছে';
-      } else if (exists.status === constants.APPOINTMENT_ACCEPTED) {
+      } else if (existingAp.status === constants.APPOINTMENT_ACCEPTED) {
         message = 'আপডেট দেখুন';
       }
     }
@@ -139,23 +139,25 @@ const AllProfessionals = () => {
 
   const requestAppointmentButton = (prof) => {
     const isClient = professionalsClient.find((c) => c.prof === prof._id);
-    const exists = contactedProfessionals.find((c) => c.prof === prof._id);
+    const existingAp = contactedProfessionals.find((c) => c.prof === prof._id);
+    console.log(isClient, existingAp);
 
     if (isClient) {
       navigation.navigate(constants.APPOINTMENT_STATUS, {
-        appointmentId: exists.appointmentId,
-        stage: 'is_a_client',
+        appointmentId: existingAp._id,
+        professionalId: existingAp.prof,
       });
-    } else if (!exists) {
+    } else if (!existingAp) {
       navigation.navigate(constants.PROFESSIONAL_DETAILS, {
         prof,
       });
-    } else if (exists.status === constants.APPOINTMENT_ACCEPTED) {
-      navigation.navigate(constants.APPOINTMENT_STATUS, {
-        appointmentId: exists.appointmentId,
-        profId: exists.prof,
-      });
     }
+    // else if (exists.status === constants.APPOINTMENT_ACCEPTED) {
+    //   navigation.navigate(constants.APPOINTMENT_STATUS, {
+    //     appointmentId: exists.appointmentId,
+    //     professionalId: prof._id,
+    //   });
+    // }
   };
 
   return (

@@ -30,12 +30,16 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.methods.generateTokens = async (id) => {
-  const accessToken = await jwt.sign({ id }, process.env.JWT_ACCESS_TOKEN, {
-    expiresIn: process.env.JWT_EXPIRATION,
-  });
-  const refreshToken = await jwt.sign({ id }, process.env.JWT_REFRESH_TOKEN, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRATION,
-  });
+  const accessToken = await jwt.sign(
+    { id, role: "user" },
+    process.env.JWT_ACCESS_TOKEN,
+    { expiresIn: process.env.JWT_EXPIRATION }
+  );
+  const refreshToken = await jwt.sign(
+    { id, role: "user" },
+    process.env.JWT_REFRESH_TOKEN,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRATION }
+  );
 
   return [accessToken, refreshToken];
 };

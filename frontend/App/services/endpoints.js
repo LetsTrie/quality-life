@@ -8,19 +8,25 @@ export const endpoints = {
   USER_ADDITIONAL_INFO: `${BaseUrl}/user/intro/profile`,
   UPDATE_PROFILE: `${BaseUrl}/user/update/profile`,
   USER_PROFILE: `${BaseUrl}/user/all-information`,
+  APPOINTMENT_DETAILS: `${BaseUrl}/user/appointment-details`,
 
   PROF_LOGIN: `${BaseUrl}/prof/login`,
-  PROF_REGISTER_STEP1: `${BaseUrl}/prof/register/s1`,
-  PROF_REGISTER_STEP2: `${BaseUrl}/prof/register/s2`,
-  PROF_REGISTER_STEP3: `${BaseUrl}/prof/register/s3`,
-  PROF_REGISTER_STEP4: `${BaseUrl}/prof/register/s4`,
+  PROF_REGISTER_STEP1: `${BaseUrl}/prof/register/step-1`,
+  PROF_REGISTER_STEP2: `${BaseUrl}/prof/register/step-2`,
+  PROF_REGISTER_STEP3: `${BaseUrl}/prof/register/step-3`,
+  PROF_REGISTER_STEP4: `${BaseUrl}/prof/register/step-4`,
   DELETE_PROF_ACCOUNT: `${BaseUrl}/prof/`,
 
   PROF_PROFILE_UPDATE: `${BaseUrl}/prof/update/profile`,
   FIND_PROFESSIONALS_FOR_USER: `${BaseUrl}/user/professionals`,
   TAKE_APPOINTMENT: `${BaseUrl}/user/take-appointment`,
 
-  GET_APPOINTMENTS:`${BaseUrl}/prof/client-requests`,
+  GET_APPOINTMENTS: `${BaseUrl}/prof/client-requests`,
   SEEN_APPOINTMENT_REQUEST: `${BaseUrl}/prof/appointment-seen`,
   RESPOND_TO_CLIENT_REQUEST: `${BaseUrl}/prof/appointment-response`,
+
+  GET_PROFESSIONALS_CLIENT: `${BaseUrl}/prof/my-clients`,
+  GET_USER_PROFILE_FOR_PROFESSIONAL: `${BaseUrl}/prof/user-profile`,
+
+  SUGGEST_SCALE_TO_CLIENT: `${BaseUrl}/prof/suggest-scale`,
 };

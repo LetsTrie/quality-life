@@ -1,6 +1,8 @@
 const asyncHandler = require("../middlewares/asyncHandler");
 const User = require("../models/user");
+const { Professional } = require("../models");
 const bcrypt = require("bcrypt");
+const { sendErrorResponse, sendJSONresponse } = require("../utils");
 
 // API List
 // 1. User Registration :: POST /user/sign-up
@@ -108,3 +110,67 @@ exports.signIn = asyncHandler(async (req, res, _next) => {
 
 // TODO: Forget Password
 // TODO: Reset Password
+
+const ROLES = {
+  USER: "user",
+  PROFESSIONAL: "professional",
+};
+
+// Token Refresher API :: POST /auth/refresh-token
+exports.refreshToken = asyncHandler(async (req, res, next) => {
+  const { refreshToken } = req.body;
+
+  // Validate the refresh token
+  if (!refreshToken) {
+    return sendErrorResponse(res, 400, "ValidationError", {
+      message: "Refresh token is required",
+    });
+  }
+
+  try {
+    const decoded = await jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_TOKEN
+    );
+
+    const { id, role } = decoded;
+
+    let tokenUser;
+
+    if (role === ROLES.USER) {
+      tokenUser = await User.findById(id);
+      if (!tokenUser) {
+        return sendErrorResponse(res, 401, "UnAuthorized", {
+          message: "Invalid refresh token",
+        });
+      }
+    } else if (role === ROLES.PROFESSIONAL) {
+      tokenUser = await Professional.findById(id);
+      if (!tokenUser) {
+        return sendErrorResponse(res, 401, "UnAuthorized", {
+          message: "Invalid refresh token",
+        });
+      }
+    }
+
+    const [accessToken, refreshToken] = await tokenUser.generateTokens(id);
+
+    console.log("Tokens refreshed for user:", {
+      newAccessToken: accessToken,
+      newRefreshToken: refreshToken,
+    });
+
+    return sendJSONresponse(res, 200, {
+      data: {
+        accessToken,
+        refreshToken,
+      },
+    });
+  } catch (error) {
+    console.error("Error refreshing tokens:", error);
+
+    return sendErrorResponse(res, 401, "UnAuthorized", {
+      message: "Please log in again",
+    });
+  }
+});

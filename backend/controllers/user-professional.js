@@ -100,7 +100,7 @@ exports.showAllClientRequests = asyncHandler(async (req, res, _next) => {
     response.requestsCount = await Appointment.countDocuments(query);
   }
 
-  const LIMIT  = 5;
+  const LIMIT = 5;
   response.requests = await Appointment.find(query)
     .sort({ _id: -1 })
     .populate({
@@ -197,6 +197,12 @@ exports.respondToAppointment = asyncHandler(async (req, res, _next) => {
     prof: profId,
     type: constants.APPOINTMENT_ACCEPTED,
     appointmentId: appointment._id,
+  });
+
+  await UsersNotification.create({
+    user: userId,
+    prof: profId,
+    type: constants.SUGGEST_A_SCALE,
     assessmentId: appointment.initAssessmentId,
   });
 
@@ -222,6 +228,38 @@ exports.respondToAppointment = asyncHandler(async (req, res, _next) => {
       prof: profId,
     });
   }
+
+  return sendJSONresponse(res, 200, {
+    data: {
+      appointment,
+    },
+  });
+});
+
+// GET /user/appointment-details/:appointmentId
+exports.getAppointmentDetailsForUser = asyncHandler(async (req, res, _next) => {
+  const { appointmentId } = req.params;
+  const appointment = await Appointment.findById(appointmentId).populate([
+    {
+      path: "user",
+      select: "name",
+    },
+    {
+      path: "prof",
+      select: "name email telephone",
+    },
+  ]);
+  if (!appointment) {
+    return sendErrorResponse(res, 404, httpStatus.NOT_FOUND, {
+      message: "অ্যাপয়েন্টমেন্ট পাওয়া যায়নি",
+    });
+  }
+
+  await UsersNotification.deleteMany({
+    user: req.user._id,
+    type: constants.APPOINTMENT_ACCEPTED,
+    appointmentId: appointmentId,
+  });
 
   return sendJSONresponse(res, 200, {
     data: {
