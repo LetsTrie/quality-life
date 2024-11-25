@@ -3,100 +3,83 @@ import { View, StyleSheet } from 'react-native';
 import { TouchableOpacity } from 'react-native';
 import Text from '../../components/Text';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { connect } from 'react-redux';
-import { logoutAction } from '../../redux/actions/auth';
 import { useHelper } from '../../contexts/helper';
+import { useNavigation } from '@react-navigation/native';
+import { useBackPress } from '../../hooks';
+import constants from '../../navigation/constants';
 
-const Setting = ({ navigation, ...props }) => {
+const SCREEN_NAME = constants.SETTINGS;
+const Setting = () => {
+  useBackPress(SCREEN_NAME);
+  const navigation = useNavigation();
   const { logout } = useHelper();
+
   return (
-    <>
-      <View style={styles.BtnContainer}>
-        <TouchableOpacity style={styles.BtnStyle} onPress={() => navigation.navigate('AboutUs')}>
+    <View style={styles.container}>
+      <View style={styles.cardContainer}>
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('AboutUs')}>
           <MaterialCommunityIcons
-            name={'information-outline'}
+            name="information-outline"
             style={styles.iconStyle}
-            size={20}
-            color={'#444'}
+            size={24}
+            color="#4A90E2"
           />
-          <Text style={styles.textStyle}> About us </Text>
+          <Text style={styles.textStyle}> আমাদের সম্পর্কিত তথ্য </Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.BtnStyle}
-          onPress={() => navigation.navigate('PrivacyPolicy')}
-        >
+        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('PrivacyPolicy')}>
           <MaterialCommunityIcons
-            name={'shield-account-outline'}
+            name="shield-account-outline"
             style={styles.iconStyle}
-            size={20}
-            color={'#444'}
+            size={24}
+            color="#4A90E2"
           />
-          <Text style={styles.textStyle}> Privacy policy </Text>
+          <Text style={styles.textStyle}> গোপনীয়তা নীতি </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.BtnStyle} onPress={logout}>
+        <TouchableOpacity style={styles.card} onPress={logout}>
           <MaterialCommunityIcons
-            name={'exit-to-app'}
+            name="exit-to-app"
             style={styles.iconStyle}
-            size={20}
-            color={'#444'}
+            size={24}
+            color="#E94E77"
           />
-          <Text style={styles.textStyle}> Sign out </Text>
+          <Text style={styles.textStyle}> সাইন আউট </Text>
         </TouchableOpacity>
       </View>
-    </>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  BtnContainer: {
-    padding: 8,
-    paddingTop: 20,
+  container: {
     flex: 1,
-    backgroundColor: '#f6f6f6',
+    backgroundColor: '#F9FAFB',
+    paddingVertical: 20,
   },
-  BtnStyle: {
-    margin: 5,
-    marginHorizontal: 10,
+  cardContainer: {
+    marginHorizontal: 15,
+  },
+  card: {
     flexDirection: 'row',
-    elevation: 1,
-    borderColor: '#eee',
-    borderWidth: 1,
-    borderRadius: 5,
-    padding: 13,
-    paddingLeft: 15,
-    backgroundColor: '#fff',
-    marginBottom: 7,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   iconStyle: {
-    fontSize: 22.5,
-    alignSelf: 'center',
-    paddingRight: 13,
+    marginRight: 15,
   },
   textStyle: {
-    fontSize: 17.5,
-    fontWeight: '300',
-    color: '#333',
-    alignSelf: 'center',
+    fontSize: 18,
+    fontWeight: '400',
+    color: '#333333',
+    flex: 1,
   },
 });
 
-const mapStateToProps = (state) => ({
-  isAuthenticated: state.auth.isAuthenticated,
-  jwtToken: state.auth.jwtToken,
-  name: state.user.name,
-  age: state.user.age,
-  gender: state.user.gender,
-  isMarried: state.user.isMarried,
-  address: state.user.address,
-  msm_score: state.user.msm_score,
-  msm_date: state.user.msm_date,
-  moj_score: state.user.moj_score,
-  moj_date: state.user.moj_date,
-  mcn_score: state.user.mcn_score,
-  mcn_date: state.user.mcn_date,
-  dn_score: state.user.dn_score,
-  dn_date: state.user.dn_date,
-  mentalHealthProfile: state.user.mentalHealthProfile,
-});
-
-export default connect(mapStateToProps, { logoutAction })(Setting);
+export default Setting;

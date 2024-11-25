@@ -9,33 +9,37 @@ import resources from '../data/videos';
 import { useBackPress } from '../hooks';
 import constants from '../navigation/constants';
 
-// Updated At: 22/03/2024
-// Updated By: MD. Sakib Khan
-
 const Box = ({ title, isCompleted, id }) => {
   const navigation = useNavigation();
+
+  console.log({
+    title,
+    isCompleted,
+    id,
+  });
 
   const onPress = () => {
     navigation.navigate('VideoExercise', { title, isCompleted, id });
   };
 
   return (
-    <>
-      <TouchableOpacity style={styles.boxContainer} onPress={onPress}>
-        <Text style={styles.boxTitle}>{title}</Text>
-        <Image source={isCompleted ? doneImage : pendingImage} style={styles.iconStyle} />
-      </TouchableOpacity>
-    </>
+    <TouchableOpacity style={styles.boxContainer} onPress={onPress}>
+      <Text style={styles.boxTitle} numberOfLines={2}>
+        {title}
+      </Text>
+      <Image source={isCompleted ? doneImage : pendingImage} style={styles.iconStyle} />
+    </TouchableOpacity>
   );
 };
 
+const SCREEN_NAME = constants.VIDEO_EXERCISE_LIST;
 const VideoExerciseList = () => {
+  useBackPress(SCREEN_NAME);
   const { shownVideo } = useSelector((state) => state.user);
-  useBackPress(constants.VIDEO_EXERCISE_LIST);
 
   return (
-    <ScrollView>
-      <View style={{ padding: 10, paddingTop: 18 }}>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.listContainer}>
         {resources.map((resource) => (
           <Box
             title={resource.name}
@@ -50,31 +54,39 @@ const VideoExerciseList = () => {
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    padding: 10,
+  },
+  listContainer: {
+    paddingVertical: 10,
+  },
   boxContainer: {
-    elevation: 1,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    borderColor: '#eee',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    backgroundColor: 'white',
-    padding: 13,
-    borderRadius: 5,
-    marginBottom: 10,
-    paddingVertical: 15,
-    backgroundColor: '#fefefe',
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   boxTitle: {
-    color: '#333',
-    fontSize: 15,
-    maxWidth: 270,
-    lineHeight: 25,
+    color: '#424242',
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+    marginRight: 10,
+    lineHeight: 22,
   },
   iconStyle: {
-    alignSelf: 'center',
-    paddingLeft: 10,
-    paddingRight: 6,
-    height: 18,
-    width: 18,
+    height: 24,
+    width: 24,
   },
 });
 

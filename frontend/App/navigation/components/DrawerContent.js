@@ -13,10 +13,17 @@ import BaseUrl from '../../config/BaseUrl';
 import colors from '../../config/colors';
 import { useHelper } from '../../contexts/helper';
 import { logoutAction as profLogoutAction } from '../../redux/actions/prof';
+import { RoleEnum } from '../../utils/roles';
+import constants from '../constants';
 
 const DrawerContent = () => {
-  const { _id: userId, isAuthenticated } = useSelector((state) => state.auth);
-  const { isAuthenticated: isProfAuthenticated } = useSelector((state) => state.prof);
+  const { role } = useSelector((state) => state.auth);
+
+  let isAuthenticated = false;
+  let isProfAuthenticated = false;
+  if (role === RoleEnum.USER) isAuthenticated = true;
+  if (role === RoleEnum.PROFESSIONAL) isProfAuthenticated = true;
+
   const navigation = useNavigation();
   const { logout } = useHelper();
   const dispatch = useDispatch();
@@ -24,12 +31,7 @@ const DrawerContent = () => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const deleteAccount = async () => {
-    const variable = { _id: userId };
-    await axios.post(`${BaseUrl}/user/delete`, variable).then((res) => {
-      if (res.data === 'success') {
-        logout();
-      }
-    });
+    console.error('Method not implemented!');
   };
 
   const profSignOutHandler = async () => {
@@ -68,7 +70,7 @@ const DrawerContent = () => {
                   <MaterialCommunityIcons name={'account'} size={size} color={color} />
                 )}
                 label={({ focused, color }) => <Text style={{ color }}>আমার প্রোফাইল</Text>}
-                onPress={() => navigation.navigate('Profile')}
+                onPress={() => navigation.navigate(constants.PROFILE)}
                 style={{ paddingHorizontal: 10, marginBottom: 3 }}
               />
               <DrawerItem
@@ -113,7 +115,7 @@ const DrawerContent = () => {
                   <MaterialCommunityIcons name={'cog'} size={size} color={color} />
                 )}
                 label="সেটিংস"
-                onPress={() => navigation.navigate('Setting')}
+                onPress={() => navigation.navigate(constants.SETTINGS)}
                 style={{ paddingHorizontal: 10, marginBottom: 3 }}
               />
               <DrawerItem

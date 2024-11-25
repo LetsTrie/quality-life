@@ -4,20 +4,19 @@ import Text from '../../components/Text';
 
 const ShowContent = ({ container }) => {
   return (
-    <ScrollView style={{ backgroundColor: '#eee' }}>
-      {container.map((d) => (
-        <View key={d.description[0]} style={styles.infoContainer}>
-          {d.title && (
-            <Text style={styles.header} style={styles.titleStyle}>
-              {d.title}
-            </Text>
-          )}
+    <ScrollView style={styles.scrollView}>
+      {container.map((d, index) => (
+        <View
+          key={d.description[0]}
+          style={[styles.infoContainer, index !== container.length - 1 ? {} : { marginBottom: 10 }]}
+        >
+          {d.title && <Text style={styles.titleStyle}>{d.title}</Text>}
           {d.description.map((dd, ind) => (
             <Text
               key={dd}
               style={[
                 styles.descriptionStyle,
-                ind != d.description.length - 1 ? { paddingBottom: 20 } : {},
+                ind !== d.description.length - 1 ? styles.descriptionSpacing : {},
               ]}
             >
               {dd}
@@ -30,31 +29,39 @@ const ShowContent = ({ container }) => {
 };
 
 const styles = StyleSheet.create({
+  scrollView: {
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 10,
+  },
   infoContainer: {
-    padding: 12,
-    margin: 15,
-    marginBottom: 2,
-    backgroundColor: 'white',
-    borderRadius: 5,
-    elevation: 3,
-    paddingBottom: 20,
+    padding: 16,
+    marginHorizontal: 15,
+    marginBottom: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 4,
   },
   titleStyle: {
-    paddingVertical: 5,
-    paddingBottom: 8,
-    fontSize: 28,
-    color: '#444',
-    fontWeight: 'bold',
-    marginVertical: 7,
+    fontSize: 24,
+    color: '#334155',
+    fontWeight: '600',
+    marginBottom: 10,
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   descriptionStyle: {
-    paddingHorizontal: 4,
-    fontSize: 16.5,
-    fontWeight: '300',
-    lineHeight: 28,
-    color: '#444',
+    fontSize: 16,
+    fontWeight: '400',
+    lineHeight: 26,
+    color: '#475569',
     textAlign: 'justify',
+  },
+  descriptionSpacing: {
+    marginBottom: 15,
   },
 });
 

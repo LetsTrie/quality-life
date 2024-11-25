@@ -1,150 +1,104 @@
-import React, { useEffect, useState } from 'react';
-import {
-  ScrollView,
-  View,
-  StyleSheet,
-  BackHandler,
-  TouchableOpacity,
-} from 'react-native';
+import React from 'react';
+import { ScrollView, View, StyleSheet } from 'react-native';
 import Button from '../components/Button';
 import Text from '../components/Text';
 import colors from '../config/colors';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useBackPress } from '../hooks';
+import constants from '../navigation/constants';
 
-const QuizResultOutOf100 = ({ navigation, route, ...props }) => {
-  const { totalWeight, stage, type, maxWeight } = route.params;
-  let mtype;
-  if (type === 'manoshikObosthaJachaikoron') mtype = 'মানসিক অবস্থা';
-  else if (type === 'manoshikChapNirnoy') mtype = 'মানসিক চাপ';
-  else if (type === 'duschintaNirnoy') mtype = 'দুশ্চিন্তা';
-  let parcentage = 0;
-  if (maxWeight > 0) parcentage = Math.round((totalWeight / maxWeight) * 100);
-  function handleBackButtonClick() {
-    navigation.navigate('Homepage');
-    return true;
-  }
+const SCREEN_NAME = constants.QUIZ_RESULT_OUT_OF_100;
 
-  useEffect(() => {
-    BackHandler.addEventListener('hardwareBackPress', handleBackButtonClick);
-    return () => {
-      BackHandler.removeEventListener(
-        'hardwareBackPress',
-        handleBackButtonClick
-      );
-    };
-  }, []);
+const QuizResultOutOf100 = () => {
+  useBackPress(SCREEN_NAME);
+
+  const navigation = useNavigation();
+  const { params } = useRoute();
+  const { stage, type } = params;
+
+  const typeMapping = {
+    manoshikObosthaJachaikoron: 'মানসিক অবস্থা',
+    manoshikChapNirnoy: 'মানসিক চাপ',
+    duschintaNirnoy: 'দুশ্চিন্তা',
+  };
+
+  const mtype = typeMapping[type] || 'অজানা';
+  const isSevere = stage === 'তীব্র মাত্রা';
+
+  const stageDescriptions = {
+    'স্বাভাবিক মাত্রা': `আপনার ${mtype} স্বাভাবিক মাত্রায় রয়েছে। এই অবস্থার গুনগত মান উন্নয়নের জন্য অ্যাপসের ভিডিওগুলো দেখুন ও অনুশীলন করুন।`,
+    'মাঝামাঝি মাত্রা': `আপনার ${mtype} মাঝামাঝি মাত্রায় রয়েছে। এই অবস্থার গুনগত মান উন্নয়নের জন্য অ্যাপসের ভিডিওগুলো দেখুন ও অনুশীলন করুন।`,
+    'তীব্র মাত্রা': `আপনার ${mtype} তীব্র মাত্রায় রয়েছে। এই অবস্থার গুনগত মান উন্নয়নের জন্য অ্যাপসের মাধ্যমে দ্রুত সময়ের মধ্যে মানসিক স্বাস্থ্য সেবা প্রফেশনালদের সাথে যোগাযোগ করুন। পাশাপাশি অ্যাপসের ভিডিওগুলো দেখুন ও অনুশীলন করুন।`,
+  };
 
   return (
-    <>
-      <ScrollView>
-        <View style={styles.mainContainer}>
-          <Text style={styles.scoreHeading}>
-            {' '}
-            {type === 'manoshikChapNirnoy'
-              ? 'আপনার মানসিক চাপের পরিমাণঃ'
-              : type === 'manoshikObosthaJachaikoron'
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.mainContainer}>
+        <Text style={styles.scoreHeading}>
+          {type === 'manoshikChapNirnoy'
+            ? 'আপনার মানসিক চাপের পরিমাণঃ'
+            : type === 'manoshikObosthaJachaikoron'
               ? 'আপনার মানসিক অবস্থার পরিমানঃ'
               : 'আপনার দুশ্চিন্তার পরিমাণঃ'}
-          </Text>
-          <Text style={styles.scoreDesc}> {stage} </Text>
-          <View
-            style={
-              parcentage <= 50
-                ? styles.scoreTextContainerGreen
-                : styles.scoreTextContainerRed
-            }
-          >
-            <Text style={styles.scoreText}> {totalWeight}</Text>
-          </View>
-          <View
-            style={{
-              borderColor: '#ccc',
-              borderWidth: 2,
-              margin: 10,
-              padding: 10,
-              marginTop: 3,
-              borderRadius: 5,
-              elevation: 2,
-              backgroundColor: '#ddd',
-              marginBottom: 12,
-            }}
-          >
-            <Text style={{ fontSize: 16, lineHeight: 25.5, letterSpacing: 1 }}>
-              {stage === 'স্বাভাবিক মাত্রা'
-                ? `আপনার ${mtype} স্বাভাবিক মাত্রায় রয়েছে। এই অবস্থার গুনগত মান উন্নয়নের জন্য অ্যাপসের ভিডিওগুলো দেখুন ও অনুশীলন করুন।`
-                : stage === 'মাঝামাঝি মাত্রা'
-                ? `আপনার ${mtype} মাঝামাঝি মাত্রায় রয়েছে। এই অবস্থার গুনগত মান উন্নয়নের জন্য অ্যাপসের ভিডিওগুলো দেখুন ও অনুশীলন করুন। `
-                : `আপনার ${mtype} তীব্র মাত্রায় রয়েছে । এই অবস্থার গুনগত মান উন্নয়নের জন্য অ্যাপসের মাধ্যমে দ্রুত সময়ের মধ্যে মানসিক স্বাস্থ্য সেবা প্রফেশনালদের সাথে যোগাযোগ করুন। পাশাপাশি অ্যাপসের ভিডিওগুলো দেখুন ও অনুশীলন করুন।`}
-            </Text>
-          </View>
-
-          {stage === 'তীব্র মাত্রা' && (
-            <Button
-              textStyle={{ fontSize: 16.5 }}
-              style={{
-                marginBottom: 5,
-                backgroundColor: '#2d4059',
-              }}
-              title={'প্রফেশনালদের সাথে যোগাযোগ করুন'}
-              onPress={() => navigation.navigate('AllProfessionals')}
-            />
-          )}
-          <Button
-            title={'অনুশীলন করুন'}
-            onPress={() => navigation.navigate('VideoExerciseList')}
-          />
+        </Text>
+        <Text style={styles.scoreDesc}>{stage}</Text>
+        <View style={styles.descriptionBox}>
+          <Text style={styles.descriptionText}>{stageDescriptions[stage]}</Text>
         </View>
-      </ScrollView>
-    </>
+        {isSevere && (
+          <Button
+            textStyle={styles.buttonText}
+            style={styles.contactButton}
+            title="প্রফেশনালদের সাথে যোগাযোগ করুন"
+            onPress={() => navigation.replace(constants.PROFESSIONALS_LIST)}
+          />
+        )}
+        <Button title="অনুশীলন করুন" onPress={() => navigation.replace('VideoExerciseList')} />
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    paddingVertical: 20,
+  },
   mainContainer: {
-    padding: 10,
-    paddingTop: 18,
+    paddingHorizontal: 16,
+    paddingTop: 24,
   },
   scoreHeading: {
     textAlign: 'center',
-    fontSize: 22.5,
-    paddingBottom: 5,
+    fontSize: 22,
+    marginBottom: 8,
   },
   scoreDesc: {
     textAlign: 'center',
-    fontSize: 35,
+    fontSize: 28,
     fontWeight: 'bold',
-    paddingBottom: 12,
     color: colors.primary,
+    marginBottom: 8,
   },
-  scoreTextContainer: {},
-  scoreTextContainerGreen: {
-    height: 150,
-    width: 150,
-    justifyContent: 'center',
-    alignSelf: 'center',
-    alignItems: 'center',
-    borderWidth: 8,
-    borderRadius: 100,
-    marginBottom: 13,
-    borderColor: '#4fc63a',
-    backgroundColor: '#7ed56f',
+  descriptionBox: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    marginVertical: 16,
   },
-  scoreTextContainerRed: {
-    height: 150,
-    width: 150,
-    justifyContent: 'center',
-    alignSelf: 'center',
-    alignItems: 'center',
-    borderWidth: 8,
-    borderRadius: 100,
-    marginBottom: 13,
-    borderColor: 'rgb(255, 97, 99)',
-    backgroundColor: 'rgb(247, 129, 119)',
+  descriptionText: {
+    fontSize: 16,
+    lineHeight: 24,
+    letterSpacing: 0.5,
   },
-  scoreText: {
-    textAlign: 'center',
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: 'white',
+  buttonText: {
+    fontSize: 16,
+  },
+  contactButton: {
+    backgroundColor: '#2d4059',
+    marginBottom: 12,
   },
 });
 

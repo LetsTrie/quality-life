@@ -41,11 +41,11 @@ const Test = () => {
   const [answers, setAnswers] = useState(new Array(questions.length).fill(null));
   const [isLoading, setIsLoading] = useState(false);
 
-  function goToAnotherPage(redirectTo, score = null, stage = null, maxWeight = 0) {
+  function goToAnotherPage(redirectTo, stage = null) {
     switch (redirectTo) {
       case Keys.SHOW_VIDEO:
-        navigation.replace('VideoScreen', {
-          ...route.params,
+        navigation.replace(constants.VIDEO_SCREEN, {
+          scaleId,
           needAction: false,
         });
         break;
@@ -58,11 +58,9 @@ const Test = () => {
         break;
 
       case Keys.RESULT_OUT_OF_100:
-        navigation.navigate('QuizResultOutOf100', {
-          ...route.params,
-          totalWeight: score,
+        navigation.replace(constants.QUIZ_RESULT_OUT_OF_100, {
+          type,
           stage,
-          maxWeight,
         });
         break;
 
@@ -134,6 +132,8 @@ const Test = () => {
         _score = Math.round(_score);
 
         let range = [];
+
+        console.log('type: ', type, route.params.type);
         if (type === 'manoshikChapNirnoy') range = [13, 26];
         else if (type === 'duschintaNirnoy') range = [54, 66];
         if (type === 'manoshikObosthaJachaikoron') range = [4, 9];
@@ -144,7 +144,7 @@ const Test = () => {
         else stage = 'তীব্র মাত্রা';
 
         const payload = {
-          answers,
+          questionAnswers,
           type,
           score: _score,
           severity: stage,
@@ -152,8 +152,13 @@ const Test = () => {
           postTest,
         };
 
+        console.log('route.params: ', route.params);
+        console.log('payload: ', payload);
+
         const response = await ApiExecutor(ApiDefinitions.submitTest({ payload }));
         setIsLoading(false);
+
+        console.log('response:', response);
 
         if (!response.success) {
           console.error(`Failed to submit test: ${response.error.message}`);
@@ -161,7 +166,7 @@ const Test = () => {
         }
 
         const { mDate } = response.data;
-        const { score, type } = response.data.test;
+        const { score } = response.data.test;
 
         if (type === 'duschintaNirnoy') {
           dispatch(updateDnAction(score, mDate));
@@ -171,7 +176,7 @@ const Test = () => {
           dispatch(updateMojAction(score, mDate));
         }
 
-        goToAnotherPage(route.params.redirectTo, score, stage, maxWeight);
+        goToAnotherPage(route.params.redirectTo, stage);
       }
     })();
   }, [submitted]);

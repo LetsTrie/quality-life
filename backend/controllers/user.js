@@ -314,16 +314,30 @@ exports.getAllInformation = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.submitAVideo = asyncHandler(async (req, res, next) => {
-  const { user } = req;
-  const { videoUrl } = req.body;
-  if (user.shownVideo.includes(videoUrl)) return res.json({ success: true });
-  user.shownVideo.push(videoUrl);
-  await user.save();
-  return res.json({ success: true });
+exports.submitAVideo = asyncHandler(async (req, res) => {
+  const { videoUrl } = req.params;
+
+  if (!videoUrl) {
+    return sendErrorResponse(res, 400, "BadRequest", {
+      message: "Video URL is required.",
+    });
+  }
+
+  if (!Array.isArray(req.user.shownVideo)) {
+    req.user.shownVideo = [];
+  }
+
+  if (!req.user.shownVideo.includes(videoUrl)) {
+    req.user.shownVideo.push(videoUrl);
+    await req.user.save();
+  }
+
+  return sendJSONresponse(res, 200, {
+    data: {},
+  });
 });
 
-exports.rating = asyncHandler(async (req, res, next) => {
+exports.rating = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
   const { rating, comment, videoUrl } = req.body;
 
@@ -333,7 +347,7 @@ exports.rating = asyncHandler(async (req, res, next) => {
   return res.json({ rating: userRating });
 });
 
-exports.updateProfile = asyncHandler(async (req, res, next) => {
+exports.updateProfile = asyncHandler(async (req, res, _next) => {
   const user = req.user;
   console.log(user);
   for (let r in req.body) user[r] = req.body[r];

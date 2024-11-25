@@ -34,4 +34,9 @@ export default {
   [constants.ASK_FOR_TEST]: constants.HOMEPAGE,
   [constants.TEST]: constants.HOMEPAGE,
   [constants.HELP_CENTER]: constants.HOMEPAGE,
+
+  [constants.SETTINGS]: constants.HOMEPAGE,
+  [constants.ABOUT_US]: constants.SETTINGS,
+  [constants.PRIVACY_POLICY]: constants.SETTINGS,
+  [constants.QUIZ_RESULT_OUT_OF_100]: constants.HOMEPAGE,
 };

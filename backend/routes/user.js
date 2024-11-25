@@ -14,7 +14,7 @@ router.post("/intro-Test-Submit", M.verifyToken("user"), C.introTestSubmit);
 
 router.get("/profile/all", M.verifyToken("user"), C.getProfileDetails);
 router.get("/all-information", M.verifyToken("user"), C.getAllInformation);
-router.post("/submitAVideo", M.verifyToken("user"), C.submitAVideo);
+router.post("/seen-video/:videoUrl", M.verifyToken("user"), C.submitAVideo);
 
 router.post("/rating", M.verifyToken("user"), C.rating);
 router.post("/update/profile", M.verifyToken("user"), C.updateProfile);

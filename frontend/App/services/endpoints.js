@@ -32,4 +32,6 @@ export const endpoints = {
   SUGGEST_SCALE_TO_CLIENT: `${BaseUrl}/prof/suggest-scale`,
   PROF_HOMEPAGE_NOTIFICATION_COUNT: `${BaseUrl}/prof/homepage-notification-count`,
   SUBMIT_TEST: `${BaseUrl}/user/test`,
+
+  SEEN_VIDEO: `${BaseUrl}/user/seen-video/`,
 };

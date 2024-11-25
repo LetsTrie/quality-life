@@ -1,17 +1,17 @@
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
 import React, { useCallback, useEffect, useState } from 'react';
 import { BackHandler, View } from 'react-native';
 import YoutubePlayer from 'react-native-youtube-iframe';
-import { useDispatch, useSelector } from 'react-redux';
-import BaseUrl from '../config/BaseUrl';
+import { useDispatch } from 'react-redux';
 import { shownVideoAction } from '../redux/actions/user';
 import { Loader } from './Loader';
+import { ApiDefinitions } from '../services/api';
+import { useHelper } from '../hooks';
 
 export default function YouTube({ videoId, needAction = true }) {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  const { jwtToken } = useSelector((state) => state.auth);
+  const { ApiExecutor } = useHelper();
 
   const [showLoader, setShowLoader] = useState(true);
   const [playing, setPlaying] = useState(false);
@@ -22,53 +22,42 @@ export default function YouTube({ videoId, needAction = true }) {
   }
 
   useEffect(() => {
-    setTimeout(() => {
-      setShowLoader(false);
-    }, 2500);
+    if (!needAction) return;
 
-    if (needAction) {
-      BackHandler.addEventListener('hardwareBackPress', handleBackButtonClick);
-      return () => {
-        BackHandler.removeEventListener('hardwareBackPress', handleBackButtonClick);
-      };
-    }
+    BackHandler.addEventListener('hardwareBackPress', handleBackButtonClick);
+    return () => {
+      BackHandler.removeEventListener('hardwareBackPress', handleBackButtonClick);
+    };
   }, []);
 
-  const onStateChange = useCallback((state) => {
+  const onStateChange = useCallback(async (state) => {
     if (state === 'ended') {
       setPlaying(false);
 
-      if (!needAction) {
-        return;
-      }
+      if (!needAction) return;
 
-      const headers = {
-        'Content-Type': 'YouTube/json',
-        Authorization: `Bearer ${jwtToken}`,
-      };
+      const response = await ApiExecutor(ApiDefinitions.seenVideo({ videoId }));
+      if (!response.success) return;
 
-      axios
-        .post(`${BaseUrl}/user/submitAVideo`, { videoUrl: videoId }, { headers })
-        .then(() => {
-          dispatch(shownVideoAction(videoId));
-          navigation.navigate('Rating', { videoId });
-        })
-        .catch((err) => console.log(err));
+      dispatch(shownVideoAction(videoId));
+      navigation.navigate('Rating', { videoId });
     }
+  }, []);
+
+  const onReady = useCallback(() => {
+    setShowLoader(false);
   }, []);
 
   return (
     <View style={{ padding: 10 }}>
       <Loader visible={showLoader} />
-
-      {!showLoader && (
-        <YoutubePlayer
-          height={200}
-          play={playing}
-          videoId={videoId}
-          onChangeState={onStateChange}
-        />
-      )}
+      <YoutubePlayer
+        height={200}
+        play={playing}
+        videoId={videoId}
+        onChangeState={onStateChange}
+        onReady={onReady}
+      />
     </View>
   );
 }

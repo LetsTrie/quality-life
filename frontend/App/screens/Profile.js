@@ -107,7 +107,7 @@ const Profile = () => {
       </View>
 
       <View style={[styles.block, { paddingBottom: 23 }]}>
-        <Text style={styles.blockHeader}>Previous Tests</Text>
+        <Text style={styles.blockHeader}>পূর্ববর্তী স্কোরসমূহ</Text>
         <Table tableData={tableData} tableHead={tableHeaders} widthArr={tableColWidth} />
       </View>
 
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     color: '#555',
     fontWeight: '300',
-    paddingBottom: 15,
+    paddingBottom: 18,
   },
   BtnContainer: {
     flexDirection: 'row-reverse',

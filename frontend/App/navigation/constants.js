@@ -48,4 +48,8 @@ export default {
   ASK_FOR_TEST: 'AskForTest',
   TEST: 'Test',
   HELP_CENTER: 'HelpCenter',
+  SETTINGS: 'Setting',
+  ABOUT_US: 'AboutUs',
+  PRIVACY_POLICY: 'PrivacyPolicy',
+  QUIZ_RESULT_OUT_OF_100: 'QuizResultOutOf100',
 };

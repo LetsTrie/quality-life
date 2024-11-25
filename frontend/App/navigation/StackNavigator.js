@@ -499,15 +499,15 @@ const StackNavigator = () => {
         })}
       />
       <Stack.Screen
-        name="QuizResultOutOf100"
+        name={constants.QUIZ_RESULT_OUT_OF_100}
         component={QuizResultOutOf100}
         options={({ navigation }) => ({
-          title: 'Your Score',
+          title: 'আপনার স্কোর',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(constants.HOMEPAGE);
+                navigation.navigate(backScreenMap[constants.QUIZ_RESULT_OUT_OF_100]);
               }}
             />
           ),
@@ -627,14 +627,29 @@ const StackNavigator = () => {
           title: 'ব্যবহারিক নির্দেশিকা',
         })}
       />
-      <Stack.Screen name="Setting" component={Setting} />
+
       <Stack.Screen
-        name="AboutUs"
-        component={AboutUs}
+        name={constants.SETTINGS}
+        component={Setting}
         options={() => ({
-          title: 'About us',
+          title: 'সেটিংস',
         })}
       />
+      <Stack.Screen
+        name={constants.ABOUT_US}
+        component={AboutUs}
+        options={() => ({
+          title: 'আমাদের সম্পর্কিত তথ্য',
+        })}
+      />
+      <Stack.Screen
+        name={constants.PRIVACY_POLICY}
+        component={PrivacyPolicy}
+        options={() => ({
+          title: 'গোপনীয়তা নীতি',
+        })}
+      />
+
       <Stack.Screen
         name="CentralHelpCenter"
         component={CentralHelpCenter}
@@ -642,13 +657,7 @@ const StackNavigator = () => {
           title: 'সাহায্য কেন্দ্র',
         })}
       />
-      <Stack.Screen
-        name="PrivacyPolicy"
-        component={PrivacyPolicy}
-        options={() => ({
-          title: 'Privacy Policy',
-        })}
-      />
+
       <Stack.Screen name={constants.ASK_FOR_TEST} component={AskForTest} options={dontShowHeader} />
       <Stack.Screen
         name="ResultHistory"

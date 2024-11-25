@@ -242,4 +242,8 @@ export const ApiDefinitions = {
     method: 'POST',
     payload,
   }),
+  seenVideo: ({ videoId }) => ({
+    endpoint: endpoints.SEEN_VIDEO + videoId,
+    method: 'POST',
+  }),
 };

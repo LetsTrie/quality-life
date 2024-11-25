@@ -12,22 +12,24 @@ import constants from '../navigation/constants';
 // Updated By: MD. Sakib Khan
 
 const VideoScreen = () => {
+  const route = useRoute();
   const navigation = useNavigation();
   useBackPress(constants.VIDEO_SCREEN);
+
+  const { scaleId, needAction = true } = route.params;
 
   const [videoScreen, setVideoScreen] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { params: { link, needAction = true } = {} } = useRoute();
-
   useEffect(() => {
-    const page = videoScreenPages.find((screen) => screen.name === link);
-    setVideoScreen(page);
-    navigation.setOptions({ title: page?.pageTitle ?? constants.QUALITY_LIFE });
+    if (scaleId) {
+      const page = videoScreenPages.find((screen) => screen.name === scaleId);
+      setVideoScreen(page);
+      navigation.setOptions({ title: page?.title ?? constants.QUALITY_LIFE });
 
-    const timeoutId = setTimeout(() => setIsLoading(false), 2000);
-    return () => clearTimeout(timeoutId);
-  }, []);
+      setIsLoading(false);
+    }
+  }, [scaleId]);
 
   if (!videoScreen) return null;
 
