@@ -3,4 +3,8 @@ module.exports.constants = {
   REQUESTED: "REQUESTED",
   APPOINTMENT_ACCEPTED: "APPOINTMENT_ACCEPTED",
   SUGGEST_A_SCALE: "SUGGEST_A_SCALE",
+  ROLES: {
+    USER: "user",
+    PROFESSIONAL: "professional",
+  },
 };

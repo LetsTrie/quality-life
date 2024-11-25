@@ -5,7 +5,6 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  ToastAndroid,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -19,7 +18,7 @@ import {
   clearClientRequests,
   seenRequestAction,
 } from '../../redux/actions/prof_req';
-import { getAppointments } from '../../services/api';
+import { ApiDefinitions } from '../../services/api';
 import { useNavigation } from '@react-navigation/native';
 import SeeMoreButton from '../../components/SeeMoreButton';
 import { formatDateTime } from '../../utils/date';
@@ -28,7 +27,8 @@ const SCREEN_NAME = constants.PROF_CLIENT_REQUEST;
 
 const ClientRequest = () => {
   useBackPress(SCREEN_NAME);
-  const { processApiError } = useHelper();
+  const { ApiExecutor } = useHelper();
+
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
@@ -39,7 +39,6 @@ const ClientRequest = () => {
   const [hideSeeMoreButton, setHideSeeMoreButton] = useState(true);
   const [requestsCount, setRequestsCount] = useState(0);
 
-  const { jwtToken } = useSelector((state) => state.prof);
   const { requests } = useSelector((state) => state.profRequests);
 
   const clearPageData = useCallback(() => {
@@ -56,19 +55,15 @@ const ClientRequest = () => {
       setSeeMoreLoading(true);
     }
 
-    const response = await getAppointments({ jwtToken, page });
-    if (!response.success) {
-      processApiError(response);
-      ToastAndroid.show(response.error.message, ToastAndroid.SHORT);
-    } else {
-      if (page === 1) {
-        setRequestsCount(response.data.requestsCount);
-      }
-      setPage(page);
-      dispatch(addClientRequests(response.data.requests));
-    }
-
+    const response = await ApiExecutor(ApiDefinitions.getAppointments({ page }));
     page === 1 ? setIsLoading(false) : setSeeMoreLoading(false);
+
+    if (!response.success) return;
+
+    setPage(page);
+    dispatch(addClientRequests(response.data.requests));
+
+    if (page === 1) setRequestsCount(response.data.requestsCount);
   };
 
   useEffect(() => {
@@ -107,47 +102,49 @@ const ClientRequest = () => {
       ) : (
         <View>
           {!requests || requests.length === 0 ? (
-            <Text style={styles.noRequestsText}>No Client Request Available</Text>
+            <Text style={styles.noRequestsText}>এই মুহূর্তে কোন ক্লায়েন্ট রিকোয়েস্ট নেই</Text>
           ) : (
             <>
-              {
-                requests.map((apRequest) => (
-                  <View style={styles.requestBlock} key={apRequest._id}>
-                    <Text style={styles.requestName}> {apRequest.user.name} </Text>
-                    <View style={styles.requestInfo}>
-                      <MaterialCommunityIcons name="card-account-details" style={styles.icon} />
-                      <Text style={styles.requestText}>
-                        {`${
-                          apRequest.user.isMarried ? 'বিবাহিত' : 'অবিবাহিত'
-                        }, বয়স - ${apRequest.user.age}`}
-                      </Text>
-                    </View>
-                    <View style={styles.requestInfo}>
-                      <MaterialCommunityIcons name="map-marker-radius" style={styles.icon} />
-                      <Text style={styles.requestText}>
-                        {[
-                          apRequest.user.location.union,
-                          apRequest.user.location.upazila,
-                          apRequest.user.location.zila,
-                        ]
-                          .filter(Boolean)
-                          .join(', ')}
-                      </Text>
-                    </View>
-                    <View style={styles.requestInfo}>
-                      <MaterialCommunityIcons name="clock-time-three" style={styles.icon} />
-                      <Text style={styles.requestText}> {formatDateTime(apRequest.dateByClient)} </Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.responseButton}
-                      onPress={() => handleSendResponse(apRequest)}
-                    >
-                      <View style={styles.responseButtonContent}>
-                        <Text style={styles.responseButtonText}>Send Response</Text>
-                      </View>
-                    </TouchableOpacity>
+              {requests.map((apRequest) => (
+                <View style={styles.requestBlock} key={apRequest._id}>
+                  <Text style={styles.requestName}> {apRequest.user.name} </Text>
+                  <View style={styles.requestInfo}>
+                    <MaterialCommunityIcons name="card-account-details" style={styles.icon} />
+                    <Text style={styles.requestText}>
+                      {`${
+                        apRequest.user.isMarried ? 'বিবাহিত' : 'অবিবাহিত'
+                      }, বয়স - ${apRequest.user.age}`}
+                    </Text>
                   </View>
-                ))}
+                  <View style={styles.requestInfo}>
+                    <MaterialCommunityIcons name="map-marker-radius" style={styles.icon} />
+                    <Text style={styles.requestText}>
+                      {[
+                        apRequest.user.location.union,
+                        apRequest.user.location.upazila,
+                        apRequest.user.location.zila,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')}
+                    </Text>
+                  </View>
+                  <View style={styles.requestInfo}>
+                    <MaterialCommunityIcons name="clock-time-three" style={styles.icon} />
+                    <Text style={styles.requestText}>
+                      {' '}
+                      {formatDateTime(apRequest.dateByClient)}{' '}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.responseButton}
+                    onPress={() => handleSendResponse(apRequest)}
+                  >
+                    <View style={styles.responseButtonContent}>
+                      <Text style={styles.responseButtonText}>Send Response</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ))}
               {seeMoreLoading && (
                 <View style={styles.loader}>
                   <ActivityIndicator size="large" color={colors.primary} />
@@ -177,9 +174,9 @@ const styles = StyleSheet.create({
   },
   noRequestsText: {
     textAlign: 'center',
-    paddingTop: 15,
+    paddingTop: 22,
     fontWeight: 'bold',
-    fontSize: 22,
+    fontSize: 20,
     color: '#333',
   },
   requestBlock: {

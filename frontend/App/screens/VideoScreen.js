@@ -25,7 +25,7 @@ const VideoScreen = () => {
     setVideoScreen(page);
     navigation.setOptions({ title: page?.pageTitle ?? constants.QUALITY_LIFE });
 
-    const timeoutId = setTimeout(() => setIsLoading(false), 3000);
+    const timeoutId = setTimeout(() => setIsLoading(false), 2000);
     return () => clearTimeout(timeoutId);
   }, []);
 

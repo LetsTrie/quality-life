@@ -2,19 +2,17 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import validator from 'validator';
-import { Loader, BasedOnProfession } from '../../components';
+import { Loader, BasedOnProfession, AppText, ErrorButton } from '../../components';
 import Container from '../../components/Auth/Container';
 import EndOptions from '../../components/Auth/EndOptions';
-import TopHeading from '../../components/Auth/TopHeading';
-import Button from '../../components/Button';
 import useFormFields from '../../components/HandleForm';
 import Picker from '../../components/Picker';
 import TextInput from '../../components/TextInput';
-import colors from '../../config/colors';
 import Region from '../../data/RegionInformation.json';
 import constants from '../../navigation/constants';
-import { registerProfStep1 } from '../../services/api';
-import { useBackPress } from '../../hooks';
+import { ApiDefinitions } from '../../services/api';
+import { useBackPress, useHelper } from '../../hooks';
+import { SubmitButton } from '../../components/SubmitButton';
 
 let borderRadius = 35;
 
@@ -26,9 +24,9 @@ for (let i = 1997; i < CurrentYear; i++) {
 }
 
 const genderLists = [
-  { label: 'Male', value: 'Male' },
-  { label: 'Female', value: 'Female' },
-  { label: 'Others', value: 'Others' },
+  { label: 'পুরুষ', value: 'Male' },
+  { label: 'মহিলা', value: 'Female' },
+  { label: 'অন্যান্য', value: 'Others' },
 ];
 
 const professionLists = [
@@ -47,6 +45,7 @@ const SCREEN_NAME = constants.PROF_REGISTER_STEP_1;
 const RegisterStep1 = () => {
   useBackPress(SCREEN_NAME);
 
+  const { ApiExecutor } = useHelper();
   const navigation = useNavigation();
 
   const [gender, setGender] = useState(null);
@@ -122,7 +121,7 @@ const RegisterStep1 = () => {
       }
     }
 
-    console.log(fields)
+    console.log(fields);
 
     if (fieldAbsent) {
       setError('ফর্মটি সঠিকভাবে পূরণ করুন');
@@ -141,8 +140,11 @@ const RegisterStep1 = () => {
     fields.email = fields.email.toString().trim().toLowerCase();
     fields.password = fields.password.toString().trim().toLowerCase();
 
-    const response = await registerProfStep1(fields);
-    console.log(response);
+    const response = await ApiExecutor(
+      ApiDefinitions.registerProfessionalStep1({
+        payload: fields,
+      })
+    );
 
     setIsLoading(false);
 
@@ -156,7 +158,11 @@ const RegisterStep1 = () => {
 
   return (
     <Container>
-      <TopHeading heading="Join now!" subHeading="professional" height={165} />
+      <View style={[styles.header, { height: 165 }]}>
+        <AppText style={styles.headerText}>প্রফেশনাল হিসেবে</AppText>
+        <AppText style={styles.subHeaderText}>এখনই জয়েন করুন!</AppText>
+      </View>
+
       <View style={[styles.loginContainer, { paddingTop: 10 }]}>
         <View style={styles.loginButtons}>
           <TextInput
@@ -164,7 +170,7 @@ const RegisterStep1 = () => {
             autoCorrect={false}
             icon="account"
             name="name"
-            placeholder="Name"
+            placeholder="নাম"
             onChangeText={(text) => createChangeHandler(text, 'name')}
           />
 
@@ -174,7 +180,7 @@ const RegisterStep1 = () => {
             icon="email"
             keyboardType="email-address"
             name="email"
-            placeholder="Email"
+            placeholder="ইমেইল"
             textContentType="emailAddress"
             onChangeText={(text) => createChangeHandler(text, 'email')}
           />
@@ -182,12 +188,14 @@ const RegisterStep1 = () => {
           <Picker
             width="92%"
             icon="gender-male-female-variant"
-            placeholder="Gender"
+            placeholder="লিঙ্গ"
             selectedItem={gender}
             onSelectItem={(g) => setGender(g)}
             items={genderLists}
             name="gender"
-            onChange={(text) => createChangeHandler(text, 'gender')}
+            onChange={(text) => {
+              createChangeHandler(text, 'gender');
+            }}
           />
 
           <TextInput
@@ -195,7 +203,7 @@ const RegisterStep1 = () => {
             autoCorrect={false}
             icon="lock"
             name="password"
-            placeholder="Password"
+            placeholder="পাসওয়ার্ড"
             secureTextEntry
             textContentType="password"
             keyboardType="default"
@@ -207,7 +215,7 @@ const RegisterStep1 = () => {
             autoCorrect={false}
             icon="lock"
             name="confirmPassword"
-            placeholder="Confirm password"
+            placeholder="পুনরায় পাসওয়ার্ড দিন"
             secureTextEntry
             keyboardType="default"
             onChangeText={(text) => createChangeHandler(text, 'confirmPassword')}
@@ -252,7 +260,7 @@ const RegisterStep1 = () => {
           <Picker
             width="92%"
             icon="card-account-details-star"
-            placeholder="Profession"
+            placeholder="পেশা"
             selectedItem={profession}
             onSelectItem={(d) => setprofession(d)}
             items={professionLists}
@@ -272,51 +280,27 @@ const RegisterStep1 = () => {
             autoCorrect={false}
             icon="briefcase-account"
             name="designation"
-            placeholder="Designation"
+            placeholder="পদবি"
             onChangeText={(text) => createChangeHandler(text, 'designation')}
           />
+
           <TextInput
             autoCapitalize="none"
             autoCorrect={false}
             icon="map-marker-radius"
             name="workplace"
-            placeholder="Workplace"
+            placeholder="কর্মস্থল"
             onChangeText={(text) => createChangeHandler(text, 'workplace')}
           />
+
           <Loader visible={isLoading} style={{ paddingTop: 10 }} />
-          {error && (
-            <Button
-              title={error}
-              style={{
-                marginVertical: 10,
-                marginBottom: 0,
-                padding: 15,
-                backgroundColor: 'white',
-                borderColor: colors.primary,
-                borderWidth: 3,
-              }}
-              textStyle={{
-                fontSize: 14.5,
-                color: colors.primary,
-              }}
-            />
-          )}
-          <Button
-            title="নিবন্ধন করুন"
-            style={{
-              marginVertical: 10,
-              marginBottom: 0,
-              padding: 15,
-            }}
-            textStyle={{
-              fontSize: 20,
-            }}
-            onPress={handleFormSubmit}
-          />
+          <ErrorButton title={error} visible={!!error} style={{ borderRadius: 8 }} />
+          <SubmitButton title="রেজিস্ট্রেশন করুন" onPress={handleFormSubmit} />
+
           <EndOptions
-            title1={`Already have an account?`}
-            title2={`Login here`}
-            title3={`Register as a user`}
+            title1={`ইতোমধ্যে একটি অ্যাকাউন্ট আছে?`}
+            title2={`লগইন করুন`}
+            title3={`ইউজার হিসাবে রেজিস্ট্রেশন করুন`}
             onPress1={() => navigation.navigate('LoginPro')}
             onPress2={() => navigation.navigate('Register')}
           />
@@ -338,6 +322,26 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     paddingBottom: 20,
+  },
+
+  header: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerText: {
+    color: 'white',
+    fontSize: 28,
+    alignSelf: 'center',
+    letterSpacing: 1,
+    fontWeight: '700',
+  },
+  subHeaderText: {
+    color: 'white',
+    fontSize: 19,
+    alignSelf: 'center',
+    letterSpacing: 1.2,
+    fontWeight: '400',
+    paddingTop: 15,
   },
 });
 

@@ -1,14 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { PanResponder, View } from 'react-native';
-import PropTypes from 'prop-types';
-import Svg, {
-  Circle,
-  G,
-  LinearGradient,
-  Path,
-  Defs,
-  Stop,
-} from 'react-native-svg';
+import Svg, { Circle, G, LinearGradient, Path, Defs, Stop } from 'react-native-svg';
 
 const { PI, cos, sin, atan2 } = Math;
 
@@ -87,12 +79,7 @@ const CircularPicker = ({
     steps = steps.map((p) => {
       const pos = percentToPos(p);
       const { x2, y2 } = calculateAngle(pos, radius);
-      const { endX: x, endY: y } = calculateRealPos(
-        x2,
-        y2,
-        radius,
-        strokeWidth
-      );
+      const { endX: x, endY: y } = calculateRealPos(x2, y2, radius, strokeWidth);
       return { x, y, p };
     });
   }
@@ -111,12 +98,7 @@ const CircularPicker = ({
     onMoveShouldSetPanResponderCapture: () => true,
     onPanResponderMove: (_, { moveX, moveY }) => {
       circle.current.measure((x, y, width, height, px, py) => {
-        const newPos = calculateMovement(
-          moveX - px,
-          moveY - py,
-          radius,
-          strokeWidth
-        );
+        const newPos = calculateMovement(moveX - px, moveY - py, radius, strokeWidth);
         /**
          * @TODO
          */
@@ -140,9 +122,9 @@ const CircularPicker = ({
     <View style={{ alignItems: 'center', justifyContent: 'center' }}>
       <Svg height={size} width={size} ref={circle}>
         <Defs>
-          <LinearGradient id='grad' x1='0' y1='0' x2='100%' y2='0'>
-            <Stop offset='0' stopColor={gradient[0]} />
-            <Stop offset='1' stopColor={gradient[1]} />
+          <LinearGradient id="grad" x1="0" y1="0" x2="100%" y2="0">
+            <Stop offset="0" stopColor={gradient[0]} />
+            <Stop offset="1" stopColor={gradient[1]} />
           </LinearGradient>
         </Defs>
         <G
@@ -155,15 +137,10 @@ const CircularPicker = ({
           <Circle
             r={radius}
             strokeWidth={strokeWidth}
-            fill='transparent'
+            fill="transparent"
             stroke={backgroundColor}
           />
-          <Path
-            d={d}
-            strokeWidth={strokeWidth}
-            stroke={`url(#grad)`}
-            fill='none'
-          />
+          <Path d={d} strokeWidth={strokeWidth} stroke={`url(#grad)`} fill="none" />
         </G>
         <G
           transform={{
@@ -182,22 +159,19 @@ const CircularPicker = ({
             >
               <Circle
                 r={strokeWidth}
-                fill='transparent'
-                strokeWidth='12'
+                fill="transparent"
+                strokeWidth="12"
                 onPress={() => goToPercent(step.p)}
               />
               <Circle
                 r={strokeWidth / 2.5 / 2}
                 fill={stepColor}
-                strokeWidth='12'
+                strokeWidth="12"
                 onPress={() => goToPercent(step.p)}
               />
             </G>
           ))}
-        <G
-          transform={{ translate: `${endX + padding}, ${endY + padding}` }}
-          {...pan.panHandlers}
-        >
+        <G transform={{ translate: `${endX + padding}, ${endY + padding}` }} {...pan.panHandlers}>
           <Circle
             r={strokeWidth / 2 + padding / 2}
             fill={gradient[1]}
@@ -219,33 +193,6 @@ const CircularPicker = ({
       </Svg>
     </View>
   );
-};
-
-CircularPicker.propTypes = {
-  size: PropTypes.number.isRequired,
-  strokeWidth: PropTypes.number,
-  defaultPos: PropTypes.number,
-  steps: PropTypes.arrayOf(PropTypes.number),
-  gradients: PropTypes.objectOf(PropTypes.arrayOf(PropTypes.string)),
-  backgroundColor: PropTypes.string,
-  stepColor: PropTypes.string,
-  borderColor: PropTypes.string,
-  onChange: PropTypes.func,
-  children: PropTypes.any,
-};
-
-CircularPicker.defaultProps = {
-  strokeWidth: 45,
-  defaultPos: 0,
-  steps: [],
-  gradients: {
-    0: ['rgb(255, 204, 0)', 'rgb(255, 214, 10)'],
-  },
-  backgroundColor: 'rgb(231, 231, 231)',
-  stepColor: 'rgba(0, 0, 0, 0.2)',
-  borderColor: 'rgb(255, 255, 255)',
-  onChange: () => undefined,
-  children: null,
 };
 
 export default CircularPicker;

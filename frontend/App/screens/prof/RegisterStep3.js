@@ -2,14 +2,15 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { useSelector } from 'react-redux';
 import Button from '../../components/Button';
 import Picker from '../../components/Picker';
 import Text from '../../components/Text';
 import colors from '../../config/colors';
 import constants from '../../navigation/constants';
-import { registerProfStep3 } from '../../services/api';
-import { useBackPress } from '../../hooks';
+import { ApiDefinitions } from '../../services/api';
+import { useBackPress, useHelper } from '../../hooks';
+import { ErrorButton, Loader } from '../../components';
+import { SubmitButton } from '../../components/SubmitButton';
 
 const days = [
   {
@@ -69,9 +70,9 @@ const SCREEN_NAME = constants.PROF_REGISTER_STEP_3;
 
 const RegisterProStep3 = () => {
   useBackPress(SCREEN_NAME);
+  const { ApiExecutor } = useHelper();
 
   const navigation = useNavigation();
-  const { jwtToken } = useSelector((state) => state.auth);
 
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -158,6 +159,9 @@ const RegisterProStep3 = () => {
 
   const onPressHandler = (day) => {
     const sHook = selectHook(day);
+
+    if (!(sHook.from[0] && sHook.to[0])) return;
+
     sHook.time[1]((prev) => [...prev, { from: sHook.from[0], to: sHook.to[0] }]);
     sHook.from[1](null);
     sHook.to[1](null);
@@ -186,14 +190,17 @@ const RegisterProStep3 = () => {
       });
 
     const payload = { availableTime };
-    const response = await registerProfStep3({ payload, jwtToken });
+
+    const response = await ApiExecutor(ApiDefinitions.registerProfessionalStep3({ payload }));
+
     setIsLoading(false);
 
-    if (response.success) {
-      navigation.navigate(constants.PROF_REGISTER_STEP_4);
-    } else {
+    if (!response.success) {
       setError(response.error.message);
+      return;
     }
+
+    navigation.navigate(constants.PROF_REGISTER_STEP_4);
   };
 
   const SelectedTimeTable = ({ day }) => {
@@ -278,36 +285,12 @@ const RegisterProStep3 = () => {
           </View>
 
           <View>
-            {isLoading && (
-              <ActivityIndicator
-                size="large"
-                color={colors.primary}
-                style={{ paddingBottom: 10 }}
-              />
-            )}
-            {error && (
-              <Button
-                title={error}
-                style={{
-                  marginVertical: 10,
-                  marginBottom: 0,
-                  padding: 15,
-                  backgroundColor: 'white',
-                  borderColor: colors.primary,
-                  borderWidth: 3,
-                }}
-                textStyle={{
-                  fontSize: 14.5,
-                  color: colors.primary,
-                }}
-                onPress={HandleFormSubmit}
-              />
-            )}
-
-            <Button
-              title="SUBMIT"
-              style={{ marginTop: 0, marginBottom: 20 }}
+            <Loader visible={isLoading} style={{ paddingBottom: 10 }} />
+            <ErrorButton visible={!!error} title={error} />
+            <SubmitButton
+              title={'সাবমিট করুন'}
               onPress={onSubmitHandler}
+              style={{ marginTop: 8 }}
             />
           </View>
         </View>

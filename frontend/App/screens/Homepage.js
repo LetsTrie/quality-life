@@ -13,6 +13,7 @@ import { storeUserProfile } from '../redux/actions/user';
 import BaseUrl from '../config/BaseUrl';
 import { useNavigation } from '@react-navigation/native';
 import { useHelper } from '../hooks';
+import constants from '../navigation/constants';
 
 const wait = (timeout) => {
   return new Promise((resolve) => setTimeout(resolve, timeout));
@@ -22,9 +23,8 @@ const Homepage = (props) => {
   const navigation = useNavigation();
   const { logout } = useHelper();
 
-  let alertColor = '#fead07';
   const [refreshing, setRefreshing] = useState(false);
-  const [nNotifications, setNnotifications] = useState(0);
+  const [notificationCounter, setNotificationCounter] = useState(0);
 
   const {
     msm_score,
@@ -70,10 +70,10 @@ const Homepage = (props) => {
     };
     try {
       const response = await axios.get(`${BaseUrl}/user/notifications/unread/h/`, { headers });
-      setNnotifications(response.data.nNotifications);
+      setNotificationCounter(response.data.nNotifications);
     } catch (err) {
       console.log(err.response);
-      setNnotifications(0);
+      setNotificationCounter(0);
     }
   };
 
@@ -93,10 +93,10 @@ const Homepage = (props) => {
   }, []);
 
   let notificationMessage;
-  if (nNotifications === 1) {
-    notificationMessage = `You have ${nNotifications} new notification!!`;
-  } else if (nNotifications > 1) {
-    notificationMessage = `You have ${nNotifications} new notifications!!`;
+  if (notificationCounter === 1) {
+    notificationMessage = `You have ${notificationCounter} new notification!!`;
+  } else if (notificationCounter > 1) {
+    notificationMessage = `You have ${notificationCounter} new notifications!!`;
   }
 
   return (
@@ -110,7 +110,7 @@ const Homepage = (props) => {
             style={{
               flexDirection: 'row',
               marginHorizontal: 10,
-              borderColor: '#fead07',
+              borderColor: colors.secondary,
               borderWidth: 3,
               marginTop: 10,
               paddingHorizontal: 10,
@@ -118,7 +118,7 @@ const Homepage = (props) => {
               borderRadius: 5,
               justifyContent: 'center',
               elevation: 1,
-              backgroundColor: alertColor,
+              backgroundColor: colors.secondary,
             }}
             onPress={() => navigation.navigate('Profile')}
           >
@@ -140,12 +140,12 @@ const Homepage = (props) => {
             </Text>
           </TouchableOpacity>
         )}
-        {nNotifications !== 0 && (
+        {notificationCounter !== 0 && (
           <TouchableOpacity
             style={{
               flexDirection: 'row',
               marginHorizontal: 10,
-              borderColor: '#fead07',
+              borderColor: colors.secondary,
               borderWidth: 3,
               marginTop: 10,
               paddingHorizontal: 10,
@@ -153,7 +153,7 @@ const Homepage = (props) => {
               borderRadius: 5,
               justifyContent: 'center',
               elevation: 1,
-              backgroundColor: alertColor,
+              backgroundColor: colors.secondary,
             }}
             onPress={() => navigation.navigate('UserNotifications')}
           >
@@ -197,7 +197,10 @@ const Homepage = (props) => {
             lastScore={moj_date ? lastMojScore : undefined}
             lastDate={moj_date ? moj_date : undefined}
             onPress={() =>
-              navigation.navigate('AskForTest', {
+              navigation.navigate(constants.ASK_FOR_TEST, {
+                scaleId: T.GHQ,
+                label: 'মানসিক অবস্থা যাচাইকরণ',
+
                 link: T.GHQ,
                 redirectTo: T.RESULT_OUT_OF_100,
                 type: 'manoshikObosthaJachaikoron',
@@ -211,7 +214,10 @@ const Homepage = (props) => {
             lastScore={mcn_date ? lastMcnScore : undefined}
             lastDate={mcn_date ? mcn_date : undefined}
             onPress={() =>
-              navigation.navigate('AskForTest', {
+              navigation.navigate(constants.ASK_FOR_TEST, {
+                scaleId: T.PSS,
+                label: 'মানসিক চাপ নির্ণয়',
+
                 link: T.PSS,
                 redirectTo: T.RESULT_OUT_OF_100,
                 type: 'manoshikChapNirnoy',
@@ -225,7 +231,10 @@ const Homepage = (props) => {
             lastScore={dn_date ? lastDnScore : undefined}
             lastDate={dn_date ? dn_date : undefined}
             onPress={() =>
-              navigation.navigate('AskForTest', {
+              navigation.navigate(constants.ASK_FOR_TEST, {
+                scaleId: T.ANXIETY,
+                label: 'দুশ্চিন্তা নির্ণয়',
+
                 link: T.ANXIETY,
                 redirectTo: T.RESULT_OUT_OF_100,
                 type: 'duschintaNirnoy',

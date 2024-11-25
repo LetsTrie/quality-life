@@ -23,7 +23,7 @@ export const BasedOnProfession = ({
     <Picker
       width="92%"
       icon="account-check"
-      placeholder="Batch"
+      placeholder="ব্যাচ"
       selectedItem={batch}
       onSelectItem={(b) => setBatch(b)}
       items={batchLists}

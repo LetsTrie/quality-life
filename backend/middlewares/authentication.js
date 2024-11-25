@@ -49,11 +49,10 @@ exports.verifyToken = (role) => async (req, res, next) => {
     }
 
     req.user = user;
-    if (role === "prof") req.prof = prof;
+    if (role === "prof") req.prof = user;
 
     next();
   } catch (error) {
-    // Handle specific JWT errors for better debugging
     if (error.name === "TokenExpiredError") {
       return sendErrorResponse(res, 401, "InvalidToken", {
         success: false,

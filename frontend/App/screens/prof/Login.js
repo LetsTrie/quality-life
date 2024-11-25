@@ -1,27 +1,27 @@
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
 import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useDispatch } from 'react-redux';
 import validator from 'validator';
 import AuthIcon from '../../components/Auth/AuthIcon';
 import Container from '../../components/Auth/Container';
 import EndOptions from '../../components/Auth/EndOptions';
-import TopHeading from '../../components/Auth/TopHeading';
-import Button from '../../components/Button';
 import useFormFields from '../../components/HandleForm';
 import TextInput from '../../components/TextInput';
-import BaseUrl from '../../config/BaseUrl';
 import colors from '../../config/colors';
 import constants from '../../navigation/constants';
-import { setProfAuthToken } from '../../redux/actions/auth';
-import { loginAction } from '../../redux/actions/prof';
-import { useBackPress } from '../../hooks';
-import { profLogin } from '../../services/api';
+import { setProfessionalInfo } from '../../redux/actions/prof';
+import { useBackPress, useHelper } from '../../hooks';
+import { ApiDefinitions } from '../../services/api';
+import { RoleEnum } from '../../utils/roles';
+import { setAuthToken } from '../../redux/utils';
+import { ErrorButton, Loader } from '../../components';
+import { SubmitButton } from '../../components/SubmitButton';
 
 const SCREEN_NAME = constants.PROF_LOGIN;
-const ProfLogin = () => {
+const ProfLoginComponent = () => {
   useBackPress(SCREEN_NAME);
+  const { ApiExecutor } = useHelper();
 
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -33,6 +33,7 @@ const ProfLogin = () => {
     email: '',
     password: '',
   };
+
   const { formFields, createChangeHandler } = useFormFields(initialState);
 
   const HandleFormSubmit = async () => {
@@ -59,8 +60,11 @@ const ProfLogin = () => {
     fields.email = fields.email.toString().trim().toLowerCase();
     fields.password = fields.password.toString().trim().toLowerCase();
 
-    const response = await profLogin(fields);
-    console.log(response);
+    const response = await ApiExecutor(
+      ApiDefinitions.loginProfessional({
+        payload: fields,
+      })
+    );
 
     setIsLoading(false);
 
@@ -69,16 +73,23 @@ const ProfLogin = () => {
       return;
     }
 
-    const {data} = response;
+    const { prof, accessToken, refreshToken } = response.data;
 
-    dispatch(setProfAuthToken({ _id: data.prof._id, jwtToken: data.accessToken }));
-    dispatch(loginAction(data?.prof, data.accessToken));
+    console.log(response);
 
-    if (data.prof.step == 1) {
+    if (!('step' in prof)) {
+      setError('Step count not found');
+      return;
+    }
+
+    dispatch(setAuthToken(RoleEnum.PROFESSIONAL, accessToken, refreshToken));
+    dispatch(setProfessionalInfo(prof));
+
+    if (prof.step == 1) {
       navigation.navigate(constants.PROF_REGISTER_STEP_2);
-    } else if (data.prof.step == 2) {
+    } else if (prof.step == 2) {
       navigation.navigate(constants.PROF_REGISTER_STEP_3);
-    } else if (data.prof.step == 3) {
+    } else if (prof.step == 3) {
       navigation.navigate(constants.PROF_REGISTER_STEP_4);
     } else {
       navigation.navigate(constants.PROF_HOMEPAGE);
@@ -87,7 +98,10 @@ const ProfLogin = () => {
 
   return (
     <Container>
-      <TopHeading heading="Get Started!" subHeading="professional" />
+      <View style={styles.header}>
+        <Text style={styles.headerText}>প্রফেশনাল হিসেবে</Text>
+        <Text style={styles.subHeaderText}> লগইন করুন</Text>
+      </View>
       <View style={styles.loginContainer}>
         <AuthIcon />
         <View style={styles.loginButtons}>
@@ -96,7 +110,7 @@ const ProfLogin = () => {
             autoCorrect={false}
             icon="email"
             name="email"
-            placeholder="Email"
+            placeholder="ইমেইল"
             keyboardType="email-address"
             textContentType="emailAddress"
             onChangeText={(text) => createChangeHandler(text, 'email')}
@@ -107,54 +121,28 @@ const ProfLogin = () => {
             autoCorrect={false}
             icon="lock"
             name="password"
-            placeholder="Password"
+            placeholder="পাসওয়ার্ড"
             secureTextEntry
             textContentType="password"
             keyboardType="default"
             onChangeText={(text) => createChangeHandler(text, 'password')}
           />
-          {isLoading && (
-            <ActivityIndicator size="large" color={colors.primary} style={{ paddingTop: 10 }} />
-          )}
-          {error && (
-            <Button
-              title={error}
-              style={{
-                marginVertical: 10,
-                marginBottom: 0,
-                padding: 15,
-                backgroundColor: 'white',
-                borderColor: colors.primary,
-                borderWidth: 3,
-              }}
-              textStyle={{
-                fontSize: 14.5,
-                color: colors.primary,
-              }}
-              onPress={HandleFormSubmit}
-            />
-          )}
 
-          <Button
-            title="Sign in"
-            style={{
-              marginVertical: 10,
-              marginBottom: 0,
-            }}
-            onPress={HandleFormSubmit}
-          />
+          <Loader style={{ paddingTop: 10 }} visible={isLoading} />
+          <ErrorButton title={error} visible={!!error} />
+          <SubmitButton title={'লগইন করুন'} onPress={HandleFormSubmit} style={{ marginTop: 8 }} />
 
           <TouchableOpacity
-            style={styles.ForgetPass}
+            style={styles.forgetPassword}
             onPress={() => navigation.navigate('RecoverAccount')}
           >
-            <Text style={styles.lowerTexts}>Forget password?</Text>
+            <Text style={styles.lowerTexts}>পাসওয়ার্ড ভুলে গেছেন?</Text>
           </TouchableOpacity>
 
           <EndOptions
-            title1={`Don't have an account?`}
-            title2={`Register here`}
-            title3={`Login as a user`}
+            title1={`আপনার কি অ্যাকাউন্ট নেই?`}
+            title2={`রেজিস্ট্রেশন করুন`}
+            title3={`ইউজার হিসেবে লগইন করুন`}
             onPress1={() => navigation.navigate(constants.PROF_REGISTRATION_CONSENT)}
             onPress2={() => navigation.navigate('Login')}
           />
@@ -177,17 +165,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 20,
   },
+  forgetPassword: {
+    justifyContent: 'flex-end',
+    alignSelf: 'flex-end',
+    marginRight: 25,
+    marginTop: 10,
+    marginBottom: 5,
+  },
   lowerTexts: {
+    fontSize: 14.5,
     fontWeight: 'bold',
     fontSize: 14.5,
-    color: '#5e5e5e',
-    marginTop: 6,
-    paddingTop: 10,
-    textAlign: 'right',
+    color: colors.textSecondary,
   },
-  ForgetPass: {
-    width: '88%',
+  header: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 180,
+  },
+  headerText: {
+    color: 'white',
+    fontSize: 26,
+    alignSelf: 'center',
+    letterSpacing: 1,
+    fontWeight: '700',
+  },
+  subHeaderText: {
+    color: 'white',
+    fontSize: 23,
+    alignSelf: 'center',
+    letterSpacing: 1.2,
+    fontWeight: '400',
+    paddingTop: 15,
   },
 });
 
-export default ProfLogin;
+export default ProfLoginComponent;

@@ -9,6 +9,7 @@ const Error = require("../models/error");
 const ProfAssessment = require("../models/profAssessment");
 const UserNotification = require("../models/userNotification");
 const { MODEL_NAME } = require("../models/model_name");
+const { sendJSONresponse, sendErrorResponse } = require("../utils");
 
 // TODO:
 // 1) Move to utils/datetime.js
@@ -95,11 +96,18 @@ exports.submitAdditionalInfo = asyncHandler(async (req, res, next) => {
   return res.status(200).json({ success: true, data: user });
 });
 
-exports.anyTestSubmit = asyncHandler(async (req, res, next) => {
-  let { answers, type, score, fromProfile, totalScore, severity, postTest } =
-    req.body;
+exports.anyTestSubmit = asyncHandler(async (req, res, _next) => {
+  let {
+    questionAnswers,
+    type,
+    score,
+    fromProfile,
+    totalScore,
+    severity,
+    postTest,
+  } = req.body;
   if (!postTest) postTest = false;
-  // input => answers, type, score
+
   const allowedTypes = [
     "manoshikShasthoMullayon",
     "manoshikObosthaJachaikoron",
@@ -111,19 +119,13 @@ exports.anyTestSubmit = asyncHandler(async (req, res, next) => {
     "psychoticProfile",
     "suicideIdeation",
   ];
-  // barate hobe...
 
   if (!allowedTypes.includes(type)) {
-    return res.status(400).json({
-      success: false,
+    return sendErrorResponse(res, 400, "BadRequest", {
       message: `Type: ${type} is not allowed!`,
     });
   }
 
-  let questionAnswers = answers.map((a, i) => ({
-    questionId: `it_${i + 1}`,
-    answer: a,
-  }));
   const userId = req.user._id;
   const date = getDate();
 
@@ -134,7 +136,8 @@ exports.anyTestSubmit = asyncHandler(async (req, res, next) => {
       await req.user.save();
     }
   }
-  const test = new Test({
+
+  const test = await Test.create({
     questionAnswers,
     type,
     userId,
@@ -144,9 +147,13 @@ exports.anyTestSubmit = asyncHandler(async (req, res, next) => {
     severity,
     postTest,
   });
-  await test.save();
 
-  return res.status(200).json({ success: true, test, mDate: modifyTime(date) });
+  return sendJSONresponse(res, 200, {
+    data: {
+      test,
+      mDate: modifyTime(date),
+    },
+  });
 });
 
 async function getLastResult(types, req, res, next, format) {
@@ -300,7 +307,11 @@ exports.getAllInformation = asyncHandler(async (req, res, next) => {
   user.dn_date = duschintaNirnoy.date ?? null;
   user.shownVideo = req.user.shownVideo ?? [];
 
-  return res.json({ user });
+  return sendJSONresponse(res, 200, {
+    data: {
+      user,
+    },
+  });
 });
 
 exports.submitAVideo = asyncHandler(async (req, res, next) => {

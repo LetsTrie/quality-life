@@ -45,4 +45,7 @@ export default {
   APPOINTMENT_STATUS: 'AppointmentStatus',
   PROFESSIONALS_CLIENT: 'ProMyClients',
   CLIENT_PROFILE: 'ClientProfile',
+  ASK_FOR_TEST: 'AskForTest',
+  TEST: 'Test',
+  HELP_CENTER: 'HelpCenter',
 };

@@ -1,12 +1,7 @@
 import React, { Component } from 'react';
-import { View, ViewPropTypes } from 'react-native';
+import { View } from 'react-native';
 
 export class Table extends Component {
-  static propTypes = {
-    style: ViewPropTypes.style,
-    borderStyle: ViewPropTypes.style,
-  };
-
   _renderChildren(props) {
     return React.Children.map(props.children, (child) =>
       React.cloneElement(
@@ -42,16 +37,9 @@ export class Table extends Component {
 }
 
 export class TableWrapper extends Component {
-  static propTypes = {
-    style: ViewPropTypes.style,
-  };
-
   _renderChildren(props) {
     return React.Children.map(props.children, (child) =>
-      React.cloneElement(
-        child,
-        props.borderStyle ? { borderStyle: props.borderStyle } : {}
-      )
+      React.cloneElement(child, props.borderStyle ? { borderStyle: props.borderStyle } : {})
     );
   }
 

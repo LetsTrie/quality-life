@@ -4,16 +4,13 @@ import { useNavigation } from '@react-navigation/native';
 
 import Text from '../Text';
 import colors from '../../config/colors';
-import tests from '../../data/horizontalTab';
+import tests from '../../data/profileScales';
 
 const Tab = ({ test }) => {
   const navigation = useNavigation();
   return (
     <TouchableOpacity>
-      <Text
-        style={styles.tab}
-        onPress={() => navigation.navigate('Test', { ...test })}
-      >
+      <Text style={styles.tab} onPress={() => navigation.navigate('Test', { ...test })}>
         {test.label}
       </Text>
     </TouchableOpacity>

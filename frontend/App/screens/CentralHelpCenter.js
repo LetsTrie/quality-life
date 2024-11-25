@@ -1,26 +1,20 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
-import {
-  Linking,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Linking, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Text from '../components/Text';
 import helpCenterNumbers from '../data/helpCenter';
 
 const dialCall = async (number, type) => {
   if (type === 'whatsapp') {
-    await Linking.openURL(`whatsapp://send?text=Hello&phone=+88${number}`);
+    if (number.startsWith('01')) number = '+88' + number;
+    await Linking.openURL(`whatsapp://send?text=Hello&phone=${number}`);
   } else {
     if (Platform.OS === 'android') await Linking.openURL(`tel:${number}`);
     else await Linking.openURL(`telprompt:${number}`);
   }
 };
 
-const CentralHelpCenter = ({ navigation }) => {
+const CentralHelpCenter = () => {
   const lists = helpCenterNumbers;
 
   return (
@@ -29,10 +23,7 @@ const CentralHelpCenter = ({ navigation }) => {
         {lists.map((l, index) => (
           <View
             key={l.place}
-            style={[
-              styles.helpCenterBox,
-              index === lists.length - 1 ? { marginBottom: 25 } : {},
-            ]}
+            style={[styles.helpCenterBox, index === lists.length - 1 ? { marginBottom: 25 } : {}]}
           >
             <Text style={styles.place}>{l.place}</Text>
             {l.location && <Text style={styles.location}>{l.location}</Text>}
@@ -44,11 +35,7 @@ const CentralHelpCenter = ({ navigation }) => {
                   onPress={() => dialCall(c.number, c.type)}
                 >
                   <View style={styles.iconContainer}>
-                    <MaterialCommunityIcons
-                      name={c.type}
-                      size={25}
-                      style={styles.iconStyle}
-                    />
+                    <MaterialCommunityIcons name={c.type} size={25} style={styles.iconStyle} />
                   </View>
                   <View style={styles.numbersInfo}>
                     <Text style={styles.number}>{c.number}</Text>

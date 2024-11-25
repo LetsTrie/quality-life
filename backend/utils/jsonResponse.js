@@ -11,8 +11,6 @@ const logger = pino({
 
 const sendJSONresponse = (res, status, content) => {
   res.status(status).json(content);
-
-  logger.info(chalk.green(`Response sent with status ${statusCode}`));
 };
 
 const sendErrorResponse = function (res, status, type, content) {

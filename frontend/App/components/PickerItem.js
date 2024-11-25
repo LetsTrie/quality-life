@@ -6,7 +6,7 @@ import Text from './Text';
 function PickerItem({ item, onPress, onChange }) {
   const handlePress = () => {
     onPress();
-    if (onChange) onChange(item.label);
+    if (onChange) onChange(item.value);
   };
   return (
     <TouchableOpacity onPress={handlePress}>

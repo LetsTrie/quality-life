@@ -1,5 +1,5 @@
 import {
-  PROF_SIGN_IN,
+  SET_PROFESSIONAL_INFO,
   PROF_SIGN_OUT,
   NEW_NOTIFICATION_COUNT,
   DELETE_ALL_PROF_REQUEST,
@@ -8,10 +8,10 @@ import {
   UPDATE_PROFILE_PROF,
 } from './types';
 
-export const loginAction = (prof, jwtToken) => (dispatch) => {
+export const setProfessionalInfo = (prof) => (dispatch) => {
   dispatch({
-    type: PROF_SIGN_IN,
-    payload: {prof, jwtToken },
+    type: SET_PROFESSIONAL_INFO,
+    payload: { prof },
   });
 };
 

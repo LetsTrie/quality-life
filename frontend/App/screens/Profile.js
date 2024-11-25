@@ -7,7 +7,7 @@ import Button from '../components/Button';
 import Block from '../components/Profile/Block';
 import Table from '../components/Table';
 import Text from '../components/Text';
-import Tests from '../data/horizontalTab';
+import Tests from '../data/profileScales';
 import getMatra from '../helpers/getMatra';
 import { useBackPress } from '../hooks';
 import constants from '../navigation/constants';
@@ -115,17 +115,23 @@ const Profile = () => {
         <Text style={[styles.blockHeader, { fontSize: 26 }]}>মানসিক স্বাস্থ্য প্রোফাইল</Text>
 
         <View styles={styles.listOfTestsContainer}>
-          {Tests.map((t) => (
+          {Tests.map((test) => (
             <TouchableOpacity
-              key={t.label}
+              key={test.label}
               style={styles.testContainer}
-              onPress={() => navigation.navigate('Test', { ...t, fromProfile: true })}
+              onPress={() =>
+                navigation.navigate(constants.TEST, {
+                  ...test,
+                  goToBack: SCREEN_NAME,
+                  fromProfile: true,
+                })
+              }
             >
-              <Text style={styles.textStyle}>{t.label}</Text>
+              <Text style={styles.textStyle}>{test.label}</Text>
 
               <Image
                 source={
-                  mentalHealthProfile.includes(t.link)
+                  mentalHealthProfile.includes(test.link)
                     ? require('../assests/images/done.png')
                     : require('../assests/images/pending.png')
                 }

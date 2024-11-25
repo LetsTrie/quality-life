@@ -1,93 +1,72 @@
-import React, { useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  Platform,
-  TouchableOpacity,
-  ScrollView,
-  Linking,
-  BackHandler,
-} from 'react-native';
+import React from 'react';
+import { View, StyleSheet, Platform, TouchableOpacity, ScrollView, Linking } from 'react-native';
 import Text from '../components/Text';
 import helpCenterNumbers from '../data/helpCenter';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Button from '../components/Button';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useBackPress } from '../hooks';
+import constants from '../navigation/constants';
+import colors from '../config/colors';
 
-const dialCall = async (number, type) => {
-  if (type === 'whatsapp') {
-    await Linking.openURL(`whatsapp://send?text=Hello&phone=+88${number}`);
-  } else {
-    if (Platform.OS === 'android') await Linking.openURL(`tel:${number}`);
-    else await Linking.openURL(`telprompt:${number}`);
-  }
-};
+const SCREEN_NAME = constants.HELP_CENTER;
+const HelpCenter = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
 
-const HelpCenter = ({ navigation, route }) => {
-  const keyword = route.params.link;
-  const lists = [];
-  for (let N of helpCenterNumbers) {
-    for (let K of N.keywords) {
-      if (K === keyword) {
-        lists.push(N);
-        break;
+  const { scaleId, goToBack } = route.params;
+  useBackPress(SCREEN_NAME, goToBack);
+
+  const filteredNumbers = helpCenterNumbers.filter((item) => item.keywords.includes(scaleId));
+
+  const dialCall = async (number, type) => {
+    try {
+      if (type === 'whatsapp') {
+        const formattedNumber = number.startsWith('01') ? `+88${number}` : number;
+        await Linking.openURL(`whatsapp://send?text=Hello&phone=${formattedNumber}`);
+      } else {
+        const scheme = Platform.OS === 'android' ? 'tel:' : 'telprompt:';
+        await Linking.openURL(`${scheme}${number}`);
       }
+    } catch (error) {
+      console.error('Error dialing call:', error);
     }
-  }
-  function handleBackButtonClick() {
-    navigation.navigate('Profile');
-    return true;
-  }
-
-  useEffect(() => {
-    BackHandler.addEventListener('hardwareBackPress', handleBackButtonClick);
-    return () => {
-      BackHandler.removeEventListener(
-        'hardwareBackPress',
-        handleBackButtonClick
-      );
-    };
-  }, []);
+  };
 
   return (
-    <ScrollView style={{ flex: 1, paddingTop: 10, backgroundColor: '#eee' }}>
+    <ScrollView style={styles.container}>
       <Button
-        title='প্রফেশনালের সাথে যোগাযোগ করুন'
-        style={{ marginTop: 7, borderRadius: 5 }}
-        textStyle={{ fontSize: 18 }}
-        onPress={() =>
-          navigation.navigate('AllProfessionals', {
-            goToBack: 'CentralHelpCenter',
-          })
-        }
+        title="প্রফেশনালের সাথে যোগাযোগ করুন"
+        style={styles.contactButton}
+        textStyle={styles.contactButtonText}
+        onPress={() => navigation.replace(constants.PROFESSIONALS_LIST)}
       />
-      {lists.map((l, index) => (
+      {filteredNumbers.map((item, index) => (
         <View
-          key={l.place}
+          key={item.place}
           style={[
             styles.helpCenterBox,
-            index === lists.length - 1 ? { marginBottom: 25 } : {},
+            index === filteredNumbers.length - 1 && styles.lastItemMargin,
           ]}
         >
-          <Text style={styles.place}>{l.place}</Text>
-          {l.location && <Text style={styles.location}>{l.location}</Text>}
+          <Text style={styles.place}>{item.place}</Text>
+          {item.location && <Text style={styles.location}>{item.location}</Text>}
           <View style={styles.numbersContainer}>
-            {l.contacts.map((c) => (
+            {item.contacts.map((contact) => (
               <TouchableOpacity
+                key={contact.number}
                 style={styles.numbers}
-                key={c.number}
-                onPress={() => dialCall(c.number, c.type)}
+                onPress={() => dialCall(contact.number, contact.type)}
+                accessible
+                accessibilityRole="button"
               >
                 <View style={styles.iconContainer}>
-                  <MaterialCommunityIcons
-                    name={c.type}
-                    size={25}
-                    style={styles.iconStyle}
-                  />
+                  <MaterialCommunityIcons name={contact.type} size={25} style={styles.iconStyle} />
                 </View>
                 <View style={styles.numbersInfo}>
-                  <Text style={styles.number}>{c.number}</Text>
-                  {c.time && <Text style={styles.time}>{c.time}</Text>}
-                  {c.hasToll && <Text style={styles.toll}>টোল ফ্রি</Text>}
+                  <Text style={styles.number}>{contact.number}</Text>
+                  {contact.time && <Text style={styles.time}>{contact.time}</Text>}
+                  {contact.hasToll && <Text style={styles.toll}>টোল ফ্রি</Text>}
                 </View>
               </TouchableOpacity>
             ))}
@@ -99,6 +78,19 @@ const HelpCenter = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 10,
+    backgroundColor: '#eee',
+  },
+  contactButton: {
+    marginTop: 7,
+    borderRadius: 5,
+    backgroundColor: colors.secondary,
+  },
+  contactButtonText: {
+    fontSize: 18,
+  },
   helpCenterBox: {
     padding: 20,
     borderRadius: 5,
@@ -106,6 +98,9 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     marginHorizontal: 14,
     backgroundColor: 'white',
+  },
+  lastItemMargin: {
+    marginBottom: 25,
   },
   place: {
     color: '#333',
@@ -126,10 +121,8 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     padding: 10,
-    alignSelf: 'center',
     justifyContent: 'center',
-    paddingLeft: 15,
-    paddingBottom: 15,
+    alignItems: 'center',
   },
   iconStyle: {
     fontSize: 30,

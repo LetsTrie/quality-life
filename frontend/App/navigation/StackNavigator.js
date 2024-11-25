@@ -142,7 +142,7 @@ const StackNavigator = () => {
         name={constants.PROF_CLIENT_REQUEST}
         component={ClientRequestPro}
         options={({ navigation }) => ({
-          title: 'Client Request',
+          title: 'ক্লায়েন্ট রিকোয়েস্ট',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
@@ -158,7 +158,7 @@ const StackNavigator = () => {
         name={constants.PROF_RESPONSE_CLIENT_REQUEST}
         component={ResponseRequest}
         options={({ navigation, route, ...props }) => ({
-          title: 'Client Request',
+          title: 'ক্লায়েন্ট রিকোয়েস্ট',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
@@ -187,14 +187,14 @@ const StackNavigator = () => {
       <Stack.Screen
         name="ClientTestResult"
         component={ClientTestResult}
-        options={({ navigation }) => ({
+        options={() => ({
           title: 'Response',
         })}
       />
       <Stack.Screen
         name="ProfSuggestedScale"
         component={ProfSuggestedScale}
-        options={({ navigation }) => ({
+        options={() => ({
           title: 'Response',
         })}
       />
@@ -445,7 +445,7 @@ const StackNavigator = () => {
         name={constants.PROF_REGISTER_STEP_2}
         component={RegisterStep2}
         options={() => ({
-          title: 'Registration (Part 2)',
+          title: 'Registration - Step 2',
           headerLeft: () => undefined,
         })}
       />
@@ -454,7 +454,7 @@ const StackNavigator = () => {
         name={constants.PROF_REGISTER_STEP_3}
         component={RegisterStep3}
         options={() => ({
-          title: 'Registration (Part 3)',
+          title: 'Registration - Step 3',
           headerLeft: () => undefined,
         })}
       />
@@ -596,7 +596,15 @@ const StackNavigator = () => {
         })}
       />
 
-      <Stack.Screen name="Test" component={Test} />
+      <Stack.Screen
+        name={constants.TEST}
+        component={Test}
+        options={({ route }) => ({
+          title: route.params.label || 'স্কেলটি পূরণ করুন',
+          headerLeft: () => undefined,
+        })}
+      />
+
       <Stack.Screen
         name={constants.PROFILE}
         component={UserProfile}
@@ -615,7 +623,7 @@ const StackNavigator = () => {
       <Stack.Screen
         name="DrawerGuideline"
         component={DrawerGuideline}
-        options={({ navigation }) => ({
+        options={() => ({
           title: 'ব্যবহারিক নির্দেশিকা',
         })}
       />
@@ -630,8 +638,8 @@ const StackNavigator = () => {
       <Stack.Screen
         name="CentralHelpCenter"
         component={CentralHelpCenter}
-        options={({ navigation }) => ({
-          title: 'Help Center',
+        options={() => ({
+          title: 'সাহায্য কেন্দ্র',
         })}
       />
       <Stack.Screen
@@ -641,7 +649,7 @@ const StackNavigator = () => {
           title: 'Privacy Policy',
         })}
       />
-      <Stack.Screen name="AskForTest" component={AskForTest} options={dontShowHeader} />
+      <Stack.Screen name={constants.ASK_FOR_TEST} component={AskForTest} options={dontShowHeader} />
       <Stack.Screen
         name="ResultHistory"
         component={ResultHistory}
@@ -650,19 +658,15 @@ const StackNavigator = () => {
         })}
       />
       <Stack.Screen
-        name="HelpCenter"
+        name={constants.HELP_CENTER}
         component={HelpCenter}
         options={({ navigation, route }) => ({
-          title: 'Help Center',
+          title: 'সাহায্য কেন্দ্র',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                if (route.params.fromProfile === true) {
-                  navigation.navigate('Profile');
-                } else {
-                  navigation.navigate(constants.HOMEPAGE);
-                }
+                navigation.replace(route.params.goToBack || backScreenMap[constants.HELP_CENTER]);
               }}
             />
           ),

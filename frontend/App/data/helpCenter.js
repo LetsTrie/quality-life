@@ -1,9 +1,9 @@
-import * as T from './type';
+import * as Key from './type';
 
 export default [
   {
     place: 'জাতীয় মানসিক স্বাস্থ্য ইনস্টিউট ও হাসপাতাল',
-    keywords: [T.psychoticProfile, T.suicideIdeation],
+    keywords: [Key.PSYCHOTIC_PROFILE, Key.SUICIDE_IDEATION],
     contacts: [
       {
         number: '01404000080',
@@ -30,7 +30,7 @@ export default [
   {
     place: 'নাসিরুল্লাহ সাইকথেরাপি ইউনিট',
     location: 'ঢাকা বিশ্ববিদ্যালয়',
-    keywords: [T.psychoticProfile, T.suicideIdeation],
+    keywords: [Key.PSYCHOTIC_PROFILE, Key.SUICIDE_IDEATION],
     contacts: [
       {
         number: '01715654538',
@@ -40,7 +40,7 @@ export default [
   },
   {
     place: 'আইন ও সালিশ কেন্দ্র হেল্পলাইন নাম্বার',
-    keywords: [T.domesticViolence],
+    keywords: [Key.DOMESTIC_VIOLENCE],
     contacts: [
       {
         number: '01724415677',
@@ -52,7 +52,7 @@ export default [
   },
   {
     place: 'মহিলা ও শিশু বিষয়ক মন্ত্রণালয়',
-    keywords: [T.domesticViolence],
+    keywords: [Key.DOMESTIC_VIOLENCE],
     contacts: [
       {
         number: '109',

@@ -15,7 +15,9 @@ const AccountConfirmation = () => {
       <View style={styles.confirmationContainer}>
         <AuthIcon />
         <Text style={[styles.textStyle, { paddingTop: 15 }]}>আপনার নিবন্ধনের জন্য ধন্যবাদ।</Text>
-        <Text style={styles.textStyle}>অনুগ্রহ করে যাচাইয়ের জন্য অপেক্ষা করুন। আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।</Text>
+        <Text style={styles.textStyle}>
+          অনুগ্রহ করে যাচাইয়ের জন্য অপেক্ষা করুন। আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব।
+        </Text>
       </View>
     </>
   );

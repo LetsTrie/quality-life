@@ -1,36 +1,15 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { View, ViewPropTypes, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Cell } from './cell';
 
 const sum = (arr) => arr.reduce((acc, n) => acc + n, 0);
 
 export class Col extends Component {
-  static propTypes = {
-    width: PropTypes.number,
-    style: ViewPropTypes.style,
-    textStyle: Text.propTypes.style,
-  };
-
   render() {
-    const {
-      data,
-      style,
-      width,
-      heightArr,
-      flex,
-      textStyle,
-      ...props
-    } = this.props;
+    const { data, style, width, heightArr, flex, textStyle, ...props } = this.props;
 
     return data ? (
-      <View
-        style={[
-          width ? { width: width } : { flex: 1 },
-          flex && { flex: flex },
-          style,
-        ]}
-      >
+      <View style={[width ? { width: width } : { flex: 1 }, flex && { flex: flex }, style]}>
         {data.map((item, i) => {
           const height = heightArr && heightArr[i];
           return (
@@ -50,21 +29,8 @@ export class Col extends Component {
 }
 
 export class Cols extends Component {
-  static propTypes = {
-    style: ViewPropTypes.style,
-    textStyle: Text.propTypes.style,
-  };
-
   render() {
-    const {
-      data,
-      style,
-      widthArr,
-      heightArr,
-      flexArr,
-      textStyle,
-      ...props
-    } = this.props;
+    const { data, style, widthArr, heightArr, flexArr, textStyle, ...props } = this.props;
     let width = widthArr ? sum(widthArr) : 0;
 
     return data ? (

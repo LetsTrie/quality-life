@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 import Text from '../Text';
+import colors from '../../config/colors';
 
 const EndOptions = ({ title1, title2, title3, onPress1, onPress2 }) => {
   return (
@@ -29,20 +30,21 @@ const EndOptions = ({ title1, title2, title3, onPress1, onPress2 }) => {
 const styles = StyleSheet.create({
   touchableStyle: {
     flexDirection: 'row',
+    marginBottom: 2,
   },
   boldUnderlineStyle: {
     fontSize: 14.5,
     marginTop: 6,
     fontWeight: '700',
-    color: '#364f6b',
+    color: colors.textSecondary,
     textDecorationLine: 'underline',
-    textDecorationStyle: 'solid',
-    textDecorationColor: '#000',
+    textDecorationStyle: 'dotted',
+    textDecorationColor: colors.secondary,
   },
   lowerTexts: {
     fontWeight: '300',
     fontSize: 14.5,
-    color: '#5e5e5e',
+    color: '#767676',
     marginTop: 6,
   },
 });

@@ -14,7 +14,7 @@ export const useBackPress = (screenName, previousPage = null) => {
   const handleBackPress = () => {
     if (backScreenMap[screenName] === constants.SPECIAL_LOGOUT_ACTION) {
       logout();
-    } if(previousPage) {
+    } else if (previousPage) {
       navigation.replace(previousPage);
     } else {
       navigation.navigate(backScreenMap[screenName]);

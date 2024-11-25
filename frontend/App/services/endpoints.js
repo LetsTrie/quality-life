@@ -5,6 +5,7 @@ export const endpoints = {
   INTRO_TEST: `${BaseUrl}/user/intro-Test-Submit`,
   LOGIN: `${BaseUrl}/auth/sign-in`,
   REGISTER: `${BaseUrl}/auth/sign-up`,
+  REFRESH_TOKEN: `${BaseUrl}/auth/refresh-token`,
   USER_ADDITIONAL_INFO: `${BaseUrl}/user/intro/profile`,
   UPDATE_PROFILE: `${BaseUrl}/user/update/profile`,
   USER_PROFILE: `${BaseUrl}/user/all-information`,
@@ -29,4 +30,6 @@ export const endpoints = {
   GET_USER_PROFILE_FOR_PROFESSIONAL: `${BaseUrl}/prof/user-profile`,
 
   SUGGEST_SCALE_TO_CLIENT: `${BaseUrl}/prof/suggest-scale`,
+  PROF_HOMEPAGE_NOTIFICATION_COUNT: `${BaseUrl}/prof/homepage-notification-count`,
+  SUBMIT_TEST: `${BaseUrl}/user/test`,
 };

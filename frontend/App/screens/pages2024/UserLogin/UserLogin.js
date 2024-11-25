@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import validator from 'validator';
 import AuthIcon from '../../../components/Auth/AuthIcon';
 import Container from '../../../components/Auth/Container';
@@ -11,26 +11,33 @@ import Button from '../../../components/Button';
 import useFormFields from '../../../components/HandleForm';
 import TextInput from '../../../components/TextInput';
 import colors from '../../../config/colors';
-import { useBackPress } from '../../../hooks';
+import { useBackPress, useHelper } from '../../../hooks';
 import constants from '../../../navigation/constants';
-import { loginAction } from '../../../redux/actions/auth';
 import { storeUserProfile } from '../../../redux/actions/user';
-import { getUserProfile, login } from '../../../services/api';
+import { ApiDefinitions } from '../../../services/api';
 import styles from './UserLogin.style';
+import { setAuthToken } from '../../../redux/utils';
+import { RoleEnum } from '../../../utils/roles';
 
 const SCREEN_SIZE = constants.LOGIN;
 
 export const UserLogin = () => {
   useBackPress(SCREEN_SIZE);
 
+  const { ApiExecutor } = useHelper();
+
   const navigation = useNavigation();
   const dispatch = useDispatch();
+
+  const { accessToken } = useSelector((state) => state.auth);
 
   const initialState = { email: '', password: '' };
   const { formFields, createChangeHandler } = useFormFields(initialState);
 
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [userLoginDone, setUserLoginDone] = useState(false);
+  const [loginResponse, setLoginResponse] = useState(null);
 
   const submitLoginForm = async () => {
     const payload = { ...formFields };
@@ -52,32 +59,46 @@ export const UserLogin = () => {
     payload.email = payload.email.toString().trim().toLowerCase();
     payload.password = payload.password.toString().trim().toLowerCase();
 
-    const loginResponse = await login(payload);
-    setIsLoading(false);
-
-    if (!loginResponse.success) {
-      setError(loginResponse.error.message);
+    const lResponse = await ApiExecutor(ApiDefinitions.userLogin({ payload }));
+    if (!lResponse.success) {
+      setError(lResponse?.error?.message);
       return;
     }
 
-    const userResponse = await getUserProfile({ jwtToken: loginResponse.data.accessToken });
-    if (userResponse.success) {
-      console.log(userResponse.data);
-      dispatch(storeUserProfile(userResponse.data));
-    } else {
-      processApiError(userResponse);
-    }
-
-    dispatch(loginAction(loginResponse.data.user._id, loginResponse.data.accessToken));
-
-    if (loginResponse.data.isNewUser) {
-      navigation.navigate(constants.REGISTER_WITH_EXTRA_INFORMATION);
-    } else if (loginResponse.data.didIntroTest) {
-      navigation.navigate(constants.TEST_PAGE, { ToHomepage: true });
-    } else {
-      navigation.navigate(constants.HOMEPAGE);
-    }
+    dispatch(setAuthToken(RoleEnum.USER, lResponse.data.accessToken, lResponse.data.refreshToken));
+    setTimeout(() => {
+      setUserLoginDone(true);
+      setLoginResponse(lResponse.data);
+    }, 500);
   };
+
+  useEffect(() => {
+    if (error) setIsLoading(false);
+  }, [error]);
+
+  useEffect(() => {
+    (async () => {
+      if (!(loginResponse && userLoginDone && accessToken)) return;
+
+      console.log('Access Token in useEffect: ', accessToken);
+
+      const userResponse = await ApiExecutor(ApiDefinitions.userProfile());
+      console.log(userResponse);
+      if (!userResponse.success) {
+        setError(userResponse?.error?.message);
+        return;
+      }
+
+      setIsLoading(false);
+      dispatch(storeUserProfile(userResponse.data.user));
+
+      if (loginResponse.isNewUser) {
+        navigation.replace(constants.REGISTER_WITH_EXTRA_INFORMATION);
+      } else {
+        navigation.replace(constants.HOMEPAGE);
+      }
+    })();
+  }, [loginResponse, userLoginDone, accessToken]);
 
   return (
     <Container>

@@ -1,4 +1,4 @@
-import * as T from '../data/type';
+import * as Keys from '../data/type';
 import childCare from '../data/childCare';
 import coronaProfile from '../data/coronaProfile';
 import domesticViolence from '../data/domesticViolence';
@@ -11,28 +11,28 @@ import ANXIETY from '../data/scales/ANXIETY';
 export function chooseTest(filename) {
   let data;
   switch (filename) {
-    case T.childCare:
+    case Keys.CHILD_CARE:
       data = childCare;
       break;
-    case T.coronaProfile:
+    case Keys.CORONA_PROFILE:
       data = coronaProfile;
       break;
-    case T.domesticViolence:
+    case Keys.DOMESTIC_VIOLENCE:
       data = domesticViolence;
       break;
-    case T.psychoticProfile:
+    case Keys.PSYCHOTIC_PROFILE:
       data = psychoticProfile;
       break;
-    case T.suicideIdeation:
+    case Keys.SUICIDE_IDEATION:
       data = suicideIdeation;
       break;
-    case T.GHQ:
+    case Keys.GHQ:
       data = GHQ;
       break;
-    case T.PSS:
+    case Keys.PSS:
       data = PSS;
       break;
-    case T.ANXIETY:
+    case Keys.ANXIETY:
       data = ANXIETY;
       break;
     default:

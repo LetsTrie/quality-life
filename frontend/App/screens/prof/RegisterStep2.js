@@ -1,17 +1,15 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useSelector } from 'react-redux';
-import { Loader } from '../../components';
+import { ErrorButton, Loader } from '../../components';
 import Container from '../../components/Auth/Container';
-import Button from '../../components/Button';
 import useFormFields from '../../components/HandleForm';
 import Picker from '../../components/Picker';
 import TextInput from '../../components/TextInput';
-import colors from '../../config/colors';
 import constants from '../../navigation/constants';
-import { registerProfStep2 } from '../../services/api';
-import { useBackPress } from '../../hooks';
+import { ApiDefinitions } from '../../services/api';
+import { useBackPress, useHelper } from '../../hooks';
+import { SubmitButton } from '../../components/SubmitButton';
 
 const specAreaLists = [
   {
@@ -57,8 +55,7 @@ const SCREEN_NAME = constants.PROF_REGISTER_STEP_2;
 
 const RegisterStep2 = () => {
   useBackPress(SCREEN_NAME);
-
-  const { jwtToken } = useSelector((state) => state.auth);
+  const { ApiExecutor } = useHelper();
 
   const navigation = useNavigation();
 
@@ -100,7 +97,12 @@ const RegisterStep2 = () => {
     setIsLoading(true);
     setError(null);
 
-    const response = await registerProfStep2({ payload: fields, jwtToken });
+    const response = await ApiExecutor(
+      ApiDefinitions.registerProfessionalStep2({
+        payload: fields,
+      })
+    );
+
     setIsLoading(false);
 
     if (response.success) {
@@ -174,37 +176,8 @@ const RegisterStep2 = () => {
           />
 
           <Loader visible={isLoading} style={{ paddingTop: 10 }} />
-
-          {error && (
-            <Button
-              title={error}
-              style={{
-                marginVertical: 10,
-                marginBottom: 0,
-                padding: 15,
-                backgroundColor: 'white',
-                borderColor: colors.primary,
-                borderWidth: 3,
-              }}
-              textStyle={{
-                fontSize: 14.5,
-                color: colors.primary,
-              }}
-              onPress={HandleFormSubmit}
-            />
-          )}
-          <Button
-            title="রেজিস্ট্রেশন করুন"
-            style={{
-              marginVertical: 10,
-              marginBottom: 0,
-              padding: 15,
-            }}
-            textStyle={{
-              fontSize: 20,
-            }}
-            onPress={HandleFormSubmit}
-          />
+          <ErrorButton visible={!!error} title={error} />
+          <SubmitButton title={'সাবমিট করুন'} onPress={HandleFormSubmit} style={{ marginTop: 8 }} />
         </View>
       </View>
     </Container>

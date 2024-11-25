@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const { constants } = require("../utils");
 
 const profSchema = new mongoose.Schema(
   {
@@ -60,12 +61,12 @@ const profSchema = new mongoose.Schema(
 
 profSchema.methods.generateTokens = async (id) => {
   const accessToken = await jwt.sign(
-    { id, role: "professional" },
+    { id, role: constants.ROLES.PROFESSIONAL },
     process.env.JWT_ACCESS_TOKEN,
     { expiresIn: process.env.JWT_EXPIRATION }
   );
   const refreshToken = await jwt.sign(
-    { id, role: "professional" },
+    { id, role: constants.ROLES.PROFESSIONAL },
     process.env.JWT_REFRESH_TOKEN,
     { expiresIn: process.env.JWT_REFRESH_EXPIRATION }
   );

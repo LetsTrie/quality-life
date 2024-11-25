@@ -1,54 +1,89 @@
-import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import Button from './Button';
 import Text from './Text';
+import colors from '../config/colors';
 
 const Consent = ({ header, description, buttonTitle, redirectTo }) => {
   const navigation = useNavigation();
 
-  const handlePress = async () => navigation.navigate(redirectTo);
+  const handlePress = async () => {
+    try {
+      navigation.navigate(redirectTo);
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
+  };
 
   return (
-    <>
-      <ScrollView style={{ backgroundColor: 'white' }}>
+    <ScrollView style={styles.container}>
+      {header && (
         <View style={styles.header}>
-          <Text style={styles.headerText}>{header}</Text>
+          <Text style={styles.headerText} accessibilityLabel={header}>
+            {header}
+          </Text>
         </View>
-        <View style={styles.desc}>
-          <Text style={styles.descText}>{description}</Text>
-        </View>
+      )}
+
+      <View style={styles.descriptionContainer}>
+        <Text style={styles.descriptionText} accessibilityLabel={description}>
+          {description}
+        </Text>
+      </View>
+      <View style={styles.buttonContainer}>
         <Button
           title={buttonTitle}
-          style={{ marginBottom: 5, padding: 12.5, marginTop: 15 }}
-          textStyle={{ fontSize: 22 }}
+          style={styles.button}
+          textStyle={styles.buttonText}
           onPress={handlePress}
+          accessibilityLabel={buttonTitle}
         />
-      </ScrollView>
-    </>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: 20,
+    paddingTop: 30,
+  },
   header: {
-    padding: 10,
+    marginBottom: 20,
     alignItems: 'center',
   },
   headerText: {
-    fontSize: 33,
-    color: '#333',
-    paddingTop: 6,
-    paddingBottom: 2,
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    textAlign: 'center',
   },
-  desc: {
-    paddingHorizontal: 15,
+  descriptionContainer: {
+    marginBottom: 20,
   },
-  descText: {
-    fontSize: 17,
-    letterSpacing: 0.5,
+  descriptionText: {
+    fontSize: 16,
+    lineHeight: 24,
     textAlign: 'justify',
-    lineHeight: 26.5,
-    color: '#555',
+    color: colors.textSecondary,
+    letterSpacing: 0.3,
+  },
+  buttonContainer: {
+    alignItems: 'center',
+  },
+  button: {
+    width: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 14,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.white,
   },
 });
 

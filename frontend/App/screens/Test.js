@@ -1,12 +1,10 @@
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
-import { connect } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import Quizes from '../components/Quiz/Quizes';
-import Quizes2 from '../components/Quiz/Quizes2';
-import BaseUrl from '../config/BaseUrl';
 import { chooseTest } from '../config/chooseTest';
-import * as T from '../data/type';
+import * as Keys from '../data/type';
+
 import {
   mentalHeathProfileAction,
   updateDnAction,
@@ -14,52 +12,52 @@ import {
   updateMojAction,
 } from '../redux/actions/user';
 
-import coronaProfile from '../data/coronaProfile';
-import coronaProfile2 from '../data/coronaProfile2';
+import { useBackPress, useHelper } from '../hooks';
+import constants from '../navigation/constants';
+import { ApiDefinitions } from '../services/api';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
-const Test = ({ navigation, route, ...props }) => {
-  const navLink = route.params.link;
-  const TestObject = chooseTest(navLink);
-  const questions = TestObject.questions;
+const SCREEN_NAME = constants.TEST;
+const Test = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+
+  const { goToBack, preTest, scaleId, type, fromProfile } = route.params;
+  useBackPress(SCREEN_NAME, goToBack);
+
+  const dispatch = useDispatch();
+  const { ApiExecutor } = useHelper();
+
+  const scale = chooseTest(scaleId);
+  if (!scale) {
+    console.error('Scale not found');
+    return null;
+  }
+
+  const questions = scale.questions;
+  const postTest = !preTest;
+
   const [submitted, setSubmitted] = useState(false);
-  const [questionsExp,setQuestionsExp]=useState(coronaProfile?.questions)
-  const [changeQ, setChangeQ]=useState(false)
-  const [answers, setAnswers] = useState(
-    new Array(questions.length).fill(null)
-  );
+  const [answers, setAnswers] = useState(new Array(questions.length).fill(null));
   const [isLoading, setIsLoading] = useState(false);
-  const {
-    updateDnAction,
-    updateMcnAction,
-    updateMojAction,
-    mentalHeathProfileAction,
-  } = props;
 
-  let { preTest } = route.params;
-  let postTest = !preTest;
-
-  function goToAnotherPage(
-    redirectTo,
-    navigation,
-    route,
-    score = null,
-    stage = null,
-    maxWeight = 0
-  ) {
+  function goToAnotherPage(redirectTo, score = null, stage = null, maxWeight = 0) {
     switch (redirectTo) {
-      case T.SHOW_VIDEO:
-        navigation.navigate('VideoScreen', {
+      case Keys.SHOW_VIDEO:
+        navigation.replace('VideoScreen', {
           ...route.params,
           needAction: false,
         });
         break;
-      case T.HELP_CENTER:
-        navigation.navigate('HelpCenter', {
-          ...route.params,
-          fromProfile: true,
+
+      case Keys.HELP_CENTER:
+        navigation.replace(constants.HELP_CENTER, {
+          scaleId,
+          goToBack: constants.PROFILE,
         });
         break;
-      case T.RESULT_OUT_OF_100:
+
+      case Keys.RESULT_OUT_OF_100:
         navigation.navigate('QuizResultOutOf100', {
           ...route.params,
           totalWeight: score,
@@ -68,7 +66,7 @@ const Test = ({ navigation, route, ...props }) => {
         });
         break;
 
-      case T.NO_ACTION:
+      case Keys.NO_ACTION:
         navigation.navigate('Profile', {
           ...route.params,
         });
@@ -79,63 +77,61 @@ const Test = ({ navigation, route, ...props }) => {
         break;
     }
   }
-  
-  useEffect(() => {
-    if (submitted) {
-      setIsLoading(true);
-      const { type } = route.params;
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${props.jwtToken}`,
-      };
-      if (route.params.fromProfile) {
-        console.log({ postTest });
-        axios
-          .post(
-            `${BaseUrl}/user/test`,
-            { answers, type, score: 0, fromProfile: true, postTest },
-            { headers }
-          )
-          .then(async (res) => {
-            mentalHeathProfileAction(route.params.link);
-            const goToProfile = [
-              'childCare',
-              'domesticViolence',
-              'suicideIdeation',
-              'psychoticProfile',
-            ];
-            const convert = [...new Set(answers)];
-            if (
-              goToProfile.includes(route.params.link) &&
-              convert.length === 1 &&
-              convert[0] === 'না'
-            ) {
-              navigation.navigate('Profile');
-            } else {
-              goToAnotherPage(route.params.redirectTo, navigation, route);
-            }
 
-            setIsLoading(false);
-          })
-          .catch((e) => {
-            console.log(e);
-            setIsLoading(false);
-          });
+  useEffect(() => {
+    if (!submitted) return;
+
+    (async () => {
+      setIsLoading(true);
+
+      const questionAnswers = answers.map((answer, index) => ({
+        question: questions[index].question,
+        answer,
+      }));
+
+      if (fromProfile) {
+        const payload = { questionAnswers, type, score: 0, fromProfile: true, postTest };
+
+        const response = await ApiExecutor(ApiDefinitions.submitTest({ payload }));
+        setIsLoading(false);
+
+        if (!response.success) {
+          console.error(`Failed to submit test: ${response.error.message}`);
+          return;
+        }
+
+        dispatch(mentalHeathProfileAction(scaleId));
+
+        const scaleIds = [
+          Keys.CHILD_CARE,
+          Keys.DOMESTIC_VIOLENCE,
+          // Keys.CORONA_PROFILE,
+          Keys.SUICIDE_IDEATION,
+          Keys.PSYCHOTIC_PROFILE,
+        ];
+
+        const uniqueAnswers = [...new Set(answers)];
+        const anyNoAnswerExists = uniqueAnswers.length === 1 && uniqueAnswers[0] === 'না';
+
+        if (scaleIds.includes(scaleId) && anyNoAnswerExists) {
+          navigation.navigate('Profile');
+          return;
+        }
+
+        goToAnotherPage(route.params.redirectTo);
       } else {
-        let index = 0;
-        let w = 0;
+        let _score = 0;
         let maxWeight = 0;
 
-        for (let a of answers) {
-          w += questions[index].options.filter((x) => x.label === a)[0].weight;
-          let mx = -1;
-          for (let o of questions[index].options)
-            if (mx < o.weight) mx = o.weight;
+        answers.map((answer, index) => {
+          const question = questions[index];
+          _score += questions[index].options.filter((x) => x.label === answer)[0].weight;
 
-          maxWeight += mx;
-          index++;
-        }
-        w = Math.round(w);
+          const questionMaxWeight = Math.max(...question.options.map((o) => o.weight));
+          maxWeight += questionMaxWeight;
+        });
+
+        _score = Math.round(_score);
 
         let range = [];
         if (type === 'manoshikChapNirnoy') range = [13, 26];
@@ -143,95 +139,56 @@ const Test = ({ navigation, route, ...props }) => {
         if (type === 'manoshikObosthaJachaikoron') range = [4, 9];
 
         let stage;
-        if (w <= range[0]) stage = 'স্বাভাবিক মাত্রা';
-        else if (w <= range[1]) stage = 'মাঝামাঝি মাত্রা';
+        if (_score <= range[0]) stage = 'স্বাভাবিক মাত্রা';
+        else if (_score <= range[1]) stage = 'মাঝামাঝি মাত্রা';
         else stage = 'তীব্র মাত্রা';
 
-        console.log({ postTest });
+        const payload = {
+          answers,
+          type,
+          score: _score,
+          severity: stage,
+          totalScore: maxWeight,
+          postTest,
+        };
 
-        axios
-          .post(
-            `${BaseUrl}/user/test`,
-            {
-              answers,
-              type,
-              score: w,
-              severity: stage,
-              totalScore: maxWeight,
-              postTest,
-            },
-            { headers }
-          )
-          .then(async (res) => {
-            const { score, type } = res.data.test;
-            const { mDate } = res.data;
+        const response = await ApiExecutor(ApiDefinitions.submitTest({ payload }));
+        setIsLoading(false);
 
-            if (type === 'duschintaNirnoy') updateDnAction(score, mDate);
-            if (type === 'manoshikChapNirnoy') updateMcnAction(score, mDate);
-            if (type === 'manoshikObosthaJachaikoron') {
-              updateMojAction(score, mDate);
-            }
+        if (!response.success) {
+          console.error(`Failed to submit test: ${response.error.message}`);
+          return;
+        }
 
-            goToAnotherPage(
-              route.params.redirectTo,
-              navigation,
-              route,
-              score,
-              stage,
-              maxWeight
-            );
-            setIsLoading(false);
-          })
-          .catch((e) => {
-            console.log(e);
-            setIsLoading(false);
-          });
+        const { mDate } = response.data;
+        const { score, type } = response.data.test;
+
+        if (type === 'duschintaNirnoy') {
+          dispatch(updateDnAction(score, mDate));
+        } else if (type === 'manoshikChapNirnoy') {
+          dispatch(updateMcnAction(score, mDate));
+        } else if (type === 'manoshikObosthaJachaikoron') {
+          dispatch(updateMojAction(score, mDate));
+        }
+
+        goToAnotherPage(route.params.redirectTo, score, stage, maxWeight);
       }
-    }
+    })();
   }, [submitted]);
-
-  useEffect(()=>{
-    if(changeQ === true){
-      setQuestionsExp(coronaProfile2?.questions)
-    }
-    if(changeQ === false){
-      setQuestionsExp(coronaProfile?.questions)
-    }
-  },[changeQ])
 
   return (
     <View style={{ flex: 1, backgroundColor: 'white' }}>
       <ScrollView>
-      {/* new quiz created for coronaProfile */}
-       {route?.params?.link === 'coronaProfile'? <Quizes2
-          questions={questionsExp}
+        <Quizes
+          questions={questions}
           answers={answers}
           setAnswers={setAnswers}
           setSubmitted={setSubmitted}
           isLoading={isLoading}
-          setChangeQ={setChangeQ}
-        />:
-        <Quizes
-        questions={questions}
-        answers={answers}
-        setAnswers={setAnswers}
-        setSubmitted={setSubmitted}
-        isLoading={isLoading}
-      /> } 
+        />
       </ScrollView>
     </View>
   );
 };
 
-const mapStateToProps = (state) => ({
-  name: state.auth.name,
-  photoUrl: state.auth.photoUrl,
-  jwtToken: state.auth.jwtToken,
-});
-
-export default connect(mapStateToProps, {
-  updateDnAction,
-  updateMcnAction,
-  updateMojAction,
-  mentalHeathProfileAction,
-})(Test);
+export default Test;

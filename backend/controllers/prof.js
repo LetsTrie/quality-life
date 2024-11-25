@@ -170,26 +170,29 @@ exports.registerProfessionalStep2 = asyncHandler(async (req, res) => {
 });
 
 // TODO: Need scope to update everything..
-// TODO:: Add Joi Validation
 exports.registerProfessionalStep3 = asyncHandler(async (req, res) => {
   req.user.availableTime = req.body.availableTime;
   req.user.step = 3;
   await req.user.save();
-  return res.json({ success: true, data: { user: req.user } });
+  return sendJSONresponse(res, 200, {
+    data: {},
+  });
 });
 
 // TODO: Need scope to update everything..
-// TODO:: Add Joi Validation
 exports.registerProfessionalStep4 = asyncHandler(async (req, res) => {
   for (let key in req.body) {
     req.user[key] = req.body[key];
   }
   req.user.step = 4;
   await req.user.save();
-  return res.json({ success: true, data: { user: req.user } });
+
+  return sendJSONresponse(res, 200, {
+    data: {},
+  });
 });
 
-exports.profLogin = asyncHandler(async (req, res, next) => {
+exports.profLogin = asyncHandler(async (req, res, _next) => {
   const prof = await Professional.findOne({ email: req.body.email });
   if (!prof) {
     return sendErrorResponse(res, 401, httpStatus.UNAUTHORIZED, {
@@ -210,6 +213,12 @@ exports.profLogin = asyncHandler(async (req, res, next) => {
     });
   }
 
+  if (prof.hasRejected) {
+    return sendErrorResponse(res, 401, httpStatus.UNAUTHORIZED, {
+      message: "আপনার অ্যাকাউন্ট বাতিল করা হয়েছে",
+    });
+  }
+
   const [accessToken, refreshToken] = await prof.generateTokens(prof._id);
 
   return sendJSONresponse(res, 200, {
@@ -217,18 +226,23 @@ exports.profLogin = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.getHomepageInformationProf = asyncHandler(async (req, res, next) => {
+exports.getHomepageInformationProf = asyncHandler(async (req, res, _next) => {
   const profId = req.user._id;
-  const notifications = await ProfNotification.countDocuments({
+
+  const notificationCount = await ProfNotification.countDocuments({
     prof: profId,
     hasSeen: false,
   });
-  const appointments = await Appointment.countDocuments({
+
+  const appointmentCount = await Appointment.countDocuments({
     prof: profId,
     hasProfViewed: false,
+    isActive: true,
   });
 
-  return res.json({ appointments, notifications });
+  return sendJSONresponse(res, 200, {
+    data: { notificationCount, appointmentCount },
+  });
 });
 
 // OKAY

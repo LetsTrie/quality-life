@@ -7,11 +7,7 @@ const Container = ({ children }) => {
   return (
     <ScrollView style={styles.scrollViewStyle}>
       <View style={styles.container}>
-        <LinearGradient
-          colors={[colors.primary, '#ff7e67']}
-          start={[0, 0]}
-          end={[1, 0.5]}
-        >
+        <LinearGradient colors={[colors.primary, colors.secondary]} start={[0, 0]} end={[1, 0.5]}>
           {children}
         </LinearGradient>
       </View>

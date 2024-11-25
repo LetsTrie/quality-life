@@ -2,7 +2,8 @@ const asyncHandler = require("../middlewares/asyncHandler");
 const User = require("../models/user");
 const { Professional } = require("../models");
 const bcrypt = require("bcrypt");
-const { sendErrorResponse, sendJSONresponse } = require("../utils");
+const { sendErrorResponse, sendJSONresponse, constants } = require("../utils");
+const jwt = require("jsonwebtoken");
 
 // API List
 // 1. User Registration :: POST /user/sign-up
@@ -111,13 +112,8 @@ exports.signIn = asyncHandler(async (req, res, _next) => {
 // TODO: Forget Password
 // TODO: Reset Password
 
-const ROLES = {
-  USER: "user",
-  PROFESSIONAL: "professional",
-};
-
 // Token Refresher API :: POST /auth/refresh-token
-exports.refreshToken = asyncHandler(async (req, res, next) => {
+exports.tokenRefresher = asyncHandler(async (req, res, _next) => {
   const { refreshToken } = req.body;
 
   // Validate the refresh token
@@ -137,14 +133,14 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
 
     let tokenUser;
 
-    if (role === ROLES.USER) {
+    if (role === constants.ROLES.USER) {
       tokenUser = await User.findById(id);
       if (!tokenUser) {
         return sendErrorResponse(res, 401, "UnAuthorized", {
           message: "Invalid refresh token",
         });
       }
-    } else if (role === ROLES.PROFESSIONAL) {
+    } else if (role === constants.ROLES.PROFESSIONAL) {
       tokenUser = await Professional.findById(id);
       if (!tokenUser) {
         return sendErrorResponse(res, 401, "UnAuthorized", {
@@ -153,17 +149,19 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
       }
     }
 
-    const [accessToken, refreshToken] = await tokenUser.generateTokens(id);
+    const [newAccessToken, newRefreshToken] = await tokenUser.generateTokens(
+      id
+    );
 
     console.log("Tokens refreshed for user:", {
-      newAccessToken: accessToken,
-      newRefreshToken: refreshToken,
+      newAccessToken,
+      newRefreshToken,
     });
 
     return sendJSONresponse(res, 200, {
       data: {
-        accessToken,
-        refreshToken,
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
       },
     });
   } catch (error) {

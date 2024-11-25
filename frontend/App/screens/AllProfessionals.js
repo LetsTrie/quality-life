@@ -12,7 +12,7 @@ import { useSelector } from 'react-redux';
 import Text from '../components/Text';
 import colors from '../config/colors';
 import { numberWithCommas } from '../utils/number';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useBackPress, useHelper } from '../hooks';
 import constants from '../navigation/constants';
 import SeeMoreButton from '../components/SeeMoreButton';

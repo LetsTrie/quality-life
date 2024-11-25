@@ -11,10 +11,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
+    "assetBundlePatterns": ["**/*"],
+    "plugins": [
+      [
+        "expo-font",
+        {
+          "fonts": ["node_modules/@expo-google-fonts/inter/Inter_900Black.ttf"]
+        }
+      ]
     ],
-    "plugins": [],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.letstrie.qlife"

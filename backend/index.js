@@ -8,10 +8,6 @@ const madge = require("madge");
 
 const app = express();
 
-const pino = require("pino-http")();
-
-app.use(pino);
-
 app.use(cors());
 require("dotenv").config();
 app.use(express.json());

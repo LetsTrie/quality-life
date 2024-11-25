@@ -31,4 +31,7 @@ export default {
   [constants.CLIENT_PROFILE]: constants.PROFESSIONALS_CLIENT,
 
   [constants.USER_APPOINTMENT_TAKEN]: constants.HOMEPAGE,
+  [constants.ASK_FOR_TEST]: constants.HOMEPAGE,
+  [constants.TEST]: constants.HOMEPAGE,
+  [constants.HELP_CENTER]: constants.HOMEPAGE,
 };

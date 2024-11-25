@@ -60,6 +60,94 @@ const registerProfessionalStep2 = {
   }),
 };
 
+const allowedDays = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+const timeFormatRegex = /^(0?[1-9]|1[0-2]):[0-5][0-9](AM|PM)$/;
+
+const timeRangeSchema = Joi.object({
+  from: Joi.string().pattern(timeFormatRegex).required().messages({
+    "string.pattern.base": '"from" must be in the format hh:mmAM/PM',
+  }),
+  to: Joi.string().pattern(timeFormatRegex).required().messages({
+    "string.pattern.base": '"to" must be in the format hh:mmAM/PM',
+  }),
+});
+
+const availableTimeSchema = Joi.object({
+  day: Joi.string()
+    .valid(...allowedDays)
+    .required()
+    .messages({
+      "any.only": `"day" must be one of ${allowedDays.join(", ")}`,
+    }),
+  timeRange: Joi.array().items(timeRangeSchema).required(),
+});
+
+const registerProfessionalStep3 = {
+  body: Joi.object().keys({
+    availableTime: Joi.array().items(availableTimeSchema).required().messages({
+      "array.includes":
+        'Each item in "availableTime" must have a valid day and timeRange',
+    }),
+  }),
+};
+
+const clientOptions = [
+  "০-৫ জন",
+  "৬-১০ জন",
+  "১১-১৫ জন",
+  "১৬-২০ জন",
+  "২১ বা তার উর্ধে",
+];
+
+const registerProfessionalStep4 = {
+  body: Joi.object().keys({
+    maxClient: Joi.string()
+      .valid(...clientOptions)
+      .required()
+      .messages({
+        "any.only": `"maxClient" must be one of ${clientOptions.join(", ")}`,
+        "any.required": '"maxClient" is required',
+      }),
+
+    avgClient: Joi.string()
+      .valid(...clientOptions)
+      .required()
+      .messages({
+        "any.only": `"avgClient" must be one of ${clientOptions.join(", ")}`,
+        "any.required": '"avgClient" is required',
+      }),
+
+    numOfClient: Joi.array()
+      .items(
+        Joi.alternatives()
+          .try(Joi.string(), Joi.number().integer().min(0))
+          .allow("")
+      )
+      .length(9)
+      .required()
+      .messages({
+        "array.length": '"numOfClient" must contain exactly 9 items',
+      }),
+    ref: Joi.string()
+      .max(255)
+      .messages({
+        "string.base": '"ref" must be a string',
+        "string.max": '"ref" must not exceed 255 characters',
+        "any.required": '"ref" is required',
+      })
+      .allow(""),
+  }),
+};
+
 const profVisibility = {
   body: Joi.object().keys({
     visibility: Joi.boolean().required(),
@@ -109,5 +197,7 @@ const profVisibility = {
 module.exports = {
   registerProfessionalStep1,
   registerProfessionalStep2,
+  registerProfessionalStep3,
+  registerProfessionalStep4,
   profVisibility,
 };

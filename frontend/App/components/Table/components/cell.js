@@ -1,24 +1,9 @@
 import React, { Component } from 'react';
-import { View, ViewPropTypes, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 export class Cell extends Component {
-  static propTypes = {
-    style: ViewPropTypes.style,
-    textStyle: Text.propTypes.style,
-    borderStyle: ViewPropTypes.style,
-  };
-
   render() {
-    const {
-      data,
-      width,
-      height,
-      flex,
-      style,
-      textStyle,
-      borderStyle,
-      ...props
-    } = this.props;
+    const { data, width, height, flex, style, textStyle, borderStyle, ...props } = this.props;
     const textDom = React.isValidElement(data) ? (
       data
     ) : (

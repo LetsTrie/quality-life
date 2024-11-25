@@ -24,21 +24,21 @@ export default function (state = initialState, action) {
       return {
         ...initialState,
       };
+
     case REMOVE_ONE_REQUESTED_CLIENT:
       id = action.payload._id;
       index = state.reqClients.findIndex((n) => n._id === id);
       return {
         ...state,
-        reqClients: [
-          ...state.reqClients.slice(0, index),
-          ...state.reqClients.slice(index + 1),
-        ],
+        reqClients: [...state.reqClients.slice(0, index), ...state.reqClients.slice(index + 1)],
       };
+
     case ADD_ALL_MY_CLIENT:
       return {
         ...state,
         clients: action.payload.clients,
       };
+
     case ADD_ONE_MY_CLIENT:
       return {
         ...state,

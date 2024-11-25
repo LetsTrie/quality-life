@@ -22,7 +22,6 @@ export const sendErrorResponse = (error) => {
 
 export const sendErrorResponseV2 = (error) => {
   try {
-    console.log(error.response.data.message);
     const { errors, status, type, message } = error.response.data;
 
     const errorMessage = isNotEmptyArray(errors)
@@ -40,7 +39,7 @@ export const sendErrorResponseV2 = (error) => {
       },
     };
   } catch (error) {
-    console.log(error.message);
+    console.log(error);
     return {
       success: false,
       status: 500,

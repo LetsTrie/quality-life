@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { AppButton, AppText } from '../../../components';
 import styles from './Welcome.style';
 import constants from '../../../navigation/constants';
+import { RoleEnum } from '../../../utils/roles';
 
 const ImageSlider = () => {
   return (
@@ -22,7 +23,7 @@ const ImageSlider = () => {
 export const Welcome = () => {
   const route = useRoute();
   const navigation = useNavigation();
-  const { isAuthenticated, jwtToken, type } = useSelector((state) => state.auth);
+  const { isAuthenticated, role } = useSelector((state) => state.auth);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -39,12 +40,19 @@ export const Welcome = () => {
   const tokenBasedRedirection = useCallback(() => {
     if (!isAuthenticated) return false;
 
-    // TODO: Need to do some API Calls. to UNDERSTAND where to redirect...!!
-    if (type === constants.USER_TYPE) navigation.navigate(constants.HOMEPAGE);
-    else navigation.navigate(constants.PROF_HOMEPAGE);
+    switch (role) {
+      case RoleEnum.USER:
+        navigation.navigate(constants.HOMEPAGE);
+        break;
+      case RoleEnum.PROFESSIONAL:
+        navigation.navigate(constants.PROF_HOMEPAGE);
+        break;
+      default:
+        return false;
+    }
 
     return true;
-  }, [jwtToken, isAuthenticated, navigation]);
+  }, [isAuthenticated, role, navigation]);
 
   const authNavigate = (defaultRoute) => {
     return () => {
@@ -64,9 +72,9 @@ export const Welcome = () => {
           বিভিন্ন চিকিৎসক এবং স্বাস্থ্যকেন্দ্রে আপনি এই অ্যাপটি থেকে যোগাযোগ করতে পারবেন।
         </AppText>
         <View>
-          <AppButton title="Sign in" onPress={authNavigate(constants.LOGIN)} />
+          <AppButton title="সাইন ইন করুন" onPress={authNavigate(constants.LOGIN)} />
           <AppButton
-            title="Create an account"
+            title="অ্যাকাউন্ট তৈরি করুন"
             onPress={authNavigate(constants.USER_REGISTER_CONSENT)}
           />
         </View>

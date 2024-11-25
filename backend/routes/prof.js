@@ -25,12 +25,14 @@ router.post(
 router.post(
   "/register/step-3",
   M.verifyToken(ROLE),
+  validate(profValidation.registerProfessionalStep3),
   professionalController.registerProfessionalStep3
 );
 
 router.post(
   "/register/step-4",
   M.verifyToken(ROLE),
+  validate(profValidation.registerProfessionalStep4),
   professionalController.registerProfessionalStep4
 );
 
@@ -49,7 +51,7 @@ router.put(
 );
 
 router.get(
-  "/homepage",
+  "/homepage-notification-count",
   M.verifyToken(ROLE),
   professionalController.getHomepageInformationProf
 );

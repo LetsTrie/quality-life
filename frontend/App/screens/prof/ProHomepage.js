@@ -10,35 +10,82 @@ import {
 } from 'react-native';
 import Text from '../../components/Text';
 import BaseUrl from '../../config/BaseUrl';
-import colors from '../../config/colors';
-import { logoutAction, numOfNewNotificationsAction } from '../../redux/actions/prof';
+import { numOfNewNotificationsAction } from '../../redux/actions/prof';
 import { connect } from 'react-redux';
 import YesNoModal from '../../components/YesNoModal';
 import ProfileActModal from './ProfileActModal';
 import constants from '../../navigation/constants';
 import { useBackPress, useHelper } from '../../hooks';
 import { AppButton } from '../../components';
-import { deleteProfAccount } from '../../services/api';
+import { ApiDefinitions } from '../../services/api';
 import { numberWithCommas } from '../../utils/number';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const wait = (timeout) => {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 };
 
-const p = (a) => parseFloat(a);
-
 const SCREEN_NAME = constants.PROF_HOMEPAGE;
+
+const colors = {
+  primary: '#2C3E50',
+  secondary: '#34495E',
+  accent: '#3498DB',
+  success: '#27AE60',
+  warning: '#F39C12',
+  danger: '#E74C3C',
+  background: '#F8FAFC',
+  cardBackground: '#FFFFFF',
+  text: {
+    primary: '#2C3E50',
+    secondary: '#5D6D7E',
+    light: '#8395A7',
+  },
+};
+
+const CardItem = ({ icon, title, subtitle, color, onPress, badge }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    style={[
+      styles.card,
+      {
+        borderWidth: 0.5,
+        borderLeftWidth: 4,
+        borderLeftColor: color,
+        borderColor: color,
+        transform: [{ translateX: 0 }],
+        marginRight: 5,
+      },
+    ]}
+  >
+    <View style={styles.cardContent}>
+      <View style={styles.cardIcon}>
+        <MaterialIcons name={icon} size={24} color={color} />
+      </View>
+      <View style={styles.cardTextContainer}>
+        <Text style={[styles.cardTitle, { color: colors.text.primary }]}>{title}</Text>
+        {subtitle && (
+          <Text style={[styles.cardSubtitle, { color: colors.text.secondary }]}>{subtitle}</Text>
+        )}
+      </View>
+      {badge && (
+        <View style={[styles.badge, { backgroundColor: color }]}>
+          <Text style={styles.badgeText}>{badge}</Text>
+        </View>
+      )}
+      <MaterialIcons name="chevron-right" size={24} color={colors.text.light} />
+    </View>
+  </TouchableOpacity>
+);
 
 const Homepage = ({ navigation, route, ...props }) => {
   useBackPress(SCREEN_NAME);
-  const { logout } = useHelper();
+
+  const { ApiExecutor, logout } = useHelper();
 
   const {
     _id,
     visibility,
-    jwtToken,
-    isAuthenticated,
-    logoutAction,
     numOfNewNotifications,
     numOfNewClientRequests,
     numOfNewNotificationsAction,
@@ -49,34 +96,24 @@ const Homepage = ({ navigation, route, ...props }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalVisibleAct, setModalVisibleAct] = useState(false);
   const [activeText, setActiveText] = useState(visibility);
-  const [error,setError] = useState(null)
+  const [error, setError] = useState(null);
 
-  const logoutHandler = () => {
-    logoutAction(); // TODO: REMOVE THIS
-    logout();
-  };
+  const logoutHandler = logout;
 
   async function getHomepageData() {
-    if (!isAuthenticated) {
-      navigation.navigate('LoginPro');
+    setIsLoading(true);
+    const response = await ApiExecutor(ApiDefinitions.getProfessionalHomepageNotificationCount());
+    setIsLoading(false);
+
+    if (!response.success) {
+      setError(response.error.message);
       return;
     }
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${jwtToken}`,
-    };
 
-    try {
-      const response = await axios.get(`${BaseUrl}/prof/homepage`, { headers });
-      const { appointments, notifications } = response.data;
-      numOfNewNotificationsAction(p(notifications), p(appointments));
-    } catch (err) {
-      if (err?.response?.status === 401) {
-        logoutHandler();
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    console.log(response);
+
+    const { notificationCount, appointmentCount } = response.data;
+    numOfNewNotificationsAction(parseFloat(notificationCount), parseFloat(appointmentCount));
   }
 
   const anyNewNotifications = !(!numOfNewNotifications || numOfNewNotifications <= 0);
@@ -91,15 +128,15 @@ const Homepage = ({ navigation, route, ...props }) => {
     setIsLoading(true);
     setError(null);
 
-    const response = await deleteProfAccount({ profId: _id, jwtToken });
-    
+    const response = await ApiExecutor(ApiDefinitions.deleteProfessionalAccount({ profId: _id }));
     setIsLoading(false);
 
-    if (response.success) {
-      logoutHandler();
-    } else {
+    if (!response.success) {
       setError(response.error.message);
+      return;
     }
+
+    logoutHandler();
   };
 
   const activation = async () => {
@@ -118,125 +155,83 @@ const Homepage = ({ navigation, route, ...props }) => {
 
   return (
     <ScrollView
-      style={{ backgroundColor: '#efefef' }}
+      style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       {isLoading ? (
-        <View
-          style={{
-            textAlign: 'center',
-            width: '100%',
-            paddingTop: 10,
-          }}
-        >
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : (
-        <View style={{ paddingTop: 10 }}>
+        <View style={styles.content}>
+          {error && <Text style={styles.errorText}>{error}</Text>}
+
           {anyNewNotifications && (
-            <TouchableOpacity
-              style={[styles.box, { backgroundColor: '#fead07', borderColor: '#fead07' }]}
-              onPress={() =>
-                navigation.navigate('ProNotification', {
-                  goToBack: SCREEN_NAME,
-                })
-              }
-            >
-              <Text
-                style={[
-                  styles.boxText,
-                  {
-                    color: 'white',
-                    textAlign: 'center',
-                    fontSize: 17,
-                    paddingVertical: 5,
-                    fontWeight: 'bold',
-                  },
-                ]}
-              >
-                আপনার {numberWithCommas(numOfNewNotifications)} টি নতুন নোটিফিকেশন আছে
-              </Text>
-            </TouchableOpacity>
+            <CardItem
+              icon="notifications-active"
+              title="New Notifications"
+              subtitle={`You have ${numberWithCommas(numOfNewNotifications)} new notifications`}
+              color={colors.warning}
+              onPress={() => navigation.navigate('ProNotification', { goToBack: SCREEN_NAME })}
+            />
           )}
 
-          {error && (
-            <Text style={{ color: 'red', textAlign: 'center', fontSize: 15 }}>{error}</Text>
-          )}
-
-          <TouchableOpacity
-            style={styles.box}
+          <CardItem
+            icon="people"
+            title="Client Requests"
+            badge={numOfNewClientRequests > 0 ? numOfNewClientRequests.toString() : null}
+            color={colors.accent}
             onPress={() => navigation.navigate(constants.PROF_CLIENT_REQUEST)}
-          >
-            <Text style={styles.boxText}>Client Request</Text>
-            {numOfNewClientRequests > 0 && (
-              <Text style={{ fontSize: 14, paddingTop: 2, color: '#727272' }}>
-                ◉ {numOfNewClientRequests} new requests
-              </Text>
-            )}
-          </TouchableOpacity>
+          />
 
-          <TouchableOpacity
-            style={styles.box}
-            onPress={() =>
-              navigation.navigate('ProAssessments', {
-                goToBack: SCREEN_NAME,
-              })
-            }
-          >
-            <Text style={styles.boxText}>Assessment Tools</Text>
-          </TouchableOpacity>
+          <CardItem
+            icon="assessment"
+            title="Assessment Tools"
+            color={colors.secondary}
+            onPress={() => navigation.navigate('ProAssessments', { goToBack: SCREEN_NAME })}
+          />
 
-          <TouchableOpacity
-            style={styles.box}
+          <CardItem
+            icon="person"
+            title="My Profile"
+            color={colors.success}
             onPress={() => navigation.navigate(constants.PROF_PROFILE)}
-          >
-            <Text style={styles.boxText}>আমার প্রোফাইল</Text>
-          </TouchableOpacity>
+          />
 
-          <TouchableOpacity
-            style={styles.box}
-            onPress={() =>
-              navigation.navigate('ProMyClients', {
-                goToBack: SCREEN_NAME,
-              })
-            }
-          >
-            <Text style={styles.boxText}>আমার ক্লায়েন্টস</Text>
-          </TouchableOpacity>
-
-          {/* <TouchableOpacity
-            style={styles.box}
-            onPress={() =>
-              navigation.navigate('ProActivityLog', {
-                goToBack: SCREEN_NAME,
-              })
-            }
-          >
-            <Text style={styles.boxText}>Clinical Documentation Form</Text>
-          </TouchableOpacity> */}
+          <CardItem
+            icon="group"
+            title="My Clients"
+            color={colors.primary}
+            onPress={() => navigation.navigate('ProMyClients', { goToBack: SCREEN_NAME })}
+          />
 
           {!anyNewNotifications && (
-            <TouchableOpacity
-              style={styles.box}
-              onPress={() =>
-                navigation.navigate('ProNotification', {
-                  goToBack: SCREEN_NAME,
-                })
-              }
-            >
-              <Text style={styles.boxText}>নোটিফিকেশন</Text>
-            </TouchableOpacity>
+            <CardItem
+              icon="notifications"
+              title="Notifications"
+              color={colors.text.light}
+              onPress={() => navigation.navigate('ProNotification', { goToBack: SCREEN_NAME })}
+            />
           )}
 
-          <TouchableOpacity style={styles.box} onPress={() => setModalVisibleAct(true)}>
-            <Text style={styles.boxText}>{!activeText ? 'অ্যাকাউন্ট সক্রিয় করুন' : 'অ্যাকাউন্ট গোপন করুন'}</Text>
-          </TouchableOpacity>
+          <CardItem
+            icon="visibility"
+            title="Account Visibility"
+            subtitle={!activeText ? 'Activate Account' : 'Deactivate Account'}
+            color={colors.secondary}
+            onPress={() => setModalVisibleAct(true)}
+          />
 
-          <TouchableOpacity style={styles.box} onPress={() => setModalVisible(true)}>
-            <Text style={styles.boxText}>অ্যাকাউন্ট ডিলিট করুন </Text>
-          </TouchableOpacity>
+          <CardItem
+            icon="delete"
+            title="Delete Account"
+            color={colors.danger}
+            onPress={() => setModalVisible(true)}
+          />
 
-          <AppButton title="সাইন আউট" onPress={logoutHandler} />
+          <View style={styles.buttonContainer}>
+            <AppButton title="Sign Out" onPress={logoutHandler} style={styles.signOutButton} />
+          </View>
 
           <YesNoModal
             modalVisible={modalVisible}
@@ -256,33 +251,82 @@ const Homepage = ({ navigation, route, ...props }) => {
 };
 
 const styles = StyleSheet.create({
-  box: {
-    margin: 10,
-    padding: 15,
-    paddingVertical: 13,
-    borderWidth: 1,
-    elevation: 1,
-    borderColor: '#ddd',
-    borderRadius: 10,
-    marginVertical: 0,
-    marginBottom: 10,
-    backgroundColor: 'white',
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: 16,
   },
-  boxText: {
-
+  content: {
+    paddingVertical: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 20,
+  },
+  card: {
+    marginVertical: 8,
+    backgroundColor: colors.cardBackground,
+    borderRadius: 8,
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  cardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${colors.background}`,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  cardTextContainer: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  badgeText: {
+    color: colors.cardBackground,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  errorText: {
+    color: colors.danger,
+    textAlign: 'center',
+    fontSize: 15,
+    marginBottom: 16,
+  },
+  buttonContainer: {
+    marginTop: 16,
+    paddingHorizontal: 8,
+  },
+  signOutButton: {
+    backgroundColor: colors.danger,
+    borderRadius: 12,
+    paddingVertical: 14,
   },
 });
-
 const mapStateToProps = (state) => ({
   _id: state.prof?.prof?._id,
-  jwtToken: state.prof.jwtToken,
-  isAuthenticated: state.prof.isAuthenticated,
   numOfNewNotifications: state.prof.numOfNewNotifications,
   numOfNewClientRequests: state.prof.numOfNewClientRequests,
   visibility: state.prof?.prof?.visibility,
 });
 
-export default connect(mapStateToProps, {
-  logoutAction,
-  numOfNewNotificationsAction,
-})(Homepage);
+export default connect(mapStateToProps, { numOfNewNotificationsAction })(Homepage);

@@ -3,9 +3,15 @@ import AppButton from './Button';
 import { StyleSheet } from 'react-native';
 import colors from '../config/colors';
 
-export const ErrorButton = ({ errorMessage, visible }) => {
+export const ErrorButton = ({ title, visible, style, textStyle }) => {
   return (
-    !!visible && <AppButton title={errorMessage} style={styles.btn} textStyle={styles.btnText} />
+    !!visible && (
+      <AppButton
+        title={title}
+        style={[styles.btn, style]}
+        textStyle={[styles.btnText, textStyle]}
+      />
+    )
   );
 };
 
@@ -15,11 +21,12 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     padding: 15,
     backgroundColor: 'white',
-    borderColor: colors.primary,
+    borderColor: colors.danger,
     borderWidth: 3,
+    borderRadius: 8,
   },
   btnText: {
-    fontSize: 14.5,
-    color: colors.primary,
+    fontSize: 15,
+    color: colors.danger,
   },
 });

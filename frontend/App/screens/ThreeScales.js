@@ -30,6 +30,7 @@ const ThreeScales = () => {
 
   const navigate = (link, type) => {
     navigation.navigate('AskForTest', {
+      scaleId: link,
       link,
       redirectTo: Type.RESULT_OUT_OF_100,
       type,

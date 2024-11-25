@@ -1,5 +1,5 @@
 import {
-  PROF_SIGN_IN,
+  SET_PROFESSIONAL_INFO,
   PROF_SIGN_OUT,
   NEW_NOTIFICATION_COUNT,
   NEW_NOTIFICATION_COUNT_MINUS,
@@ -24,10 +24,11 @@ const initialState = {
 
 export default function (state = initialState, action) {
   switch (action.type) {
-    case PROF_SIGN_IN:
+    case SET_PROFESSIONAL_INFO:
       return {
         ...state,
         prof: action.payload.prof,
+
         _id: action.payload._id,
         name: action.payload.prof.name,
         email: action.payload.prof.email,
@@ -36,9 +37,6 @@ export default function (state = initialState, action) {
         eduQualification: action.payload.prof.eduQualification,
         experience: action.payload.prof.experience,
         fee: action.payload.prof.fee,
-        jwtToken: action.payload.jwtToken,
-
-        isAuthenticated: true,
       };
 
     case PROF_SIGN_OUT:

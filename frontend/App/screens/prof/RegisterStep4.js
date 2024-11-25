@@ -1,15 +1,14 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { useSelector } from 'react-redux';
-import Button from '../../components/Button';
+import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import Picker from '../../components/Picker';
 import Text from '../../components/Text';
 import AppTextInput from '../../components/TextInput';
-import colors from '../../config/colors';
 import constants from '../../navigation/constants';
-import { registerProfStep4 } from '../../services/api';
-import { useBackPress } from '../../hooks';
+import { ApiDefinitions } from '../../services/api';
+import { useBackPress, useHelper } from '../../hooks';
+import { ErrorButton, Loader } from '../../components';
+import { SubmitButton } from '../../components/SubmitButton';
 
 const dis = [
   'ঢাকা',
@@ -33,9 +32,8 @@ const SCREEN_NAME = constants.PROF_REGISTER_STEP_4;
 const RegisterStep4 = () => {
   useBackPress(SCREEN_NAME);
 
+  const { ApiExecutor } = useHelper();
   const navigation = useNavigation();
-
-  const { jwtToken } = useSelector((state) => state.auth);
 
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,14 +59,15 @@ const RegisterStep4 = () => {
     };
 
     if (!payload.maxClient || !payload.avgClient) {
-      setError('Fill up all fields properly');
+      setError('ফর্মটি সঠিকভাবে পূরণ করুন');
       return;
     }
 
     setIsLoading(true);
     setError(null);
 
-    const response = await registerProfStep4({ payload, jwtToken });
+    const response = await ApiExecutor(ApiDefinitions.registerProfessionalStep4({ payload }));
+
     setIsLoading(false);
 
     if (response.success) {
@@ -79,127 +78,112 @@ const RegisterStep4 = () => {
   };
 
   return (
-    <>
-      <ScrollView style={styles.ScrollViewStyle}>
-        <View style={styles.mainContainerStyle}>
-          <View style={styles.questionContainer}>
-            <Text style={styles.questionTextStyle}>
-              আপনার মতে আপনি সপ্তাহে সর্বোচ্চ কতজন ক্লায়েন্টকে সেবা দিতে পারবেন?
-            </Text>
-            <Picker
-              width="98%"
-              selectedItem={option1}
-              onSelectItem={(g) => setOption1(g)}
-              items={optionList}
-              placeholder="Select here"
-              style={{
-                borderRadius: 5,
-                borderWidth: 1,
-                borderColor: '#ccc',
-                marginRight: 5,
-                padding: 10,
-                backgroundColor: '#fff',
-              }}
-              placeholderColor="gray"
-            />
-          </View>
-          <View style={styles.questionContainer}>
-            <Text style={styles.questionTextStyle}>
-              বর্তমানে আপনি সপ্তাহে গড়ে কতজন ক্লায়েন্টকে সেবা দিচ্ছেন?
-            </Text>
-            <Picker
-              width="98%"
-              selectedItem={option2}
-              onSelectItem={(g) => setOption2(g)}
-              items={optionList}
-              placeholder="Select here"
-              style={{
-                borderRadius: 5,
-                borderWidth: 1,
-                borderColor: '#ccc',
-                marginRight: 5,
-                padding: 10,
-                backgroundColor: '#fff',
-              }}
-              placeholderColor="gray"
-            />
-          </View>
-          <View style={styles.questionContainer}>
-            <Text style={styles.questionTextStyle}>
-              আপনার সেবা গ্রহণকারী ক্লায়েন্টের কতজন নিচে বর্ণিত স্থানগুলোতে অবস্থান করছেঃ
-            </Text>
-            <View>
-              {dis.map((d, i) => (
-                <View style={styles.NumberInRegionContainer} key={d}>
-                  <Text style={styles.RegionNameStyle}>{d}: </Text>
-                  <TextInput
-                    style={{
-                      borderColor: 'white',
-                      borderBottomColor: '#ccc',
-                      borderWidth: 1,
-                      flex: 1,
-                      fontSize: 15,
-                    }}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    onChangeText={(text) => numOfClientHandler(i, text)}
-                    placeholderTextColor={'#6e6969'}
-                    keyboardType={d === 'অন্যান্য (উল্লেখ করুন)' ? 'default' : 'number-pad'}
-                  />
-                </View>
-              ))}
-            </View>
-          </View>
-          <View style={styles.questionContainer}>
-            <Text style={styles.questionTextStyle}>
-              আপনার নিকট বর্তমানে সেবা গ্রহণকারী অধিকাংশ ক্লায়েন্টের রেফারালের উৎস উল্লেখ করুনঃ
-            </Text>
-            <AppTextInput
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder="রেফারালের উৎস"
-              onChangeText={(text) => setRef(text)}
-              style={{
-                borderRadius: 5,
-                borderWidth: 1,
-                borderColor: '#ccc',
-                marginRight: 5,
-                padding: 10,
-                backgroundColor: '#fff',
-                width: '98%',
-              }}
-            />
-          </View>
-
-          {isLoading && (
-            <ActivityIndicator
-              size="large"
-              color={colors.primary}
-              style={{ marginBottom: 8, marginTop: -5 }}
-            />
-          )}
-          {error && (
-            <Button
-              title={error}
-              style={{
-                padding: 15,
-                backgroundColor: 'white',
-                borderColor: colors.primary,
-                borderWidth: 3,
-                marginTop: 0,
-                marginBottom: 5,
-              }}
-              textStyle={{
-                fontSize: 14.5,
-                color: colors.primary,
-              }}
-            />
-          )}
-
-          <Button title="Submit" style={{ marginLeft: -6 }} onPress={handleSubmit} />
+    <ScrollView style={styles.ScrollViewStyle}>
+      <View style={styles.mainContainerStyle}>
+        <View style={styles.questionContainer}>
+          <Text style={styles.questionTextStyle}>
+            আপনার মতে আপনি সপ্তাহে সর্বোচ্চ কতজন ক্লায়েন্টকে সেবা দিতে পারবেন?
+          </Text>
+          <Picker
+            width="98%"
+            selectedItem={option1}
+            onSelectItem={(g) => setOption1(g)}
+            items={optionList}
+            placeholder="সিলেক্ট করুন"
+            style={{
+              borderRadius: 5,
+              borderWidth: 1,
+              borderColor: '#ccc',
+              marginRight: 5,
+              padding: 10,
+              backgroundColor: '#fff',
+            }}
+            placeholderColor="gray"
+          />
         </View>
-      </ScrollView>
-    </>
+        <View style={styles.questionContainer}>
+          <Text style={styles.questionTextStyle}>
+            বর্তমানে আপনি সপ্তাহে গড়ে কতজন ক্লায়েন্টকে সেবা দিচ্ছেন?
+          </Text>
+          <Picker
+            width="98%"
+            selectedItem={option2}
+            onSelectItem={(g) => setOption2(g)}
+            items={optionList}
+            placeholder="সিলেক্ট করুন"
+            style={{
+              borderRadius: 5,
+              borderWidth: 1,
+              borderColor: '#ccc',
+              marginRight: 5,
+              padding: 10,
+              backgroundColor: '#fff',
+            }}
+            placeholderColor="gray"
+          />
+        </View>
+        <View style={styles.questionContainer}>
+          <Text style={styles.questionTextStyle}>
+            আপনার সেবা গ্রহণকারী ক্লায়েন্টের কতজন নিচে বর্ণিত স্থানগুলোতে অবস্থান করছেঃ
+          </Text>
+          <View>
+            {dis.map((d, i) => (
+              <View style={styles.NumberInRegionContainer} key={d}>
+                <Text style={styles.RegionNameStyle}>{d}: </Text>
+                <TextInput
+                  style={{
+                    borderWidth: 0,
+                    borderBottomColor: '#ccc',
+                    borderBottomWidth: 1,
+                    flex: 1,
+                    fontSize: 15,
+                  }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onChangeText={(text) => numOfClientHandler(i, text)}
+                  placeholderTextColor={'#6e6969'}
+                  keyboardType={d === 'অন্যান্য (উল্লেখ করুন)' ? 'default' : 'number-pad'}
+                />
+              </View>
+            ))}
+          </View>
+        </View>
+        <View style={styles.questionContainer}>
+          <Text style={styles.questionTextStyle}>
+            আপনার নিকট বর্তমানে সেবা গ্রহণকারী অধিকাংশ ক্লায়েন্টের রেফারালের উৎস উল্লেখ করুনঃ
+          </Text>
+          <AppTextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="রেফারালের উৎস"
+            onChangeText={(text) => setRef(text)}
+            style={{
+              borderRadius: 5,
+              borderWidth: 1,
+              borderColor: '#ccc',
+              marginRight: 5,
+              padding: 10,
+              backgroundColor: '#fff',
+              width: '98%',
+            }}
+          />
+        </View>
+
+        <View>
+          <Loader visible={isLoading} style={{ marginBottom: 8, marginTop: -5 }} />
+          <ErrorButton
+            visible={!!error}
+            title={error}
+            style={{ borderRadius: 8, alignSelf: 'flex-start', width: '98%' }}
+          />
+          <SubmitButton
+            title="সাবমিট করুন"
+            onPress={handleSubmit}
+            style={{ borderRadius: 8, marginTop: 8, alignSelf: 'flex-start', width: '98%' }}
+          />
+        </View>
+      </View>
+    </ScrollView>
   );
 };
 

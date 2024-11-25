@@ -4,12 +4,6 @@ export const loginAction = (_id, jwtToken) => (dispatch) => {
   dispatch({ type: SIGN_IN, payload: { _id, jwtToken } });
 };
 
-export const setUserAuthToken = ({ _id, jwtToken }) => {
-  return (dispatch) => {
-    dispatch({ type: SIGN_IN, payload: { _id, jwtToken, type: 'USER' } });
-  };
-};
-
 export const setProfAuthToken = ({ _id, jwtToken }) => {
   return (dispatch) => {
     dispatch({ type: SIGN_IN, payload: { _id, jwtToken, type: 'PROF' } });
