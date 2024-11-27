@@ -132,12 +132,12 @@ const ProfLoginComponent = () => {
           <ErrorButton title={error} visible={!!error} />
           <SubmitButton title={'লগইন করুন'} onPress={HandleFormSubmit} style={{ marginTop: 8 }} />
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.forgetPassword}
             onPress={() => navigation.navigate('RecoverAccount')}
           >
             <Text style={styles.lowerTexts}>পাসওয়ার্ড ভুলে গেছেন?</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <EndOptions
             title1={`আপনার কি অ্যাকাউন্ট নেই?`}

@@ -40,14 +40,14 @@ exports.signIn = asyncHandler(async (req, res, _next) => {
     email: req.body.email,
   });
   if (!user) {
-    return sendJSONresponse(res, 401, "UNAUTHORIZED", {
+    return sendErrorResponse(res, 401, "UNAUTHORIZED", {
       message: "ইমেইল/পাসওয়ার্ডটি ভুল",
     });
   }
 
-  const isMatch = bcrypt.compare(req.body.password, user.password);
+  const isMatch = await bcrypt.compare(req.body.password, user.password);
   if (!isMatch) {
-    return sendJSONresponse(res, 401, "UNAUTHORIZED", {
+    return sendErrorResponse(res, 401, "UNAUTHORIZED", {
       message: "ইমেইল/পাসওয়ার্ডটি ভুল",
     });
   }

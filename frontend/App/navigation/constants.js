@@ -16,7 +16,6 @@ export default {
   UPDATE_USER_PROFILE: 'UpdateProfile',
   PROFESSIONALS_LIST: 'AllProfessionals',
   PROFESSIONAL_DETAILS: 'professionalDetails',
-  PROF_LOGIN: 'PROF_LOGIN',
   PROF_REGISTRATION_CONSENT: 'RegisterConsentPro',
   WAIT_FOR_VERIFICATION: 'AccountConfirmation',
   PROF_REGISTER_STEP_1: 'RegisterPro',

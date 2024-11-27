@@ -1,16 +1,14 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import validator from 'validator';
 import AuthIcon from '../../../components/Auth/AuthIcon';
 import Container from '../../../components/Auth/Container';
 import EndOptions from '../../../components/Auth/EndOptions';
 import TopHeading from '../../../components/Auth/TopHeading';
-import Button from '../../../components/Button';
 import useFormFields from '../../../components/HandleForm';
 import TextInput from '../../../components/TextInput';
-import colors from '../../../config/colors';
 import { useBackPress, useHelper } from '../../../hooks';
 import constants from '../../../navigation/constants';
 import { storeUserProfile } from '../../../redux/actions/user';
@@ -18,6 +16,8 @@ import { ApiDefinitions } from '../../../services/api';
 import styles from './UserLogin.style';
 import { setAuthToken } from '../../../redux/utils';
 import { RoleEnum } from '../../../utils/roles';
+import { ErrorButton, Loader } from '../../../components';
+import { SubmitButton } from '../../../components/SubmitButton';
 
 const SCREEN_SIZE = constants.LOGIN;
 
@@ -25,7 +25,6 @@ export const UserLogin = () => {
   useBackPress(SCREEN_SIZE);
 
   const { ApiExecutor } = useHelper();
-
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
@@ -42,14 +41,11 @@ export const UserLogin = () => {
   const submitLoginForm = async () => {
     const payload = { ...formFields };
 
-    if (!payload.email || payload.email === '') {
-      setError('Email is required');
+    if (!payload.email || payload.email === '' || !payload.password || payload.password === '') {
+      setError('ফর্মটি সঠিকভাবে পূরণ করুন');
       return;
     } else if (!validator.isEmail(payload.email)) {
-      setError('Email is not valid');
-      return;
-    } else if (!payload.password || payload.password === '') {
-      setError('Password is required');
+      setError('ইমেলটি বৈধ নয়');
       return;
     }
 
@@ -60,6 +56,8 @@ export const UserLogin = () => {
     payload.password = payload.password.toString().trim().toLowerCase();
 
     const lResponse = await ApiExecutor(ApiDefinitions.userLogin({ payload }));
+    console.log(lResponse);
+
     if (!lResponse.success) {
       setError(lResponse?.error?.message);
       return;
@@ -80,16 +78,16 @@ export const UserLogin = () => {
     (async () => {
       if (!(loginResponse && userLoginDone && accessToken)) return;
 
-      console.log('Access Token in useEffect: ', accessToken);
-
       const userResponse = await ApiExecutor(ApiDefinitions.userProfile());
       console.log(userResponse);
+
+      setIsLoading(false);
+
       if (!userResponse.success) {
         setError(userResponse?.error?.message);
         return;
       }
 
-      setIsLoading(false);
       dispatch(storeUserProfile(userResponse.data.user));
 
       if (loginResponse.isNewUser) {
@@ -102,7 +100,7 @@ export const UserLogin = () => {
 
   return (
     <Container>
-      <TopHeading heading="Get Started!" />
+      <TopHeading heading="অ্যাপে প্রবেশ করুন" />
       <View style={styles.loginContainer}>
         <AuthIcon />
         <View style={styles.loginButtons}>
@@ -111,7 +109,7 @@ export const UserLogin = () => {
             autoCorrect={false}
             icon="email"
             name="email"
-            placeholder="Email"
+            placeholder="ইমেইল"
             onChangeText={(text) => createChangeHandler(text, 'email')}
             keyboardType="email-address"
             textContentType="emailAddress"
@@ -122,29 +120,23 @@ export const UserLogin = () => {
             autoCorrect={false}
             icon="lock"
             name="password"
-            placeholder="Password"
+            placeholder="পাসওয়ার্ড"
             secureTextEntry
             textContentType="password"
             keyboardType="default"
             onChangeText={(text) => createChangeHandler(text, 'password')}
           />
 
-          {isLoading && (
-            <ActivityIndicator size="large" color={colors.primary} style={{ paddingTop: 10 }} />
-          )}
-
-          {error && (
-            <Button title={error} style={styles.errorButton} textStyle={styles.errorButtonText} />
-          )}
-
-          <Button title="Sign in" style={styles.submitButton} onPress={submitLoginForm} />
+          <Loader visible={isLoading} style={{ marginTop: 10 }} />
+          <ErrorButton visible={!!error} title={error} />
+          <SubmitButton title={'লগইন করুন'} onPress={submitLoginForm} />
 
           <EndOptions
-            title1={`Don't have an account?`}
-            title2={`Register here`}
-            title3={`Login as a professional`}
-            onPress1={() => navigation.navigate('UserRegisterConsent')}
-            onPress2={() => navigation.navigate('LoginPro')}
+            title1={'আপনার কি অ্যাকাউন্ট নেই?'}
+            title2={'রেজিস্ট্রেশন করুন'}
+            title3={'প্রফেশনাল হিসেবে লগইন করুন'}
+            onPress1={() => navigation.navigate(constants.USER_REGISTER_CONSENT)}
+            onPress2={() => navigation.navigate(constants.PROF_LOGIN)}
           />
         </View>
       </View>

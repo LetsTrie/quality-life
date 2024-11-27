@@ -1,12 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import {
-  ImageBackground,
-  StyleSheet,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import { ImageBackground, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
 import Text from '../Text';
 import colors from '../../config/colors';
 
@@ -24,10 +19,9 @@ const Box = ({ source, name, lastScore, lastDate, onPress, boxStyle }) => {
           <Text style={styles.testName}>{name}</Text>
           {lastDate && (
             <View style={styles.history}>
-              <Text style={styles.lastScore}>লাস্ট স্কোর: {lastScore}</Text>
+              <Text style={styles.lastScore}>সর্বশেষ স্কোর: {lastScore}</Text>
               <Text style={styles.lastDate}>
-                <MaterialCommunityIcons name='calendar-account' size={18} />{' '}
-                {lastDate}
+                <MaterialCommunityIcons name="calendar-account" size={18} /> {lastDate}
               </Text>
             </View>
           )}
