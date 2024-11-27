@@ -8,12 +8,12 @@ import colors from '../../config/colors';
 const Box = ({ source, name, lastScore, lastDate, onPress, boxStyle }) => {
   return (
     <TouchableWithoutFeedback onPress={onPress}>
-      <View style={boxStyle ? boxStyle : styles.box}>
+      <View style={[styles.box, boxStyle]}>
         <ImageBackground source={source} style={styles.backgroundImageStyle}>
           <LinearGradient
-            colors={['#75757598', '#2b2b2b98']}
-            start={[1, 1]}
-            end={[0, 0]}
+            colors={['#00000090', '#00000000']}
+            start={[0, 0.5]}
+            end={[0, 1]}
             style={styles.linearGradientStyle}
           ></LinearGradient>
           <Text style={styles.testName}>{name}</Text>
@@ -38,7 +38,13 @@ const styles = StyleSheet.create({
     margin: 10,
     marginLeft: 14,
     marginBottom: 3,
-    elevation: 5,
+
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 10,
+    elevation: 6,
+
     borderRadius: 10,
     overflow: 'hidden',
   },

@@ -180,7 +180,7 @@ const Homepage = (props) => {
         <View style={styles.boxContainer}>
           <Box
             source={require('../assests/images/mentalexcercise.jpeg')}
-            name="মানসিক স্বাস্থ্য মূল্যায়ন (WHO wellbeing scale)"
+            name="মানসিক স্বাস্থ্য মূল্যায়ন"
             lastScore={msm_date ? lastMsmScore : undefined}
             lastDate={msm_date ? msm_date : undefined}
             onPress={() =>
@@ -192,8 +192,8 @@ const Homepage = (props) => {
             }
           />
           <Box
-            source={require('../assests/images/Picture1.png')}
-            name="মানসিক অবস্থা যাচাইকরণ (General Health Questionnaire (GHQ)-12)"
+            source={require('../assests/images/picture_1.png')}
+            name="মানসিক অবস্থা যাচাইকরণ (GHQ-12)"
             lastScore={moj_date ? lastMojScore : undefined}
             lastDate={moj_date ? moj_date : undefined}
             onPress={() =>
@@ -209,8 +209,8 @@ const Homepage = (props) => {
             }
           />
           <Box
-            source={require('../assests/images/Picture2.png')}
-            name="মানসিক চাপ নির্ণয় (Perceived Stress Scale (PSS)- 10)"
+            source={require('../assests/images/picture_2.jpg')}
+            name="মানসিক চাপ নির্ণয় (PSS-10)"
             lastScore={mcn_date ? lastMcnScore : undefined}
             lastDate={mcn_date ? mcn_date : undefined}
             onPress={() =>
@@ -226,7 +226,7 @@ const Homepage = (props) => {
             }
           />
           <Box
-            source={require('../assests/images/Picture3.png')}
+            source={require('../assests/images/picture_3.png')}
             name="দুশ্চিন্তা নির্ণয় (Anxiety Scale)"
             lastScore={dn_date ? lastDnScore : undefined}
             lastDate={dn_date ? dn_date : undefined}
@@ -241,12 +241,16 @@ const Homepage = (props) => {
                 preTest: true,
               })
             }
+            boxStyle={dn_date || mcn_date || moj_date ? {} : { marginBottom: 15 }}
           />
           {(dn_date || mcn_date || moj_date) && (
             <Box
-              source={require('../assests/images/Picture4.png')}
+              source={require('../assests/images/picture_4.png')}
               name="মানসিক স্বাস্থ্যের গুণগত মান উন্নয়ন"
               onPress={() => navigation.navigate('VideoExerciseList')}
+              boxStyle={{
+                marginBottom: 15,
+              }}
             />
           )}
         </View>

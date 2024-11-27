@@ -13,6 +13,7 @@ import { useBackPress } from '../hooks';
 import constants from '../navigation/constants';
 import { numberWithCommas } from '../utils/number';
 import colors from '../config/colors';
+import { lightenColor } from '../utils/ui';
 
 const modifyDate = (date) => {
   if (!date) return null;
@@ -34,7 +35,7 @@ const genderMap = (gender) => {
 };
 
 const tableHeaders = ['তারিখ', 'Test', 'মাত্রা'];
-const tableColWidth = [80, 165, 65];
+const tableColWidth = [75, 165, 70];
 
 const SCREEN_NAME = constants.PROFILE;
 
@@ -99,15 +100,16 @@ const Profile = () => {
     <ScrollView style={styles.scrollContainer}>
       <View style={styles.block}>
         <Block name={'নাম'} data={name} icon={'account'} />
-        <Block name={'বয়স'} data={numberWithCommas(age)} icon={'account-clock'} />
-        <Block name={'লিঙ্গ'} data={genderMap(gender)} icon={'gender-male-female-variant'} />
-        <Block name={'বৈবাহিক অবস্থা'} data={isMarried} icon={'card-account-details-star'} />
+        <Block
+          name={'ব্যক্তিগত বিবরণ'}
+          data={`${numberWithCommas(age)} বছর, ${genderMap(gender)}, ${isMarried}`}
+          icon={'account-details'}
+        />
         <Block name={'বর্তমান ঠিকানা'} data={address} icon={'map-marker-radius'} />
 
         <Button
           title="আপডেট করুন"
           style={{ marginTop: 12, marginBottom: 20 }}
-          textStyle={{ fontSize: 17 }}
           onPress={() => navigation.navigate('UpdateProfile')}
         />
       </View>
@@ -171,6 +173,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 2,
+
+    borderColor: lightenColor(colors.primary, 20),
+    borderWidth: 0.5,
   },
   blockHeader: {
     textAlign: 'center',

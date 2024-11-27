@@ -42,21 +42,21 @@ const ThreeScales = () => {
     <ScrollView style={{ backgroundColor: 'white' }}>
       <View>
         <Box
-          source={require('../assests/images/Picture1.png')}
+          source={require('../assests/images/picture_1.png')}
           name="মানসিক অবস্থা যাচাইকরণ (General Health Questionnaire (GHQ)-12)"
           lastScore={moj_date ? lastMojScore : undefined}
           lastDate={moj_date ? moj_date : undefined}
           onPress={() => navigate(Type.GHQ, 'manoshikObosthaJachaikoron')}
         />
         <Box
-          source={require('../assests/images/Picture2.png')}
+          source={require('../assests/images/picture_2.jpg')}
           name="মানসিক চাপ নির্ণয় (Perceived Stress Scale (PSS)- 10)"
           lastScore={mcn_date ? lastMcnScore : undefined}
           lastDate={mcn_date ? mcn_date : undefined}
           onPress={() => navigate(Type.PSS, 'manoshikChapNirnoy')}
         />
         <Box
-          source={require('../assests/images/Picture3.png')}
+          source={require('../assests/images/picture_3.png')}
           name="দুশ্চিন্তা নির্ণয় (Anxiety Scale)"
           lastScore={dn_date ? lastDnScore : undefined}
           lastDate={dn_date ? dn_date : undefined}
