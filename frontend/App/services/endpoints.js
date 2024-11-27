@@ -2,8 +2,8 @@ import BaseUrl from '../config/BaseUrl';
 
 export const endpoints = {
   INTRO_TEST: `${BaseUrl}/user/intro-Test-Submit`,
-  LOGIN: `${BaseUrl}/auth/sign-in`,
-  REGISTER: `${BaseUrl}/auth/sign-up`,
+  LOGIN: `${BaseUrl}/user/sign-in`,
+  REGISTER: `${BaseUrl}/user/sign-up`,
   REFRESH_TOKEN: `${BaseUrl}/auth/refresh-token`,
   USER_ADDITIONAL_INFO: `${BaseUrl}/user/add-info`,
   UPDATE_PROFILE: `${BaseUrl}/user/update/profile`,
@@ -33,4 +33,7 @@ export const endpoints = {
   SUBMIT_TEST: `${BaseUrl}/user/test`,
 
   SEEN_VIDEO: `${BaseUrl}/user/seen-video/`,
+  RESET_PASSWORD: `${BaseUrl}/user/reset-password`,
+
+  DELETE_ACCOUNT: `${BaseUrl}/user/delete-account`,
 };

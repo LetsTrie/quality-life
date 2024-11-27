@@ -12,7 +12,7 @@ import Text from '../../components/Text';
 import BaseUrl from '../../config/BaseUrl';
 import { numOfNewNotificationsAction } from '../../redux/actions/prof';
 import { connect } from 'react-redux';
-import YesNoModal from '../../components/YesNoModal';
+import DeleteAccountModal from '../../components/DeleteAccountModal';
 import ProfileActModal from './ProfileActModal';
 import constants from '../../navigation/constants';
 import { useBackPress, useHelper } from '../../hooks';
@@ -233,10 +233,10 @@ const Homepage = ({ navigation, route, ...props }) => {
             <AppButton title="Sign Out" onPress={logoutHandler} style={styles.signOutButton} />
           </View>
 
-          <YesNoModal
+          <DeleteAccountModal
             modalVisible={modalVisible}
             setModalVisible={setModalVisible}
-            deleteAccount={deleteAccount}
+            onDelete={deleteAccount}
           />
 
           <ProfileActModal
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginBottom: 2,
   },
   cardSubtitle: {
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: colors.cardBackground,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   errorText: {
     color: colors.danger,

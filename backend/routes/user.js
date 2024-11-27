@@ -8,7 +8,9 @@ const AuthCtrl = require("../controllers/auth");
 
 const ROLE = "user";
 
-router.post("/sign-in", AuthCtrl.signIn);
+router.post("/delete-account", M.verifyToken(ROLE), AuthCtrl.deleteUserAccount);
+
+router.post("/sign-in", validate(userValidation.loginAsUser), AuthCtrl.signIn);
 
 router.post(
   "/sign-up",
@@ -21,6 +23,13 @@ router.post(
   M.verifyToken(ROLE),
   validate(userValidation.additionalInfoValidationSchema),
   C.submitAdditionalInfo
+);
+
+router.post(
+  "/reset-password",
+  M.verifyToken(ROLE),
+  validate(userValidation.resetPassword),
+  AuthCtrl.resetPassword
 );
 
 router.post("/test", M.verifyToken(ROLE), C.anyTestSubmit);
@@ -43,7 +52,7 @@ router.get(
 
 router.get("/all", C.allUsers);
 router.post("/userInfo", C.userInfo);
-router.post("/delete", C.userDelete);
+
 router.post("/error", C.error);
 router.post("/notification/seen/", C.seenNotification);
 

@@ -122,7 +122,7 @@ const ProfLoginComponent = () => {
             icon="lock"
             name="password"
             placeholder="পাসওয়ার্ড"
-            secureTextEntry
+            // secureTextEntry
             textContentType="password"
             keyboardType="default"
             onChangeText={(text) => createChangeHandler(text, 'password')}

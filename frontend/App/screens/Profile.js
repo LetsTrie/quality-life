@@ -11,9 +11,8 @@ import Tests from '../data/profileScales';
 import getMatra from '../helpers/getMatra';
 import { useBackPress } from '../hooks';
 import constants from '../navigation/constants';
-
-// Updated At: 22/03/2024
-// Updated By: MD. Sakib Khan
+import { numberWithCommas } from '../utils/number';
+import colors from '../config/colors';
 
 const modifyDate = (date) => {
   if (!date) return null;
@@ -28,8 +27,14 @@ const modifyDate = (date) => {
   return parts.join('/');
 };
 
+const genderMap = (gender) => {
+  if (gender === 'Male') return 'পুরুষ';
+  if (gender === 'Female') return 'মহিলা';
+  return 'অন্যান্য';
+};
+
 const tableHeaders = ['তারিখ', 'Test', 'মাত্রা'];
-const tableColWidth = [75, 150, 65];
+const tableColWidth = [80, 165, 65];
 
 const SCREEN_NAME = constants.PROFILE;
 
@@ -91,17 +96,18 @@ const Profile = () => {
   }, []);
 
   return (
-    <ScrollView style={{ paddingBottom: 10 }}>
+    <ScrollView style={styles.scrollContainer}>
       <View style={styles.block}>
         <Block name={'নাম'} data={name} icon={'account'} />
-        <Block name={'বয়স'} data={age} icon={'account-clock'} />
-        <Block name={'লিঙ্গ'} data={gender} icon={'gender-male-female-variant'} />
+        <Block name={'বয়স'} data={numberWithCommas(age)} icon={'account-clock'} />
+        <Block name={'লিঙ্গ'} data={genderMap(gender)} icon={'gender-male-female-variant'} />
         <Block name={'বৈবাহিক অবস্থা'} data={isMarried} icon={'card-account-details-star'} />
         <Block name={'বর্তমান ঠিকানা'} data={address} icon={'map-marker-radius'} />
 
         <Button
-          title="Edit Profile"
-          style={{ marginTop: 7 }}
+          title="আপডেট করুন"
+          style={{ marginTop: 12, marginBottom: 20 }}
+          textStyle={{ fontSize: 17 }}
           onPress={() => navigation.navigate('UpdateProfile')}
         />
       </View>
@@ -111,8 +117,8 @@ const Profile = () => {
         <Table tableData={tableData} tableHead={tableHeaders} widthArr={tableColWidth} />
       </View>
 
-      <View style={styles.block}>
-        <Text style={[styles.blockHeader, { fontSize: 26 }]}>মানসিক স্বাস্থ্য প্রোফাইল</Text>
+      <View style={[styles.block, { marginBottom: 20 }]}>
+        <Text style={[styles.blockHeader]}>মানসিক স্বাস্থ্য প্রোফাইল</Text>
 
         <View styles={styles.listOfTestsContainer}>
           {Tests.map((test) => (
@@ -146,22 +152,33 @@ const Profile = () => {
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    paddingBottom: 10,
+    backgroundColor: colors.background,
+  },
   block: {
     elevation: 3,
-    borderRadius: 5,
+    borderRadius: 10,
     marginTop: 20,
     marginHorizontal: 15,
-    paddingHorizontal: 18,
+    paddingHorizontal: 15,
     paddingVertical: 10,
     paddingTop: 25,
     backgroundColor: 'white',
+
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 2,
   },
   blockHeader: {
     textAlign: 'center',
-    fontSize: 26,
-    color: '#555',
-    fontWeight: '300',
-    paddingBottom: 18,
+    fontSize: 23,
+    color: colors.primary,
+    fontWeight: 'bold',
+    paddingBottom: 22,
+    paddingTop: 5,
   },
   BtnContainer: {
     flexDirection: 'row-reverse',
@@ -177,37 +194,40 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginHorizontal: 5,
     backgroundColor: '#eee',
-    elevation: 1,
   },
   BtnTextStyle: {
     color: '#444',
   },
-  listOfTestsContainer: {},
+  listOfTestsContainer: {
+    marginVertical: 20,
+    paddingHorizontal: 15,
+  },
   testContainer: {
-    elevation: 1,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-
-    borderColor: '#eee',
-    borderWidth: 1,
-    backgroundColor: 'white',
-
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: '#ffffff',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 12,
     marginBottom: 10,
-    paddingVertical: 13,
-    backgroundColor: '#fefefe',
+    borderWidth: 1,
+    borderColor: colors.neutral,
+    shadowColor: '#333',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 1,
   },
   textStyle: {
-    color: '#333',
     fontSize: 15,
+    fontWeight: '500',
+    color: colors.textPrimary,
   },
   iconStyle: {
+    height: 21,
+    width: 21,
     alignSelf: 'center',
-    paddingLeft: 10,
-    paddingRight: 5,
-    height: 18,
-    width: 18,
   },
 });
 

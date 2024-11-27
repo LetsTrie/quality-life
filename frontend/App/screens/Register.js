@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, BackHandler, StyleSheet, View } from 'react-native';
+import { BackHandler, StyleSheet, View } from 'react-native';
 import TextInput from '../components/TextInput';
-import colors from '../config/colors';
 import constants from '../navigation/constants';
 import AuthIcon from '../components/Auth/AuthIcon';
 import Container from '../components/Auth/Container';
 import EndOptions from '../components/Auth/EndOptions';
 import TopHeading from '../components/Auth/TopHeading';
-import Button from '../components/Button';
 import { storeUserProfile } from '../redux/actions/user';
 import useFormFields from '../components/HandleForm';
 import { useDispatch } from 'react-redux';
@@ -71,6 +69,8 @@ const Register = () => {
     payload.email = payload.email.toString().trim().toLowerCase();
     payload.password = payload.password.toString().trim().toLowerCase();
 
+    delete payload['confirmPassword'];
+
     setIsLoading(true);
     const response = await ApiExecutor(ApiDefinitions.registerAsUser({ payload }));
     setIsLoading(false);
@@ -109,7 +109,6 @@ const Register = () => {
             icon="lock"
             name="password"
             placeholder="পাসওয়ার্ড"
-            secureTextEntry
             textContentType="password"
             keyboardType="default"
             onChangeText={(text) => createChangeHandler(text, 'password')}
@@ -121,7 +120,6 @@ const Register = () => {
             icon="lock"
             name="confirmPassword"
             placeholder="পুনরায় পাসওয়ার্ড দিন "
-            secureTextEntry
             textContentType="password"
             keyboardType="default"
             onChangeText={(text) => createChangeHandler(text, 'confirmPassword')}

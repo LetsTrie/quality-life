@@ -5,6 +5,17 @@ const bcrypt = require("bcrypt");
 const { sendErrorResponse, sendJSONresponse, constants } = require("../utils");
 const jwt = require("jsonwebtoken");
 
+const Appointment = require("../models/appointment");
+const AppointmentMeta = require("../models/appointmentMeta");
+const ProfsClient = require("../models/myClient");
+const ProfAssessment = require("../models/profAssessment");
+const ProfAssessmentResult = require("../models/profAssessmentResult");
+const ProfNotification = require("../models/profNotification");
+const Rating = require("../models/rating");
+const RecentlyContacted = require("../models/recentlyContacted");
+const Test = require("../models/test");
+const UserNotification = require("../models/userNotification");
+
 // POST /user/sign-up
 exports.signUp = asyncHandler(async (req, res, _next) => {
   const user = await User.findOne({
@@ -19,8 +30,7 @@ exports.signUp = asyncHandler(async (req, res, _next) => {
 
   req.body.password = await bcrypt.hash(req.body.password, 10);
 
-  const newUser = new User(req.body);
-  await newUser.save();
+  const newUser = await User.create(req.body);
 
   const [accessToken, refreshToken] = await newUser.generateTokens(newUser._id);
 
@@ -34,7 +44,6 @@ exports.signUp = asyncHandler(async (req, res, _next) => {
 });
 
 // POST /user/sign-in
-// TODO: Write Request Body Validation...
 exports.signIn = asyncHandler(async (req, res, _next) => {
   const user = await User.findOne({
     email: req.body.email,
@@ -65,10 +74,7 @@ exports.signIn = asyncHandler(async (req, res, _next) => {
   });
 });
 
-// TODO: Forget Password
-// TODO: Reset Password
-
-// Token Refresher API :: POST /auth/refresh-token
+// POST /auth/refresh-token
 exports.tokenRefresher = asyncHandler(async (req, res, _next) => {
   const { refreshToken } = req.body;
 
@@ -121,3 +127,45 @@ exports.tokenRefresher = asyncHandler(async (req, res, _next) => {
     });
   }
 });
+
+// POST /user/reset-password
+exports.resetPassword = asyncHandler(async (req, res, _next) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const isMatch = await bcrypt.compare(oldPassword, req.user.password);
+  if (!isMatch) {
+    return sendErrorResponse(res, 401, "Unauthorized", {
+      message: "পুরনো পাসওয়ার্ড সঠিক নয়।",
+    });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  req.user.password = hashedPassword;
+  await req.user.save();
+
+  return sendJSONresponse(res, 200, {
+    data: {},
+  });
+});
+
+exports.deleteUserAccount = asyncHandler(async (req, res, _next) => {
+  const userId = req.user._id;
+
+  await Appointment.deleteMany({ user: userId });
+  await AppointmentMeta.deleteMany({ user: userId });
+  await ProfsClient.deleteMany({ user: userId });
+  await ProfAssessment.deleteMany({ user: userId });
+  await ProfAssessmentResult.deleteMany({ user: userId });
+  await ProfNotification.deleteMany({ user: userId });
+  await Rating.deleteMany({ userId: userId });
+  await RecentlyContacted.deleteMany({ user: userId });
+  await Test.deleteMany({ userId: userId });
+  await UserNotification.deleteMany({ user: userId });
+  await User.findByIdAndDelete(userId);
+
+  return sendJSONresponse(res, 200, {
+    data: {},
+  });
+});
+
+// TODO: Forget Password

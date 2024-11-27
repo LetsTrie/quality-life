@@ -42,4 +42,8 @@ export default {
 
   [constants.REGISTER_WITH_EXTRA_INFORMATION]: constants.SPECIAL_LOGOUT_ACTION,
   [constants.ONBOARDING_GUIDELINE]: constants.SPECIAL_LOGOUT_ACTION,
+  [constants.UPDATE_PASSWORD]: constants.SETTINGS,
+
+  [constants.CENTRAL_HELP_CENTER]: constants.HOMEPAGE,
+  [constants.SIDEBAR_APP_GUIDELINE]: constants.HOMEPAGE,
 };

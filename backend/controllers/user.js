@@ -618,15 +618,6 @@ exports.allUsers = asyncHandler(async (req, res, next) => {
   }
 });
 
-exports.userDelete = asyncHandler(async (req, res, next) => {
-  try {
-    await User.findByIdAndDelete(req.body._id);
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-});
-
 exports.userInfo = asyncHandler(async (req, res, next) => {
   try {
     const tests = await Test.find({ userId: req.body._id });

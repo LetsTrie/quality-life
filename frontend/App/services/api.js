@@ -214,4 +214,13 @@ export const ApiDefinitions = {
     method: 'POST',
     payload,
   }),
+  resetUserPassword: ({ payload }) => ({
+    endpoint: endpoints.RESET_PASSWORD,
+    method: 'POST',
+    payload,
+  }),
+  deleteUserAccount: () => ({
+    endpoint: endpoints.DELETE_ACCOUNT,
+    method: 'POST',
+  }),
 };

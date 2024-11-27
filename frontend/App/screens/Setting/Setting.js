@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TouchableOpacity } from 'react-native';
 import Text from '../../components/Text';
@@ -7,44 +7,87 @@ import { useHelper } from '../../contexts/helper';
 import { useNavigation } from '@react-navigation/native';
 import { useBackPress } from '../../hooks';
 import constants from '../../navigation/constants';
+import colors from '../../config/colors';
+import DeleteAccountModal from '../../components/DeleteAccountModal';
+import { ApiDefinitions } from '../../services/api';
 
 const SCREEN_NAME = constants.SETTINGS;
 const Setting = () => {
   useBackPress(SCREEN_NAME);
+
+  const { ApiExecutor } = useHelper();
+
   const navigation = useNavigation();
   const { logout } = useHelper();
+
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const onDelete = async () => {
+    await ApiExecutor(ApiDefinitions.deleteUserAccount());
+    setModalVisible(false);
+    logout();
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.cardContainer}>
         <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('AboutUs')}>
           <MaterialCommunityIcons
-            name="information-outline"
+            name="account-outline"
             style={styles.iconStyle}
             size={24}
             color="#4A90E2"
           />
-          <Text style={styles.textStyle}> আমাদের সম্পর্কিত তথ্য </Text>
+          <Text style={styles.textStyle}>আমাদের সম্পর্কিত তথ্য</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('PrivacyPolicy')}>
           <MaterialCommunityIcons
-            name="shield-account-outline"
+            name="shield-check-outline"
             style={styles.iconStyle}
             size={24}
             color="#4A90E2"
           />
-          <Text style={styles.textStyle}> গোপনীয়তা নীতি </Text>
+          <Text style={styles.textStyle}>গোপনীয়তা নীতি</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.card} onPress={logout}>
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => navigation.navigate(constants.UPDATE_PASSWORD)}
+        >
           <MaterialCommunityIcons
-            name="exit-to-app"
+            name="lock-reset"
             style={styles.iconStyle}
             size={24}
-            color="#E94E77"
+            color="#4CAF50"
           />
-          <Text style={styles.textStyle}> সাইন আউট </Text>
+          <Text style={styles.textStyle}>পাসওয়ার্ড পরিবর্তন করুন</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.card} onPress={() => setModalVisible(true)}>
+          <MaterialCommunityIcons
+            name="trash-can-outline"
+            style={styles.iconStyle}
+            size={24}
+            color="#E53935"
+          />
+          <Text style={styles.textStyle}>অ্যাকাউন্ট ডিলিট করুন</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.card} onPress={logout}>
+          <MaterialCommunityIcons
+            name="logout"
+            style={styles.iconStyle}
+            size={24}
+            color="#FF5252"
+          />
+          <Text style={styles.textStyle}>সাইন আউট</Text>
         </TouchableOpacity>
       </View>
+
+      <DeleteAccountModal
+        modalVisible={modalVisible}
+        setModalVisible={setModalVisible}
+        onDelete={onDelete}
+      />
     </View>
   );
 };
@@ -52,7 +95,7 @@ const Setting = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
     paddingVertical: 20,
   },
   cardContainer: {

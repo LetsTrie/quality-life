@@ -66,7 +66,7 @@ export const HelperProvider = ({ children }) => {
           error.response?.status === 401 && error.response?.data?.type === 'InvalidToken';
 
         if (isTokenExpired) {
-          ToastAndroid.show('Refreshing token...', ToastAndroid.SHORT);
+          // ToastAndroid.show('Refreshing token...', ToastAndroid.SHORT);
 
           const maxRetries = 3;
           let attempts = 0;
@@ -76,7 +76,7 @@ export const HelperProvider = ({ children }) => {
               const refreshResponse = await refreshTokener({ refreshToken });
 
               if (refreshResponse.success) {
-                ToastAndroid.show('Token refreshed successfully.', ToastAndroid.SHORT);
+                // ToastAndroid.show('Token refreshed successfully.', ToastAndroid.SHORT);
 
                 dispatch(
                   setAuthToken(

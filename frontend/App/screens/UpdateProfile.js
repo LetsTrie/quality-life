@@ -36,7 +36,7 @@ const UpdateProfile = () => {
 
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { ApiExecutor, processApiError } = useHelper();
+  const { ApiExecutor } = useHelper();
 
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -52,7 +52,6 @@ const UpdateProfile = () => {
   const [union, setUnion] = useState(null);
   const [unionList, setUnionList] = useState([]);
 
-  const { jwtToken } = useSelector((state) => state.auth);
   const { name, age, gender, isMarried, address } = useSelector((state) => state.user);
 
   let initialState = {
@@ -142,8 +141,8 @@ const UpdateProfile = () => {
     let initialState = {
       name: name?.toString() ?? '',
       age: age?.toString() ?? '',
-      gender: findedGender?.label ?? '',
-      maritalStatus: findedMaritalStatus?.label ?? '',
+      gender: findedGender?.value ?? '',
+      maritalStatus: findedMaritalStatus?.value ?? '',
       zila: findedZila?.label ?? '',
       upazila: findedUpaZila?.label ?? '',
       union: findedUnion?.label ?? '',

@@ -2,18 +2,13 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Text from '../Text';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import colors from '../../config/colors';
 
 const Block = ({ name, data, icon }) => {
-  let borderColor = '#888';
-  let iconColor = '#333';
   return (
     <View style={styles.singleBlock}>
-      <View style={[styles.iconBlock, { borderColor: borderColor }]}>
-        <MaterialCommunityIcons
-          name={icon}
-          style={styles.iconStyle}
-          color={iconColor}
-        />
+      <View style={styles.iconBlock}>
+        <MaterialCommunityIcons name={icon} style={styles.iconStyle} color={colors.primary} />
       </View>
       <View style={styles.dataBlock}>
         <Text style={styles.blockName}>{name}</Text>
@@ -25,34 +20,35 @@ const Block = ({ name, data, icon }) => {
 
 const styles = StyleSheet.create({
   singleBlock: {
-    paddingBottom: 8,
     flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginLeft: 15,
   },
   iconBlock: {
-    alignSelf: 'center',
     justifyContent: 'center',
-    padding: 7,
-    borderWidth: 3.5,
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 2,
+    borderColor: colors.primary,
     borderRadius: 50,
-    marginRight: 13,
+    backgroundColor: colors.light,
+    marginRight: 16,
   },
   iconStyle: {
-    fontSize: 23,
+    fontSize: 24,
   },
   dataBlock: {
-    marginRight: 35,
-    padding: 3.5,
+    flex: 1,
   },
   blockName: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 14,
+    marginBottom: 2,
   },
   blockData: {
-    color: '#444',
-    fontSize: 16.5,
-    paddingRight: 10,
-    letterSpacing: 0.2,
-    lineHeight: 23,
+    color: colors.textPrimary,
+    fontSize: 16,
     fontWeight: '500',
   },
 });

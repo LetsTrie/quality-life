@@ -204,7 +204,7 @@ const RegisterStep1 = () => {
             icon="lock"
             name="password"
             placeholder="পাসওয়ার্ড"
-            secureTextEntry
+            // secureTextEntry
             textContentType="password"
             keyboardType="default"
             onChangeText={(text) => createChangeHandler(text, 'password')}
@@ -216,7 +216,7 @@ const RegisterStep1 = () => {
             icon="lock"
             name="confirmPassword"
             placeholder="পুনরায় পাসওয়ার্ড দিন"
-            secureTextEntry
+            // secureTextEntry
             keyboardType="default"
             onChangeText={(text) => createChangeHandler(text, 'confirmPassword')}
           />

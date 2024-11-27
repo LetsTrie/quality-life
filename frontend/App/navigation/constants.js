@@ -51,4 +51,7 @@ export default {
   ABOUT_US: 'AboutUs',
   PRIVACY_POLICY: 'PrivacyPolicy',
   QUIZ_RESULT_OUT_OF_100: 'QuizResultOutOf100',
+  UPDATE_PASSWORD: 'UpdatePassword',
+  CENTRAL_HELP_CENTER: 'CentralHelpCenter',
+  SIDEBAR_APP_GUIDELINE: 'DrawerGuideline',
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import colors from '../config/colors';
 import { Row, Table } from './Table/index';
+import { lightenColor } from '../utils/ui';
 
 const tD = [];
 for (let i = 0; i < 10; i += 1) {
@@ -12,7 +13,6 @@ for (let i = 0; i < 10; i += 1) {
   tD.push(rowData);
 }
 const tableHead = ['তারিখ', 'স্কোর', 'মাত্রা'];
-const wA = [75, 140, 70];
 
 const AppTable = ({ tableData, widthArr }) => {
   return (
@@ -24,29 +24,25 @@ const AppTable = ({ tableData, widthArr }) => {
               <Table
                 borderStyle={{
                   borderWidth: 1,
-                  borderColor: '#C1C0B9',
+                  borderColor: lightenColor(colors.medium, 20),
                 }}
               >
                 <Row
                   data={tableHead}
                   style={styles.header}
-                  textStyle={[
-                    styles.text,
-                    { color: 'white', fontWeight: '700', fontSize: 16 },
-                  ]}
+                  textStyle={[styles.text, { color: 'white', fontWeight: '700', fontSize: 16 }]}
                   widthArr={widthArr}
                 />
               </Table>
               <ScrollView style={styles.dataWrapper}>
-                <Table borderStyle={{ borderWidth: 1, borderColor: '#C1C0B9' }}>
+                <Table
+                  borderStyle={{ borderWidth: 1, borderColor: lightenColor(colors.accent, 20) }}
+                >
                   {tableData.map((rowData, index) => (
                     <Row
                       key={index}
                       data={rowData}
-                      style={[
-                        styles.row,
-                        index % 2 && { backgroundColor: '#cadefc' },
-                      ]}
+                      style={[styles.row, index % 2 && { backgroundColor: colors.light }]}
                       textStyle={styles.text}
                       widthArr={widthArr}
                     />
@@ -67,7 +63,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     alignItems: 'center',
   },
-  header: { height: 45, backgroundColor: colors.primary },
+  header: { height: 45, backgroundColor: colors.tableHeader },
   text: {
     textAlign: 'center',
     color: '#444',

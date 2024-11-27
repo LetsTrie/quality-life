@@ -235,7 +235,7 @@ const RecoverAccount = ({ navigation, route, ...props }) => {
                 icon="lock"
                 name="newPassword"
                 placeholder="New Password"
-                secureTextEntry
+                // secureTextEntry
                 textContentType="password"
                 keyboardType="default"
                 onChangeText={(text) => createChangeHandler(text, 'newPassword')}
@@ -246,7 +246,7 @@ const RecoverAccount = ({ navigation, route, ...props }) => {
                 icon="lock"
                 name="confirmPassword"
                 placeholder="Confirm Password"
-                secureTextEntry
+                // secureTextEntry
                 textContentType="password"
                 keyboardType="default"
                 onChangeText={(text) => createChangeHandler(text, 'confirmPassword')}

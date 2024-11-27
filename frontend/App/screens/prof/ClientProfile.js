@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   seeResultText: {
     fontSize: 16,
     color: '#f44336',
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   seeResultIcon: {
     fontSize: 20,

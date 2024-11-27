@@ -66,12 +66,13 @@ import ThreeScales from '../screens/ThreeScales.js';
 import VideoExercise from '../screens/VideoExercise.js';
 import VideoExerciseList from '../screens/VideoExerciseList.js';
 import VideoScreen from '../screens/VideoScreen.js';
+import UpdatePassword from '../screens/Setting/UpdatePassword.js';
 
 const Stack = createStackNavigator();
 
 const dontShowHeader = () => ({ headerShown: false });
 
-const screenOptions = ({ navigation, route }) => ({
+const screenOptions = ({ navigation }) => ({
   headerStyle: {
     backgroundColor: colors.primary,
     height: 60,
@@ -86,7 +87,7 @@ const screenOptions = ({ navigation, route }) => ({
   headerLeft: () => {
     return (
       <MaterialCommunityIcons
-        name={'menu'}
+        name={'backburger'}
         size={35}
         color={'white'}
         style={{ paddingHorizontal: 12 }}
@@ -100,9 +101,7 @@ const StackNavigator = () => {
   return (
     <Stack.Navigator initialRouteName="Welcome" screenOptions={screenOptions}>
       <Stack.Screen name="Welcome" component={Welcome} options={dontShowHeader} />
-
       <Stack.Screen name="Login" component={UserLogin} options={dontShowHeader} />
-
       <Stack.Screen
         name={constants.USER_REGISTER_CONSENT}
         component={UserRegisterConsent}
@@ -111,13 +110,11 @@ const StackNavigator = () => {
           headerLeft: () => undefined,
         })}
       />
-
       <Stack.Screen
         name={constants.REGISTER_WITH_EXTRA_INFORMATION}
         component={AdditionalInformation}
         options={dontShowHeader}
       />
-
       <Stack.Screen
         name={constants.ONBOARDING_GUIDELINE}
         component={StartingGuideline}
@@ -126,7 +123,6 @@ const StackNavigator = () => {
           headerLeft: () => undefined,
         })}
       />
-
       <Stack.Screen
         name={constants.TEST_PAGE}
         component={CircularQuiz}
@@ -135,9 +131,13 @@ const StackNavigator = () => {
           headerLeft: () => undefined,
         })}
       />
-
-      <Stack.Screen name={constants.HOMEPAGE} component={Homepage} />
-
+      <Stack.Screen
+        name={constants.HOMEPAGE}
+        component={Homepage}
+        options={() => ({
+          title: 'Quality Life',
+        })}
+      />
       <Stack.Screen
         name={constants.PROF_CLIENT_REQUEST}
         component={ClientRequestPro}
@@ -148,6 +148,22 @@ const StackNavigator = () => {
               {...props}
               onPress={() => {
                 navigation.navigate(backScreenMap[constants.PROF_CLIENT_REQUEST]);
+              }}
+            />
+          ),
+        })}
+      />
+
+      <Stack.Screen
+        name={constants.UPDATE_PASSWORD}
+        component={UpdatePassword}
+        options={({ navigation }) => ({
+          title: 'পাসওয়ার্ড পরিবর্তন করুন',
+          headerLeft: (props) => (
+            <HeaderBackButton
+              {...props}
+              onPress={() => {
+                navigation.navigate(backScreenMap[constants.UPDATE_PASSWORD]);
               }}
             />
           ),
@@ -220,7 +236,6 @@ const StackNavigator = () => {
           title: 'Appointment',
         })}
       />
-
       <Stack.Screen
         name="ProMyClients"
         component={ProMyClients}
@@ -236,7 +251,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name="ProActivityLog"
         component={ProActivityLog}
@@ -252,7 +266,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name="recentlyContacted"
         component={recentlyContacted}
@@ -268,11 +281,9 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen name="Register" component={Register} options={dontShowHeader} />
       <Stack.Screen name="LoginPro" component={LoginPro} options={dontShowHeader} />
       <Stack.Screen name="RecoverAccount" component={RecoverAccount} options={dontShowHeader} />
-
       <Stack.Screen
         name={constants.PROFESSIONAL_DETAILS}
         component={professionalDetails}
@@ -288,7 +299,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name={constants.USER_APPOINTMENT_TAKEN}
         component={AppointmentSuccess}
@@ -304,7 +314,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name="ProNotification"
         component={ProNotification}
@@ -320,7 +329,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name={constants.PROF_REGISTRATION_CONSENT}
         component={RegisterConsentPro}
@@ -329,13 +337,11 @@ const StackNavigator = () => {
           headerLeft: () => undefined,
         })}
       />
-
       <Stack.Screen
         name={constants.PROF_REGISTER_STEP_1}
         component={RegisterStep1}
         options={dontShowHeader}
       />
-
       <Stack.Screen
         name={constants.WAIT_FOR_VERIFICATION}
         component={WaitForVerification}
@@ -351,7 +357,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name={constants.PROF_HOMEPAGE}
         component={ProHomepage}
@@ -360,7 +365,6 @@ const StackNavigator = () => {
           headerLeft: () => null,
         })}
       />
-
       <Stack.Screen
         name={constants.PROF_ASSESSMENT_TOOLS}
         component={ProAssessments}
@@ -376,7 +380,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name={constants.PROF_ASSESSMENT_TOOL_DETAILS}
         component={ProAssessmentDetails}
@@ -392,7 +395,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name={constants.PROF_PROFILE}
         component={ProfileProf}
@@ -408,7 +410,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name={constants.PROF_UPDATE_PROFILE}
         component={UpdateProfileProf}
@@ -424,7 +425,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name="ProfSideScaleResult"
         component={ProfSideScaleResult}
@@ -440,7 +440,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name={constants.PROF_REGISTER_STEP_2}
         component={RegisterStep2}
@@ -449,7 +448,6 @@ const StackNavigator = () => {
           headerLeft: () => undefined,
         })}
       />
-
       <Stack.Screen
         name={constants.PROF_REGISTER_STEP_3}
         component={RegisterStep3}
@@ -458,7 +456,6 @@ const StackNavigator = () => {
           headerLeft: () => undefined,
         })}
       />
-
       <Stack.Screen
         name={constants.PROF_REGISTER_STEP_4}
         component={RegisterStep4}
@@ -467,7 +464,6 @@ const StackNavigator = () => {
           headerLeft: () => undefined,
         })}
       />
-
       <Stack.Screen
         name={constants.PROFESSIONALS_LIST}
         component={AllProfessionals}
@@ -482,7 +478,6 @@ const StackNavigator = () => {
           title: 'Qlife',
         })}
       />
-
       <Stack.Screen
         name={constants.THREE_SCALES}
         component={ThreeScales}
@@ -595,7 +590,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-
       <Stack.Screen
         name={constants.TEST}
         component={Test}
@@ -604,11 +598,10 @@ const StackNavigator = () => {
           headerLeft: () => undefined,
         })}
       />
-
       <Stack.Screen
         name={constants.PROFILE}
         component={UserProfile}
-        options={({ navigation, route }) => ({
+        options={({ navigation }) => ({
           title: 'প্রোফাইল',
           headerLeft: (props) => (
             <HeaderBackButton
@@ -621,13 +614,12 @@ const StackNavigator = () => {
         })}
       />
       <Stack.Screen
-        name="DrawerGuideline"
+        name={constants.SIDEBAR_APP_GUIDELINE}
         component={DrawerGuideline}
         options={() => ({
           title: 'ব্যবহারিক নির্দেশিকা',
         })}
       />
-
       <Stack.Screen
         name={constants.SETTINGS}
         component={Setting}
@@ -638,26 +630,40 @@ const StackNavigator = () => {
       <Stack.Screen
         name={constants.ABOUT_US}
         component={AboutUs}
-        options={() => ({
+        options={({ navigation }) => ({
           title: 'আমাদের সম্পর্কিত তথ্য',
+          headerLeft: (props) => (
+            <HeaderBackButton
+              {...props}
+              onPress={() => {
+                navigation.navigate(backScreenMap[constants.ABOUT_US]);
+              }}
+            />
+          ),
         })}
       />
       <Stack.Screen
         name={constants.PRIVACY_POLICY}
         component={PrivacyPolicy}
-        options={() => ({
+        options={({ navigation }) => ({
           title: 'গোপনীয়তা নীতি',
+          headerLeft: (props) => (
+            <HeaderBackButton
+              {...props}
+              onPress={() => {
+                navigation.navigate(backScreenMap[constants.PRIVACY_POLICY]);
+              }}
+            />
+          ),
         })}
       />
-
       <Stack.Screen
-        name="CentralHelpCenter"
+        name={constants.CENTRAL_HELP_CENTER}
         component={CentralHelpCenter}
         options={() => ({
           title: 'সাহায্য কেন্দ্র',
         })}
       />
-
       <Stack.Screen name={constants.ASK_FOR_TEST} component={AskForTest} options={dontShowHeader} />
       <Stack.Screen
         name="ResultHistory"

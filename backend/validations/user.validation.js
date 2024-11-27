@@ -8,6 +8,20 @@ const registerUserStep1 = {
   }),
 };
 
+const loginAsUser = {
+  body: Joi.object().keys({
+    email: Joi.string().required().email().trim().lowercase(),
+    password: Joi.string().required(),
+  }),
+};
+
+const resetPassword = {
+  body: Joi.object().keys({
+    oldPassword: Joi.string().required(),
+    newPassword: Joi.string().required().custom(password),
+  }),
+};
+
 const additionalInfoValidationSchema = {
   body: Joi.object().keys({
     name: Joi.string().trim().min(1).max(255).required().messages({
@@ -56,6 +70,8 @@ const additionalInfoValidationSchema = {
 };
 
 module.exports = {
+  loginAsUser,
   registerUserStep1,
   additionalInfoValidationSchema,
+  resetPassword,
 };

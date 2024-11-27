@@ -117,6 +117,8 @@ const AdditionalInformation = () => {
       },
     };
 
+    console.log(payload);
+
     setIsLoading(true);
     const response = await ApiExecutor(ApiDefinitions.additionalInfo({ payload }));
     console.log(response);

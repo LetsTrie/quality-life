@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const { MODEL_NAME } = require("./model_name");
 const Schema = mongoose.Schema;
 
-const profAssessmentSchema = Schema(
+const profAssessmentResultSchema = Schema(
   {
     user: { type: Schema.Types.ObjectId, ref: MODEL_NAME.USER },
     prof: { type: Schema.Types.ObjectId, ref: MODEL_NAME.PROFESSIONAL },
@@ -16,8 +16,8 @@ const profAssessmentSchema = Schema(
   { timestamps: true }
 );
 
-const ProfAssessment = mongoose.model(
+const ProfAssessmentResult = mongoose.model(
   "qlife_profAssessmentResult",
-  profAssessmentSchema
+  profAssessmentResultSchema
 );
-module.exports = ProfAssessment;
+module.exports = ProfAssessmentResult;

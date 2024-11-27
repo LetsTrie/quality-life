@@ -10,6 +10,6 @@ const ratingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const rating = mongoose.model("qlife_rating", ratingSchema);
+const Rating = mongoose.model("qlife_rating", ratingSchema);
 
-module.exports = rating;
+module.exports = Rating;

@@ -10,6 +10,7 @@ import constants from '../navigation/constants';
 import colors from '../config/colors';
 
 const SCREEN_NAME = constants.HELP_CENTER;
+
 const HelpCenter = () => {
   const navigation = useNavigation();
   const route = useRoute();
@@ -61,7 +62,7 @@ const HelpCenter = () => {
                 accessibilityRole="button"
               >
                 <View style={styles.iconContainer}>
-                  <MaterialCommunityIcons name={contact.type} size={25} style={styles.iconStyle} />
+                  <MaterialCommunityIcons name={contact.type} size={25} color={colors.primary} />
                 </View>
                 <View style={styles.numbersInfo}>
                   <Text style={styles.number}>{contact.number}</Text>
@@ -81,71 +82,87 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 10,
-    backgroundColor: '#eee',
+    backgroundColor: colors.background,
   },
   contactButton: {
-    marginTop: 7,
-    borderRadius: 5,
+    marginHorizontal: 16,
+    marginTop: 10,
+    borderRadius: 8,
     backgroundColor: colors.secondary,
+    elevation: 3,
   },
   contactButtonText: {
     fontSize: 18,
+    color: colors.white,
   },
   helpCenterBox: {
     padding: 20,
-    borderRadius: 5,
-    elevation: 3,
-    marginVertical: 8,
-    marginHorizontal: 14,
-    backgroundColor: 'white',
+    borderRadius: 10,
+    marginVertical: 10,
+    marginHorizontal: 16,
+    backgroundColor: colors.white,
+    elevation: 4,
+    shadowColor: colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
   lastItemMargin: {
     marginBottom: 25,
   },
   place: {
-    color: '#333',
-    fontSize: 19,
+    color: colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '600',
     paddingBottom: 10,
   },
   location: {
-    fontSize: 17,
-    paddingBottom: 7,
-    color: '#666',
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: 8,
   },
   numbersContainer: {
     paddingTop: 10,
   },
   numbers: {
     flexDirection: 'row',
-    paddingBottom: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: colors.light,
+    elevation: 1,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
   },
   iconContainer: {
-    padding: 10,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  iconStyle: {
-    fontSize: 30,
+    padding: 10,
   },
   numbersInfo: {
-    paddingLeft: 10,
-    alignSelf: 'center',
+    paddingLeft: 12,
+    flex: 1,
   },
   number: {
-    fontSize: 15.5,
-    color: '#333',
-    paddingBottom: 4,
-    letterSpacing: 0.3,
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.textPrimary,
+    marginBottom: 4,
   },
   time: {
     fontSize: 14,
-    color: '#666',
-    paddingBottom: 3,
+    color: colors.textSecondary,
   },
   toll: {
     fontSize: 14,
-    color: '#666',
-    paddingBottom: 3,
+    color: colors.success,
+    marginTop: 4,
+    fontWeight: '600',
   },
 });
 

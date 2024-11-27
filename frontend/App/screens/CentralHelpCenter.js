@@ -3,6 +3,9 @@ import React from 'react';
 import { Linking, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Text from '../components/Text';
 import helpCenterNumbers from '../data/helpCenter';
+import colors from '../config/colors';
+import { useBackPress } from '../hooks';
+import constants from '../navigation/constants';
 
 const dialCall = async (number, type) => {
   if (type === 'whatsapp') {
@@ -14,12 +17,15 @@ const dialCall = async (number, type) => {
   }
 };
 
+const SCREEN_NAME = constants.CENTRAL_HELP_CENTER;
 const CentralHelpCenter = () => {
+  useBackPress(SCREEN_NAME);
+
   const lists = helpCenterNumbers;
 
   return (
     <>
-      <ScrollView style={{ flex: 1, paddingTop: 10, backgroundColor: '#eee' }}>
+      <ScrollView style={{ flex: 1, paddingTop: 10, backgroundColor: colors.background }}>
         {lists.map((l, index) => (
           <View
             key={l.place}
@@ -55,21 +61,31 @@ const CentralHelpCenter = () => {
 const styles = StyleSheet.create({
   helpCenterBox: {
     padding: 20,
-    borderRadius: 5,
-    elevation: 3,
+    paddingBottom: 15,
+    paddingTop: 25,
+    borderRadius: 10,
     marginVertical: 8,
     marginHorizontal: 14,
-    backgroundColor: 'white',
+    backgroundColor: colors.white,
+    elevation: 6,
+    shadowColor: colors.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
   },
   place: {
-    color: '#333',
-    fontSize: 19,
+    color: colors.textPrimary,
+    fontSize: 17,
+    fontWeight: 'bold',
     paddingBottom: 10,
   },
   location: {
-    fontSize: 17,
+    fontSize: 15,
     paddingBottom: 7,
-    color: '#666',
+    color: colors.textSecondary,
   },
   numbersContainer: {
     paddingTop: 10,
@@ -86,26 +102,26 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
   },
   iconStyle: {
-    fontSize: 30,
+    fontSize: 25,
   },
   numbersInfo: {
     paddingLeft: 10,
     alignSelf: 'center',
   },
   number: {
-    fontSize: 15.5,
-    color: '#333',
+    fontSize: 15,
+    color: colors.textPrimary,
     paddingBottom: 4,
     letterSpacing: 0.3,
   },
   time: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textSecondary,
     paddingBottom: 3,
   },
   toll: {
     fontSize: 14,
-    color: '#666',
+    color: colors.textSecondary,
     paddingBottom: 3,
   },
 });

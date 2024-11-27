@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import Text from '../../components/Text';
+import colors from '../../config/colors';
 
 const ShowContent = ({ container }) => {
   return (
@@ -8,15 +9,15 @@ const ShowContent = ({ container }) => {
       {container.map((d, index) => (
         <View
           key={d.description[0]}
-          style={[styles.infoContainer, index !== container.length - 1 ? {} : { marginBottom: 10 }]}
+          style={[styles.infoContainer, index !== container.length - 1 ? {} : { marginBottom: 20 }]}
         >
           {d.title && <Text style={styles.titleStyle}>{d.title}</Text>}
-          {d.description.map((dd, ind) => (
+          {d.description.map((dd, ii) => (
             <Text
               key={dd}
               style={[
                 styles.descriptionStyle,
-                ind !== d.description.length - 1 ? styles.descriptionSpacing : {},
+                ii !== d.description.length - 1 && { marginBottom: 20 },
               ]}
             >
               {dd}
@@ -35,6 +36,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     padding: 16,
+    paddingHorizontal: 20,
     marginHorizontal: 15,
     marginBottom: 10,
     backgroundColor: '#FFFFFF',
@@ -46,22 +48,18 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   titleStyle: {
-    fontSize: 24,
-    color: '#334155',
-    fontWeight: '600',
-    marginBottom: 10,
+    fontSize: 22.5,
+    color: colors.dark,
+    fontWeight: 'bold',
+    marginBottom: 13,
     textAlign: 'center',
-    letterSpacing: 0.5,
   },
   descriptionStyle: {
-    fontSize: 16,
-    fontWeight: '400',
-    lineHeight: 26,
-    color: '#475569',
+    fontSize: 15,
+    lineHeight: 23,
+    color: colors.textSecondary,
     textAlign: 'justify',
-  },
-  descriptionSpacing: {
-    marginBottom: 15,
+    marginBottom: 10,
   },
 });
 

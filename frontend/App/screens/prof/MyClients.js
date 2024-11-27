@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   profileButtonText: {
     color: '#ffffff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });
 
