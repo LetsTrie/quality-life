@@ -3,10 +3,6 @@ const Professional = require("../models/prof");
 const User = require("../models/user");
 const { sendErrorResponse } = require("../utils");
 
-/**
- * Middleware to verify JWT token and authorize based on role.
- * @param {string} role - The role to authorize ("user" or "prof").
- */
 exports.verifyToken = (role) => async (req, res, next) => {
   if (!["user", "prof"].includes(role)) {
     return sendErrorResponse(res, 400, "ValidationError", {
@@ -14,7 +10,6 @@ exports.verifyToken = (role) => async (req, res, next) => {
     });
   }
 
-  // Validate Authorization header
   const bearerHeader = req.headers.authorization;
   if (!bearerHeader || !bearerHeader.startsWith("Bearer ")) {
     return sendErrorResponse(res, 400, "ValidationError", {
@@ -22,7 +17,6 @@ exports.verifyToken = (role) => async (req, res, next) => {
     });
   }
 
-  // Extract token from header
   const accessToken = bearerHeader.split(" ")[1];
   if (!accessToken) {
     return sendErrorResponse(res, 400, "ValidationError", {

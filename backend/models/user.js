@@ -6,11 +6,16 @@ const { constants } = require("../utils");
 
 const userSchema = new mongoose.Schema(
   {
-    // Required
-    email: String,
-    password: String,
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
 
-    // Additional
     name: String,
     age: Number,
     gender: String,

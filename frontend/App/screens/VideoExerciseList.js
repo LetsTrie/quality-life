@@ -19,7 +19,7 @@ const Box = ({ title, isCompleted, id }) => {
   });
 
   const onPress = () => {
-    navigation.navigate('VideoExercise', { title, isCompleted, id });
+    navigation.navigate(constants.VIDEO_EXERCISE, { title, isCompleted, id });
   };
 
   return (

@@ -1,9 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import Text from '../components/Text';
-import YouTube from '../components/Youtube';
 
-const DrawerGuideline = ({ navigation }) => {
+const DrawerGuideline = () => {
   return (
     <ScrollView style={{ backgroundColor: 'white' }}>
       <View style={styles.header}>

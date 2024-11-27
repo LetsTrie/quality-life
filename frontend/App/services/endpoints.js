@@ -1,12 +1,11 @@
 import BaseUrl from '../config/BaseUrl';
 
 export const endpoints = {
-  USER_INFO: `${BaseUrl}/user/all-information`,
   INTRO_TEST: `${BaseUrl}/user/intro-Test-Submit`,
   LOGIN: `${BaseUrl}/auth/sign-in`,
   REGISTER: `${BaseUrl}/auth/sign-up`,
   REFRESH_TOKEN: `${BaseUrl}/auth/refresh-token`,
-  USER_ADDITIONAL_INFO: `${BaseUrl}/user/intro/profile`,
+  USER_ADDITIONAL_INFO: `${BaseUrl}/user/add-info`,
   UPDATE_PROFILE: `${BaseUrl}/user/update/profile`,
   USER_PROFILE: `${BaseUrl}/user/all-information`,
   APPOINTMENT_DETAILS: `${BaseUrl}/user/appointment-details`,

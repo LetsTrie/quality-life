@@ -1,28 +1,28 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { useSelector } from 'react-redux';
+import { StyleSheet, View } from 'react-native';
 import Container from '../components/Auth/Container';
 import TopHeading from '../components/Auth/TopHeading';
-import Button from '../components/Button';
 import useFormFields from '../components/HandleForm';
 import Picker from '../components/Picker';
 import TextInput from '../components/TextInput';
-import colors from '../config/colors';
 import { useHelper } from '../contexts/helper';
 import Region from '../data/RegionInformation.json';
 import constants from '../navigation/constants';
-import { submitAdditionalInfo } from '../services/api';
+import { ApiDefinitions } from '../services/api';
+import { ErrorButton, Loader } from '../components';
+import { SubmitButton } from '../components/SubmitButton';
+import { useBackPress } from '../hooks';
 
 let borderRadius = 35;
 const genderLists = [
-  { label: 'পুরুষ', value: 0 },
-  { label: 'মহিলা', value: 1 },
-  { label: 'অন্যান্য', value: 2 },
+  { label: 'পুরুষ', value: 'Male' },
+  { label: 'মহিলা', value: 'Female' },
+  { label: 'অন্যান্য', value: 'Others' },
 ];
 const maritalStatusLists = [
-  { label: 'বিবাহিত', value: 10 },
-  { label: 'অবিবাহিত', value: 11 },
+  { label: 'বিবাহিত', value: 'Married' },
+  { label: 'অবিবাহিত', value: 'Single' },
 ];
 
 const zillaList = Region.districts.map((d) => ({
@@ -40,10 +40,12 @@ const initialState = {
   union: '',
 };
 
+const SCREEN_NAME = constants.REGISTER_WITH_EXTRA_INFORMATION;
 const AdditionalInformation = () => {
+  useBackPress(SCREEN_NAME);
+
   const navigation = useNavigation();
-  const { processApiError } = useHelper();
-  const { jwtToken } = useSelector((state) => state.auth);
+  const { ApiExecutor } = useHelper();
 
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -97,15 +99,17 @@ const AdditionalInformation = () => {
     }
 
     if (fieldAbsent) {
-      setError('Fill up all fields properly');
+      setError('ফর্মটি সঠিকভাবে পূরণ করুন');
       return;
     }
+
+    setError(null);
 
     const payload = {
       name: fields.name,
       age: fields.age,
       gender: fields.gender,
-      isMarried: fields.maritalStatus === 'বিবাহিত',
+      isMarried: fields.maritalStatus === 'Married',
       location: {
         zila: fields.zila,
         upazila: fields.upazila,
@@ -114,22 +118,21 @@ const AdditionalInformation = () => {
     };
 
     setIsLoading(true);
-    setError(null);
+    const response = await ApiExecutor(ApiDefinitions.additionalInfo({ payload }));
+    console.log(response);
+    setIsLoading(false);
 
-    const response = await submitAdditionalInfo({ payload, jwtToken });
-    if (response.success) {
-      setIsLoading(false);
-      navigation.navigate(constants.ONBOARDING_GUIDELINE);
-    } else {
-      setIsLoading(false);
+    if (!response.success) {
       setError(response?.error?.message);
-      processApiError(response);
+      return;
     }
+
+    navigation.navigate(constants.ONBOARDING_GUIDELINE);
   };
 
   return (
     <Container>
-      <TopHeading heading="Your profile!" height={150} />
+      <TopHeading heading="প্রয়োজনীয় তথ্য" />
       <View style={[styles.loginContainer, { paddingTop: 10 }]}>
         <View style={styles.loginButtons}>
           <TextInput
@@ -209,37 +212,10 @@ const AdditionalInformation = () => {
             name="union"
             onChange={(text) => createChangeHandler(text, 'union')}
           />
-          {isLoading && (
-            <ActivityIndicator size="large" color={colors.primary} style={{ paddingTop: 10 }} />
-          )}
-          {error && (
-            <Button
-              title={error}
-              style={{
-                marginVertical: 10,
-                marginBottom: 0,
-                padding: 15,
-                backgroundColor: 'white',
-                borderColor: colors.primary,
-                borderWidth: 3,
-              }}
-              textStyle={{
-                fontSize: 14.5,
-                color: colors.primary,
-              }}
-            />
-          )}
-          <Button
-            title="Register"
-            style={{
-              marginVertical: 10,
-              marginBottom: 0,
-            }}
-            textStyle={{
-              fontSize: 20,
-            }}
-            onPress={handleFormSubmit}
-          />
+
+          <Loader visible={!!isLoading} style={{ marginTop: 10 }} />
+          <ErrorButton title={error} visible={!!error} />
+          <SubmitButton title={'সাবমিট করুন'} onPress={handleFormSubmit} />
         </View>
       </View>
     </Container>

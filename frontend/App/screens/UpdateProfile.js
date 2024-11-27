@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, ToastAndroid, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Loader } from '../components';
 import Button from '../components/Button';
@@ -11,23 +11,18 @@ import colors from '../config/colors';
 import Region from '../data/RegionInformation.json';
 import { useBackPress, useHelper } from '../hooks';
 import { updateProfileAction } from '../redux/actions/user';
-import { updateUserProfile } from '../services/api';
+import { ApiDefinitions } from '../services/api';
 import constants from '../navigation/constants';
 
-// Updated At: 22/03/2024
-// Updated By: MD. Sakib Khan
-
-const SCREEN_NAME = constants.UPDATE_USER_PROFILE;
-
 const genderLists = [
-  { label: 'পুরুষ', value: 0 },
-  { label: 'মহিলা', value: 1 },
-  { label: 'অন্যান্য', value: 2 },
+  { label: 'পুরুষ', value: 'Male' },
+  { label: 'মহিলা', value: 'Female' },
+  { label: 'অন্যান্য', value: 'Others' },
 ];
 
 const maritalStatusLists = [
-  { label: 'বিবাহিত', value: 10 },
-  { label: 'অবিবাহিত', value: 11 },
+  { label: 'বিবাহিত', value: 'Married' },
+  { label: 'অবিবাহিত', value: 'Single' },
 ];
 
 const zillaList = Region.districts.map((d) => ({
@@ -35,12 +30,13 @@ const zillaList = Region.districts.map((d) => ({
   value: d.districtName,
 }));
 
-const UpdateProfile = (props) => {
+const SCREEN_NAME = constants.UPDATE_USER_PROFILE;
+const UpdateProfile = () => {
   useBackPress(SCREEN_NAME);
 
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { processApiError } = useHelper();
+  const { ApiExecutor, processApiError } = useHelper();
 
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -75,7 +71,7 @@ const UpdateProfile = (props) => {
     // =================================================================
     // ============================= GENDER ============================
     // =================================================================
-    const findedGender = genderLists.find((g) => g.label === gender);
+    const findedGender = genderLists.find((g) => g.value === gender);
     setGender(findedGender);
 
     // =================================================================
@@ -188,45 +184,46 @@ const UpdateProfile = (props) => {
 
   const handleFormSubmit = async () => {
     let fields = { ...formFields };
-    let hasMissingFields = false;
+    let missingRequiredFields = false;
 
     for (let key in initialState) {
-      if (key != 'union' && key != 'upazila' && fields[key] === '') {
-        hasMissingFields = true;
+      if (key != 'union' && key != 'upazila' && fields[key].trim() === '') {
+        missingRequiredFields = true;
       }
     }
 
-    if (hasMissingFields) {
-      setError('Fill up all fields properly');
+    if (missingRequiredFields) {
+      setError('ফর্মটি সঠিকভাবে পূরণ করুন');
       return;
     }
 
+    setError(null);
+
     const payload = {
-      name: fields.name,
-      age: fields.age,
-      gender: fields.gender,
-      isMarried: fields.maritalStatus === 'বিবাহিত',
+      name: fields.name.trim(),
+      age: fields.age.trim(),
+      gender: fields.gender.trim(),
+      isMarried: fields.maritalStatus === 'Married',
       location: {
-        zila: fields.zila,
-        upazila: fields.upazila,
-        union: fields.union,
+        zila: fields.zila.trim(),
+        upazila: fields.upazila?.trim() || '',
+        union: fields.union?.trim() || '',
       },
     };
 
     setIsLoading(true);
-    setError(null);
-
-    const response = await updateUserProfile({ payload, jwtToken });
-
+    const response = await ApiExecutor(ApiDefinitions.updateUserProfile({ payload }));
     setIsLoading(false);
 
-    if (response.success) {
-      dispatch(updateProfileAction(response.data));
-      navigation.navigate(constants.PROFILE);
-    } else {
-      processApiError(response);
+    if (!response.success) {
       setError(response.message);
+      return;
     }
+
+    dispatch(updateProfileAction(response.data.user));
+    navigation.navigate(constants.PROFILE);
+
+    ToastAndroid.show('প্রোফাইল আপডেট সম্পন্ন হয়েছে!', ToastAndroid.SHORT);
   };
 
   return (

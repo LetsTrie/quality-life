@@ -8,19 +8,6 @@ import {
 } from './utils';
 import BaseUrl from '../config/BaseUrl';
 
-export const getUserInformations = async ({ jwtToken }) => {
-  try {
-    console.log('API: ', endpoints.USER_INFO);
-    const response = await axios.get(endpoints.USER_INFO, {
-      headers: configHeaders({ jwtToken }),
-    });
-
-    return sendSuccessResponse(response.data.user);
-  } catch (error) {
-    return sendErrorResponse(error);
-  }
-};
-
 export const submitIntroTest = async ({ answers, score, isPostTest, jwtToken }) => {
   try {
     console.log('API: ', endpoints.INTRO_TEST);
@@ -30,40 +17,6 @@ export const submitIntroTest = async ({ answers, score, isPostTest, jwtToken }) 
       { headers: configHeaders({ jwtToken }) }
     );
     return sendSuccessResponse(response.data);
-  } catch (error) {
-    return sendErrorResponse(error);
-  }
-};
-
-export const register = async ({ email, password }) => {
-  try {
-    console.log('API: ', endpoints.REGISTER);
-    const response = await axios.post(endpoints.REGISTER, { email, password });
-    return sendSuccessResponse(response.data.data);
-  } catch (error) {
-    return sendErrorResponse(error);
-  }
-};
-
-export const submitAdditionalInfo = async ({ payload, jwtToken }) => {
-  try {
-    console.log('API: ', endpoints.USER_ADDITIONAL_INFO);
-    const response = await axios.post(endpoints.USER_ADDITIONAL_INFO, payload, {
-      headers: configHeaders({ jwtToken }),
-    });
-    return sendSuccessResponse(response.data);
-  } catch (error) {
-    return sendErrorResponse(error);
-  }
-};
-
-export const updateUserProfile = async ({ payload, jwtToken }) => {
-  try {
-    console.log('API: ', endpoints.UPDATE_PROFILE);
-    const response = await axios.post(endpoints.UPDATE_PROFILE, payload, {
-      headers: configHeaders({ jwtToken }),
-    });
-    return sendSuccessResponse(response.data.user);
   } catch (error) {
     return sendErrorResponse(error);
   }
@@ -245,5 +198,20 @@ export const ApiDefinitions = {
   seenVideo: ({ videoId }) => ({
     endpoint: endpoints.SEEN_VIDEO + videoId,
     method: 'POST',
+  }),
+  registerAsUser: ({ payload }) => ({
+    endpoint: endpoints.REGISTER,
+    method: 'POST',
+    payload,
+  }),
+  additionalInfo: ({ payload }) => ({
+    endpoint: endpoints.USER_ADDITIONAL_INFO,
+    method: 'POST',
+    payload,
+  }),
+  updateUserProfile: ({ payload }) => ({
+    endpoint: endpoints.UPDATE_PROFILE,
+    method: 'POST',
+    payload,
   }),
 };

@@ -122,7 +122,7 @@ const StackNavigator = () => {
         name={constants.ONBOARDING_GUIDELINE}
         component={StartingGuideline}
         options={() => ({
-          title: 'Quality Life',
+          title: 'অভিনন্দন',
           headerLeft: () => undefined,
         })}
       />

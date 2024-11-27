@@ -75,25 +75,14 @@ exports.introTestSubmit = asyncHandler(async (req, res, next) => {
   });
 });
 
-// Last updated: 22.03.2024 (Tested)
-// Author: MD. Sakib Khan
-exports.submitAdditionalInfo = asyncHandler(async (req, res, next) => {
-  const { user } = req;
-  const allowedFields = ["name", "age", "gender", "isMarried", "location"];
+exports.submitAdditionalInfo = asyncHandler(async (req, res, _next) => {
+  console.log(req.body);
+  for (const field in req.body) req.user[field] = req.body[field];
+  await req.user.save();
 
-  for (let field of allowedFields) {
-    if (req.body[field] === undefined) {
-      return res.status(400).json({
-        success: true,
-        message: `'${field}' is required!`,
-      });
-    }
-  }
-
-  for (const field in req.body) user[field] = req.body[field];
-  await user.save();
-
-  return res.status(200).json({ success: true, data: user });
+  return sendJSONresponse(res, 200, {
+    data: {},
+  });
 });
 
 exports.anyTestSubmit = asyncHandler(async (req, res, _next) => {
@@ -349,14 +338,15 @@ exports.rating = asyncHandler(async (req, res, _next) => {
 
 exports.updateProfile = asyncHandler(async (req, res, _next) => {
   const user = req.user;
-  console.log(user);
   for (let r in req.body) user[r] = req.body[r];
   await user.save();
 
   const { name, age, gender, isMarried, location } = req.user;
   const { union, zila, upazila } = location;
+
   let address = [union, upazila, zila].filter(Boolean).join(", ");
   if (address === "") address = null;
+
   const cUser = {
     name,
     age,
@@ -364,7 +354,12 @@ exports.updateProfile = asyncHandler(async (req, res, _next) => {
     isMarried: isMarried ? "Married" : "Unmarried",
     address,
   };
-  return res.status(200).json({ success: true, user: cUser });
+
+  return sendJSONresponse(res, 200, {
+    data: {
+      user: cUser,
+    },
+  });
 });
 
 const LIMIT = 5;

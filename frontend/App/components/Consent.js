@@ -49,9 +49,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: 20,
-    paddingTop: 30,
+    paddingTop: 20,
   },
   header: {
+    paddingTop: 5,
     marginBottom: 20,
     alignItems: 'center',
   },
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   descriptionContainer: {
-    marginBottom: 20,
+    marginBottom: 5,
   },
   descriptionText: {
     fontSize: 16,

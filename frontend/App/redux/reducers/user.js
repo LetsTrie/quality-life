@@ -63,9 +63,7 @@ export default function (state = initialState, action) {
     case UPDATE_MHP:
       return {
         ...state,
-        mentalHealthProfile: [
-          ...new Set([...state.mentalHealthProfile, action.payload]),
-        ],
+        mentalHealthProfile: [...new Set([...state.mentalHealthProfile, action.payload])],
       };
 
     case UPDATE_MSM:

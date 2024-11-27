@@ -5,8 +5,11 @@ const cors = require("cors");
 const expressWinston = require("express-winston");
 const { logger } = require("./config");
 const madge = require("madge");
+const pino = require("pino-http")();
 
 const app = express();
+
+app.use(pino);
 
 app.use(cors());
 require("dotenv").config();

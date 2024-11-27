@@ -8,14 +8,17 @@ import Container from '../components/Auth/Container';
 import EndOptions from '../components/Auth/EndOptions';
 import TopHeading from '../components/Auth/TopHeading';
 import Button from '../components/Button';
-import { loginAction } from '../redux/actions/auth';
 import { storeUserProfile } from '../redux/actions/user';
 import useFormFields from '../components/HandleForm';
 import { useDispatch } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
-import { useBackPress } from '../hooks';
+import { useBackPress, useHelper } from '../hooks';
 import validator from 'validator';
-import { register } from '../services/api';
+import { ApiDefinitions } from '../services/api';
+import { setAuthToken } from '../redux/utils';
+import { RoleEnum } from '../utils/roles';
+import { ErrorButton, Loader } from '../components';
+import { SubmitButton } from '../components/SubmitButton';
 
 let borderRadius = 35;
 
@@ -23,6 +26,7 @@ const SCREEN_SIZE = constants.REGISTER;
 
 const Register = () => {
   useBackPress(SCREEN_SIZE);
+  const { ApiExecutor } = useHelper();
 
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -51,27 +55,24 @@ const Register = () => {
   const submitLoginForm = async () => {
     const payload = { ...formFields };
 
-    if (!payload.email || payload.email === '') {
-      setError('Email is required');
+    if (!payload.email || payload.email === '' || !payload.password || payload.password === '') {
+      setError('ফর্মটি সঠিকভাবে পূরণ করুন');
       return;
     } else if (!validator.isEmail(payload.email)) {
-      setError('Email is not valid');
-      return;
-    } else if (!payload.password || payload.password === '') {
-      setError('Password is required');
+      setError('ইমেলটি বৈধ নয়');
       return;
     } else if (payload.password !== payload.confirmPassword) {
-      setError('Password is not matching');
+      setError('পাসওয়ার্ড মেলেনি');
       return;
     }
 
-    setIsLoading(true);
     setError(null);
 
     payload.email = payload.email.toString().trim().toLowerCase();
     payload.password = payload.password.toString().trim().toLowerCase();
 
-    const response = await register(payload);
+    setIsLoading(true);
+    const response = await ApiExecutor(ApiDefinitions.registerAsUser({ payload }));
     setIsLoading(false);
 
     if (!response.success) {
@@ -80,14 +81,14 @@ const Register = () => {
     }
 
     dispatch(storeUserProfile(response.data.user));
-    dispatch(loginAction(response.data.user._id, response.data.accessToken));
+    dispatch(setAuthToken(RoleEnum.USER, response.data.accessToken, response.data.refreshToken));
 
     navigation.navigate(constants.REGISTER_WITH_EXTRA_INFORMATION);
   };
 
   return (
     <Container>
-      <TopHeading heading="Join now!" />
+      <TopHeading heading="রেজিস্ট্রেশন করুন" />
       <View style={styles.loginContainer}>
         <AuthIcon />
         <View style={styles.loginButtons}>
@@ -96,7 +97,7 @@ const Register = () => {
             autoCorrect={false}
             icon="email"
             name="email"
-            placeholder="Email"
+            placeholder="ইমেইল"
             onChangeText={(text) => createChangeHandler(text, 'email')}
             keyboardType="email-address"
             textContentType="emailAddress"
@@ -107,7 +108,7 @@ const Register = () => {
             autoCorrect={false}
             icon="lock"
             name="password"
-            placeholder="Password"
+            placeholder="পাসওয়ার্ড"
             secureTextEntry
             textContentType="password"
             keyboardType="default"
@@ -119,7 +120,7 @@ const Register = () => {
             autoCorrect={false}
             icon="lock"
             name="confirmPassword"
-            placeholder="Confirm Password"
+            placeholder="পুনরায় পাসওয়ার্ড দিন "
             secureTextEntry
             textContentType="password"
             keyboardType="default"
@@ -127,20 +128,14 @@ const Register = () => {
             style={{ marginBottom: 8 }}
           />
 
-          {isLoading && (
-            <ActivityIndicator size="large" color={colors.primary} style={{ paddingTop: 10 }} />
-          )}
-
-          {error && (
-            <Button title={error} style={styles.errorButton} textStyle={styles.errorButtonText} />
-          )}
-
-          <Button title="Sign up" style={styles.submitButton} onPress={submitLoginForm} />
+          <Loader visible={isLoading} style={{ paddingTop: 10 }} />
+          <ErrorButton visible={!!error} title={error} />
+          <SubmitButton title="অ্যাকাউন্ট তৈরি করুন" onPress={submitLoginForm} />
 
           <EndOptions
-            title1={`Already have an account?`}
-            title2={`Login here`}
-            title3={`Register as a professional`}
+            title1={`ইতোমধ্যে একটি অ্যাকাউন্ট আছে?`}
+            title2={`লগইন করুন`}
+            title3={`প্রফেশনাল হিসেবে যোগদান করুন`}
             onPress1={() => navigation.navigate(constants.LOGIN)}
             onPress2={() => navigation.navigate(constants.PROF_REGISTRATION_CONSENT)}
           />

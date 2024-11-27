@@ -18,6 +18,7 @@ export const storeUserProfile = (user) => (dispatch) => {
 };
 
 export const updateProfileAction = (data) => (dispatch) => {
+  console.log({ message: 'Updating profile...', data });
   dispatch({
     type: UPDATE_PROFILE,
     payload: { ...data },

@@ -39,4 +39,7 @@ export default {
   [constants.ABOUT_US]: constants.SETTINGS,
   [constants.PRIVACY_POLICY]: constants.SETTINGS,
   [constants.QUIZ_RESULT_OUT_OF_100]: constants.HOMEPAGE,
+
+  [constants.REGISTER_WITH_EXTRA_INFORMATION]: constants.SPECIAL_LOGOUT_ACTION,
+  [constants.ONBOARDING_GUIDELINE]: constants.SPECIAL_LOGOUT_ACTION,
 };
