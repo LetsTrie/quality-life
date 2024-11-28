@@ -54,4 +54,6 @@ export default {
   UPDATE_PASSWORD: 'UpdatePassword',
   CENTRAL_HELP_CENTER: 'CentralHelpCenter',
   SIDEBAR_APP_GUIDELINE: 'DrawerGuideline',
+
+  RATING: 'Rating',
 };

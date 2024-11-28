@@ -53,7 +53,10 @@ const QuizResultOutOf100 = () => {
             onPress={() => navigation.replace(constants.PROFESSIONALS_LIST)}
           />
         )}
-        <Button title="অনুশীলন করুন" onPress={() => navigation.replace('VideoExerciseList')} />
+        <Button
+          title="অনুশীলন করুন"
+          onPress={() => navigation.replace(constants.VIDEO_EXERCISE_LIST)}
+        />
       </View>
     </ScrollView>
   );

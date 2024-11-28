@@ -36,4 +36,5 @@ export const endpoints = {
   RESET_PASSWORD: `${BaseUrl}/user/reset-password`,
 
   DELETE_ACCOUNT: `${BaseUrl}/user/delete-account`,
+  ADD_USER_RATING: `${BaseUrl}/user/add-rating`,
 };

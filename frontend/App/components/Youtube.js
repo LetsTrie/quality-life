@@ -7,6 +7,7 @@ import { shownVideoAction } from '../redux/actions/user';
 import { Loader } from './Loader';
 import { ApiDefinitions } from '../services/api';
 import { useHelper } from '../hooks';
+import constants from '../navigation/constants';
 
 export default function YouTube({ videoId, needAction = true }) {
   const dispatch = useDispatch();
@@ -17,7 +18,7 @@ export default function YouTube({ videoId, needAction = true }) {
   const [playing, setPlaying] = useState(false);
 
   function handleBackButtonClick() {
-    navigation.navigate('VideoExerciseList');
+    navigation.navigate(constants.VIDEO_EXERCISE_LIST);
     return true;
   }
 
@@ -30,22 +31,30 @@ export default function YouTube({ videoId, needAction = true }) {
     };
   }, []);
 
-  const onStateChange = useCallback(async (state) => {
-    if (state === 'ended') {
-      setPlaying(false);
+  const onStateChange = useCallback(
+    async (state) => {
+      if (state === 'playing') {
+        setPlaying(true);
+      } else if (state === 'paused') {
+        setPlaying(false);
+      } else if (state === 'ended') {
+        setPlaying(false);
 
-      if (!needAction) return;
+        if (!needAction) return;
 
-      const response = await ApiExecutor(ApiDefinitions.seenVideo({ videoId }));
-      if (!response.success) return;
+        const response = await ApiExecutor(ApiDefinitions.seenVideo({ videoId }));
+        if (!response.success) return;
 
-      dispatch(shownVideoAction(videoId));
-      navigation.navigate('Rating', { videoId });
-    }
-  }, []);
+        dispatch(shownVideoAction(videoId));
+        navigation.navigate(constants.RATING, { videoId });
+      }
+    },
+    [dispatch, navigation, needAction, ApiExecutor, videoId]
+  );
 
   const onReady = useCallback(() => {
     setShowLoader(false);
+    setPlaying(true); // Automatically start playing when ready
   }, []);
 
   return (
@@ -57,6 +66,7 @@ export default function YouTube({ videoId, needAction = true }) {
         videoId={videoId}
         onChangeState={onStateChange}
         onReady={onReady}
+        forceAndroidAutoplay // Ensures autoplay works on older Android devices
       />
     </View>
   );

@@ -561,7 +561,7 @@ const StackNavigator = () => {
         })}
       />
       <Stack.Screen
-        name="Rating"
+        name={constants.RATING}
         component={Rating}
         options={({ navigation }) => ({
           title: 'মানসিক স্বাস্থ্য পরিমাপের অবস্থা',
@@ -569,7 +569,7 @@ const StackNavigator = () => {
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate('VideoExerciseList');
+                navigation.navigate(backScreenMap[constants.RATING]);
               }}
             />
           ),

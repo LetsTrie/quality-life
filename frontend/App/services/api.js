@@ -223,4 +223,9 @@ export const ApiDefinitions = {
     endpoint: endpoints.DELETE_ACCOUNT,
     method: 'POST',
   }),
+  submitUserRating: ({ payload }) => ({
+    endpoint: endpoints.ADD_USER_RATING,
+    method: 'POST',
+    payload,
+  }),
 };

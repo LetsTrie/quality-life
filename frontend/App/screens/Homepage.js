@@ -101,7 +101,7 @@ const Homepage = (props) => {
 
   return (
     <ScrollView
-      style={{ backgroundColor: 'white' }}
+      style={{ backgroundColor: colors.background }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View>
@@ -247,7 +247,7 @@ const Homepage = (props) => {
             <Box
               source={require('../assests/images/picture_4.png')}
               name="মানসিক স্বাস্থ্যের গুণগত মান উন্নয়ন"
-              onPress={() => navigation.navigate('VideoExerciseList')}
+              onPress={() => navigation.navigate(constants.VIDEO_EXERCISE_LIST)}
               boxStyle={{
                 marginBottom: 15,
               }}

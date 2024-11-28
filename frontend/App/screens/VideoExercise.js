@@ -5,9 +5,7 @@ import Text from '../components/Text';
 import YouTube from '../components/Youtube';
 import { useBackPress } from '../hooks';
 import constants from '../navigation/constants';
-
-// Updated At: 22/03/2024
-// Updated By: MD. Sakib Khan
+import colors from '../config/colors';
 
 const VideoExercise = () => {
   useBackPress(constants.VIDEO_EXERCISE);
@@ -27,13 +25,15 @@ const styles = StyleSheet.create({
   exerciseContainer: {
     padding: 10,
     paddingTop: 20,
+    backgroundColor: colors.background,
+    flex: 1,
   },
   exerciseText: {
-    fontSize: 23,
+    fontSize: 18,
     textAlign: 'center',
     fontWeight: 'bold',
     paddingBottom: 10,
-    color: '#333',
+    color: colors.textPrimary,
   },
 });
 

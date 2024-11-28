@@ -327,13 +327,17 @@ exports.submitAVideo = asyncHandler(async (req, res) => {
 });
 
 exports.rating = asyncHandler(async (req, res, _next) => {
-  const userId = req.user._id;
-  const { rating, comment, videoUrl } = req.body;
+  await Rating.create({
+    user: req.user._id,
+    rating: req.body.rating,
+    contentId: req.body.contentId,
+    comment: req.body.comment,
+    videoUrl: req.body.videoUrl,
+  });
 
-  const userRating = new Rating({ userId, rating, comment, videoUrl });
-  await userRating.save();
-
-  return res.json({ rating: userRating });
+  return sendJSONresponse(res, 200, {
+    data: {},
+  });
 });
 
 exports.updateProfile = asyncHandler(async (req, res, _next) => {

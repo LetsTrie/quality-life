@@ -10,7 +10,7 @@ export default {
   success: '#6E8E5A', // Fresh Sage Green - natural growth and renewal
   info: '#7A6F5B', // Soft Warm Gray-Brown - calm, sophisticated information
   warning: '#D4A76A', // Soft Golden Yellow - gentle caution (kept consistent)
-  background: '#F3E9E0', // Warm, luminous neutral
+  background: '#f4ebe3', // Warm, luminous neutral
   highlight: '#A47C5B', // Rich Copper - subtle sophistication
   accent: '#8E6B4A', // Deep Earthy Brown - grounding element
   neutral: '#C1B1A1', // Soft Warm Greige

@@ -157,7 +157,7 @@ exports.deleteUserAccount = asyncHandler(async (req, res, _next) => {
   await ProfAssessment.deleteMany({ user: userId });
   await ProfAssessmentResult.deleteMany({ user: userId });
   await ProfNotification.deleteMany({ user: userId });
-  await Rating.deleteMany({ userId: userId });
+  await Rating.deleteMany({ user: userId });
   await RecentlyContacted.deleteMany({ user: userId });
   await Test.deleteMany({ userId: userId });
   await UserNotification.deleteMany({ user: userId });

@@ -40,7 +40,7 @@ router.get("/profile/all", M.verifyToken(ROLE), C.getProfileDetails);
 router.get("/all-information", M.verifyToken(ROLE), C.getAllInformation);
 router.post("/seen-video/:videoUrl", M.verifyToken(ROLE), C.submitAVideo);
 
-router.post("/rating", M.verifyToken(ROLE), C.rating);
+router.post("/add-rating", M.verifyToken(ROLE), C.rating);
 router.post("/update/profile", M.verifyToken(ROLE), C.updateProfile);
 
 router.get("/notifications", M.verifyToken(ROLE), C.userNotifications);

@@ -46,4 +46,6 @@ export default {
 
   [constants.CENTRAL_HELP_CENTER]: constants.HOMEPAGE,
   [constants.SIDEBAR_APP_GUIDELINE]: constants.HOMEPAGE,
+
+  [constants.RATING]: constants.VIDEO_EXERCISE_LIST,
 };

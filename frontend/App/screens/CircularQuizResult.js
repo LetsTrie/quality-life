@@ -5,6 +5,7 @@ import CircularPicker from '../components/CircularQuiz/index';
 import Text from '../components/Text';
 import { severityText } from '../data/mentalHealthRating';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import constants from '../navigation/constants';
 
 const CircularQuizResult = () => {
   console.log('IN: CircularQuizResult');
@@ -30,7 +31,7 @@ const CircularQuizResult = () => {
 
     if (route.params.goToBack) navigation.navigate(route.params.goToBack);
     else if (route.params.ToHomepage) navigation.navigate('Welcome');
-    else if (route.params.fromVideo) navigation.navigate('VideoExerciseList');
+    else if (route.params.fromVideo) navigation.navigate(constants.VIDEO_EXERCISE_LIST);
     else navigation.navigate('Homepage');
 
     return true;

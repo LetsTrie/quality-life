@@ -1,121 +1,87 @@
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, BackHandler, ScrollView, View } from 'react-native';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Rating } from 'react-native-ratings';
-import { connect } from 'react-redux';
+import { useSelector } from 'react-redux';
 import Button from '../components/Button';
 import Box from '../components/Homepage/Box';
 import Text from '../components/Text';
 import TextInput from '../components/TextInput';
-import BaseUrl from '../config/BaseUrl';
 import colors from '../config/colors';
 import resources from '../data/videos';
-import { logoutAction } from '../redux/actions/auth';
-import { storeUserProfile } from '../redux/actions/user';
+import constants from '../navigation/constants';
+import { useBackPress, useHelper } from '../hooks';
+import { ApiDefinitions } from '../services/api';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Loader, SubmitButton } from '../components';
 
-const RatingComp = ({ navigation, route, ...props }) => {
-  const { msm_score, msm_date, shownVideo, jwtToken } = props;
+const SCREEN_NAME = constants.RATING;
+
+const findNextVideo = (resources, currentVideoId, watchedVideos) => {
+  const currentIndex = resources.findIndex((video) => video.videoId === currentVideoId) + 1;
+  const totalVideos = resources.length;
+
+  for (let i = 0; i < totalVideos; i++) {
+    const nextIndex = (currentIndex + i) % totalVideos;
+    if (!watchedVideos.includes(resources[nextIndex].videoId)) {
+      return resources[nextIndex];
+    }
+  }
+  return null;
+};
+
+const RatingComponent = () => {
+  useBackPress(SCREEN_NAME);
+
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { ApiExecutor } = useHelper();
+
+  const { videoId } = route.params;
+  const { msm_score, msm_date, shownVideo } = useSelector((state) => state.user);
+
   const [userRating, setUserRating] = useState(0);
   const [comment, setComment] = useState('');
-  const videoId = route.params.videoId;
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const currentOrder = resources.find((v) => v.videoId === videoId).order;
-  let nextOrder = currentOrder + 1;
-  let alreadyShown = false;
-  let nextResource;
-  let isCompleted = false;
-  if (nextOrder === resources.length) {
-    let found = false;
-    for (let i = 0; i < resources.length; i++) {
-      if (!shownVideo.includes(resources[i].videoId)) {
-        nextResource = resources.find((v) => v.order === i);
-        found = true;
-        break;
-      }
-    }
-    if (!found) isCompleted = true;
-    // sesh
-  } else {
-    nextResource = resources.find((v) => v.order === nextOrder);
-    alreadyShown = shownVideo.includes(nextResource.videoId);
-  }
+  let currentOrderIndex = resources.findIndex((vRes) => {
+    return vRes.videoId === videoId;
+  });
 
-  function handleBackButtonClick() {
-    navigation.navigate('VideoExerciseList');
-    return true;
-  }
+  const nextVideo = findNextVideo(resources, videoId, shownVideo);
 
-  useEffect(() => {
-    BackHandler.addEventListener('hardwareBackPress', handleBackButtonClick);
-    return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackButtonClick);
+  const handleSubmit = async () => {
+    if (userRating === 0 && comment.trim() === '') return;
+
+    const payload = {
+      videoUrl: videoId,
+      contentId: resources[currentOrderIndex].content_id,
+      rating: userRating,
+      comment,
     };
-  }, []);
 
-  const handleSubmit = () => {
     setRatingSubmitted(false);
     setLoading(true);
-    axios
-      .post(
-        `${BaseUrl}/user/rating`,
-        { videoUrl: videoId, rating: userRating, comment },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${jwtToken}`,
-          },
-        }
-      )
-      .then((res) => {
-        const r = res.data;
-        setRatingSubmitted(true);
-        setLoading(false);
-      })
-      .catch((e) => {
-        setRatingSubmitted(true);
-        setLoading(false);
-      });
+
+    const response = await ApiExecutor(ApiDefinitions.submitUserRating({ payload }));
+
+    setLoading(false);
+    setRatingSubmitted(true);
+
+    if (!response.success) {
+      console.error(response);
+    }
   };
 
   return (
-    <ScrollView style={{ backgroundColor: '#eee' }}>
+    <ScrollView style={styles.scrollView}>
       {ratingSubmitted ? (
-        <View
-          style={{
-            margin: 15,
-            padding: 15,
-            borderWidth: 1,
-            borderColor: '#eee',
-            elevation: 3,
-            borderRadius: 5,
-            backgroundColor: 'white',
-            paddingVertical: 20,
-            marginBottom: 0,
-            textAlign: 'center',
-            paddingVertical: 20,
-          }}
-        >
-          <Text> আপনার মতামতের জন্য অশেষ ধন্যবাদ </Text>
+        <View style={[styles.card]}>
+          <Text style={styles.centerText}> আপনার মতামতের জন্য অশেষ ধন্যবাদ </Text>
         </View>
       ) : (
-        <View
-          style={{
-            margin: 15,
-            padding: 15,
-            borderWidth: 1,
-            borderColor: '#eee',
-            elevation: 3,
-            borderRadius: 5,
-            backgroundColor: 'white',
-            paddingVertical: 20,
-            marginBottom: 0,
-          }}
-        >
-          <Text style={{ marginBottom: 10, textAlign: 'center' }}>
-            ভিডিওটি সম্পর্কে আপনার মতামত দিন
-          </Text>
+        <View style={styles.card}>
+          <Text style={styles.title}>ভিডিওটি সম্পর্কে আপনার মতামত দিন</Text>
           <Rating
             count={5}
             startingValue={0}
@@ -124,106 +90,126 @@ const RatingComp = ({ navigation, route, ...props }) => {
             jumpValue={0.5}
             onFinishRating={(n) => setUserRating(n)}
             fractions={1}
-            style={{ marginBottom: 10 }}
+            style={styles.rating}
           />
           <TextInput
-            style={{
-              borderRadius: 5,
-              width: '100%',
-              padding: 14,
-              paddingLeft: 20,
-            }}
+            style={styles.textInput}
             placeholder="মতামত"
             onChangeText={(text) => setComment(text)}
           />
-          {loading ? (
-            <ActivityIndicator
-              color={colors.primary}
-              size={'large'}
-              style={{ marginVertical: 10 }}
-            />
-          ) : (
-            <Button
-              title="সাবমিট করুন"
-              style={{
-                borderRadius: 7,
-                width: '100%',
-                marginTop: 10,
-                padding: 13,
-              }}
-              textStyle={{ fontSize: 16 }}
-              onPress={handleSubmit}
-            />
-          )}
+          <Loader visible={loading} style={styles.loader} />
+          <SubmitButton title={'সাবমিট করুন'} onPress={handleSubmit} style={styles.submitButton} />
         </View>
       )}
 
-      <View
-        style={{
-          margin: 15,
-          borderWidth: 1,
-          borderColor: '#eee',
-          elevation: 3,
-          borderRadius: 5,
-          backgroundColor: 'transparent',
-          marginBottom: 0,
-        }}
-      >
-        <Box
-          source={require('../assests/images/mentalexcercise.jpeg')}
-          name="মানসিক স্বাস্থ্য মূল্যায়ন করুন"
-          lastScore={msm_score ? `${msm_score}/100` : undefined}
-          lastDate={msm_date ? msm_date : undefined}
-          onPress={() =>
-            navigation.navigate('HomepageScale', {
-              ToHomepage: false,
-              type: 'manoshikShasthoMullayon',
-              fromVideo: true,
-              videoTitle: nextResource.name,
-              videoIsCompleted: alreadyShown,
-              videoId: nextResource.videoId,
-              goToBack: 'Rating',
-              preTest: false,
-            })
-          }
-          boxStyle={{
-            height: 250,
-            borderRadius: 5,
-            overflow: 'hidden',
-            backgroundColor: '#eee',
-          }}
-        />
-      </View>
-      {!isCompleted && (
-        <Button
-          title="পরবর্তী ভিডিও দেখুন"
-          style={{
-            borderRadius: 7,
-            padding: 13,
-            marginTop: 10,
-            marginLeft: 30,
-            marginRight: 30,
-          }}
-          textStyle={{ fontSize: 16 }}
-          onPress={() =>
-            navigation.navigate('VideoExercise', {
-              title: nextResource.name,
-              isCompleted: alreadyShown,
-              id: nextResource.videoId,
-            })
-          }
-        />
+      <Box
+        source={require('../assests/images/mentalexcercise.jpeg')}
+        name="মানসিক স্বাস্থ্য মূল্যায়ন করুন"
+        lastScore={msm_score ? `${msm_score}/100` : undefined}
+        lastDate={msm_date ? msm_date : undefined}
+        onPress={() =>
+          navigation.replace('HomepageScale', {
+            ToHomepage: false,
+            type: 'manoshikShasthoMullayon',
+            fromVideo: true,
+            videoTitle: nextVideo?.name,
+            videoIsCompleted: false,
+            videoId: nextVideo?.videoId,
+            goToBack: 'Rating',
+            preTest: false,
+          })
+        }
+        boxStyle={{ width: '93%' }}
+      />
+      {nextVideo && (
+        <View style={[styles.card, { paddingHorizontal: 20 }]}>
+          <Text style={styles.hintTitle}>পরবর্তী ভিডিও</Text>
+          <Text style={styles.hintText}>
+            আমরা বিশ্বাস করি আপনি{' '}
+            <Text style={{ fontSize: 15, fontWeight: 'bold' }}>"{nextVideo.name}"</Text> ভিডিওটি
+            দেখলে উপকৃত হবেন। এটি আপনার দক্ষতা আরও উন্নত করতে এবং মানসিক স্বাস্থ্যে ইতিবাচক প্রভাব
+            ফেলতে সাহায্য করবে।
+          </Text>
+          <Button
+            title="ভিডিওটি দেখুন"
+            style={styles.nextButton}
+            textStyle={styles.nextButtonText}
+            onPress={() =>
+              navigation.replace(constants.VIDEO_EXERCISE, {
+                title: nextVideo.name,
+                isCompleted: false,
+                id: nextVideo.videoId,
+              })
+            }
+          />
+        </View>
       )}
     </ScrollView>
   );
 };
 
-const mapStateToProps = (state) => ({
-  jwtToken: state.auth.jwtToken,
-  isAuthenticated: state.auth.isAuthenticated,
-  msm_score: state.user.msm_score,
-  msm_date: state.user.msm_date,
-  shownVideo: state.user.shownVideo,
+const styles = StyleSheet.create({
+  scrollView: {
+    backgroundColor: colors.background,
+  },
+  card: {
+    margin: 15,
+    marginBottom: 10,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#eee',
+    elevation: 3,
+    borderRadius: 5,
+    backgroundColor: 'white',
+    paddingVertical: 20,
+  },
+  centerText: {
+    textAlign: 'center',
+  },
+  title: {
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  rating: {
+    marginBottom: 10,
+  },
+  textInput: {
+    borderRadius: 5,
+    width: '100%',
+    padding: 14,
+    paddingLeft: 20,
+  },
+  loader: {
+    marginVertical: 10,
+  },
+  submitButton: {
+    width: '100%',
+  },
+  nextButton: {
+    borderRadius: 7,
+    padding: 13,
+    marginTop: 5,
+    marginLeft: 30,
+    marginRight: 30,
+    backgroundColor: colors.secondary,
+    width: '100%',
+  },
+  nextButtonText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  hintTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+  hintText: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 15,
+    textAlign: 'justify',
+  },
 });
 
-export default connect(mapStateToProps, { storeUserProfile, logoutAction })(RatingComp);
+export default RatingComponent;
