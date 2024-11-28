@@ -1,123 +1,104 @@
-import React, { useEffect } from 'react';
-import { View, BackHandler } from 'react-native';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import Button from '../components/Button';
-import CircularPicker from '../components/CircularQuiz/index';
 import Text from '../components/Text';
 import { severityText } from '../data/mentalHealthRating';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import constants from '../navigation/constants';
+import colors from '../config/colors';
+import { useBackPress } from '../hooks';
 
-const CircularQuizResult = () => {
-  console.log('IN: CircularQuizResult');
-
+const SCREEN_NAME = constants.MENTAL_HEALTH_ASSESSMENT_RESULT;
+const MentalHealthAssessmentResult = () => {
   const navigation = useNavigation();
   const route = useRoute();
 
-  console.log(route);
+  const { meanResult, goToBack, fromVideo, videoTitle, videoIsCompleted, videoId } = route.params;
+
+  useBackPress(SCREEN_NAME, goToBack);
 
   const onPressHandler = () => {
-    if (route.params.ToHomepage) navigation.navigate('Homepage');
-    else if (route.params.fromVideo) {
-      navigation.navigate('VideoExercise', {
-        title: route.params.videoTitle,
-        isCompleted: route.params.videoIsCompleted,
-        id: route.params.videoId,
+    if (fromVideo) {
+      navigation.replace(constants.VIDEO_EXERCISE, {
+        id: videoId,
+        title: videoTitle,
+        isCompleted: videoIsCompleted,
       });
-    } else navigation.navigate('ThreeScales');
+    } else {
+      navigation.replace(constants.THREE_SCALES);
+    }
   };
 
-  function handleBackButtonClick() {
-    console.log(route.params);
-
-    if (route.params.goToBack) navigation.navigate(route.params.goToBack);
-    else if (route.params.ToHomepage) navigation.navigate('Welcome');
-    else if (route.params.fromVideo) navigation.navigate(constants.VIDEO_EXERCISE_LIST);
-    else navigation.navigate('Homepage');
-
-    return true;
-  }
-
-  useEffect(() => {
-    BackHandler.addEventListener('hardwareBackPress', handleBackButtonClick);
-    return () => {
-      BackHandler.removeEventListener('hardwareBackPress', handleBackButtonClick);
-    };
-  }, []);
-
   return (
-    <>
-      <View>
+    <View style={styles.container}>
+      <Text style={styles.title}>মানসিক স্বাস্থ্য মূল্যায়ন</Text>
+      <View style={styles.resultBox}>
         <Text
-          style={{
-            fontSize: 27,
-            textAlign: 'center',
-            padding: 30,
-            paddingBottom: 23,
-          }}
+          style={[
+            styles.resultText,
+            {
+              color: parseInt(meanResult) <= 50 ? colors.danger : colors.primary,
+            },
+          ]}
         >
-          মানসিক স্বাস্থ্য মূল্যায়ন
+          {meanResult}
         </Text>
-        <CircularPicker
-          size={200}
-          strokeWidth={30}
-          gradients={{
-            50: ['rgb(52, 199, 89)', 'rgb(48, 209, 88)'],
-            0: ['rgb(255, 97, 99)', 'rgb(247, 129, 119)'],
-          }}
-          defaultPos={route.params.meanResult}
-        >
-          <>
-            <Text
-              style={{
-                textAlign: 'center',
-                fontSize: 50,
-                marginBottom: 8,
-                fontWeight: 'bold',
-                color: '#333',
-              }}
-            >
-              {route.params.meanResult}
-            </Text>
-          </>
-        </CircularPicker>
-
-        <View
-          style={{
-            borderColor: '#ccc',
-            borderWidth: 2,
-            margin: 15,
-            padding: 10,
-            borderRadius: 5,
-            elevation: 2,
-            backgroundColor: '#ddd',
-            marginBottom: 15,
-            marginTop: 20,
-            marginBottom: 15,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 16,
-              lineHeight: 26,
-              letterSpacing: 1,
-            }}
-          >
-            {parseInt(route.params.meanResult) <= 50 ? severityText[1] : severityText[0]}
-          </Text>
-        </View>
-        <Button
-          title={
-            route.params.ToHomepage
-              ? 'Redirect to Homepage'
-              : route.params.fromVideo
-                ? 'পরবর্তী ভিডিও দেখুন'
-                : 'পরবর্তী ধাপ'
-          }
-          onPress={onPressHandler}
-        />
+        <Text style={styles.severityText}>
+          {parseInt(meanResult) <= 50 ? severityText[1] : severityText[0]}
+        </Text>
       </View>
-    </>
+      <Button
+        title={fromVideo ? 'পরবর্তী ভিডিও দেখুন' : 'পরবর্তী ধাপ'}
+        style={styles.nextStepButton}
+        onPress={onPressHandler}
+      />
+    </View>
   );
 };
-//
-export default CircularQuizResult;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: 20,
+    paddingTop: 25,
+  },
+  title: {
+    fontSize: 28,
+    textAlign: 'center',
+    color: colors.textPrimary,
+    marginBottom: 26,
+  },
+  resultBox: {
+    borderColor: colors.neutral,
+    borderWidth: 2,
+    borderRadius: 8,
+    padding: 15,
+    backgroundColor: colors.light,
+    marginBottom: 12,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  resultText: {
+    fontSize: 50,
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  severityText: {
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'justify',
+    color: colors.textSecondary,
+  },
+  nextStepButton: {
+    width: '100%',
+    borderRadius: 8,
+  },
+});
+
+export default MentalHealthAssessmentResult;

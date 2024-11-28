@@ -184,8 +184,7 @@ const Homepage = (props) => {
             lastScore={msm_date ? lastMsmScore : undefined}
             lastDate={msm_date ? msm_date : undefined}
             onPress={() =>
-              navigation.navigate('HomepageScale', {
-                ToHomepage: false,
+              navigation.navigate(constants.MENTAL_HEALTH_ASSESSMENT, {
                 type: 'manoshikShasthoMullayon',
                 preTest: true,
               })

@@ -82,7 +82,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: colors.success,
+    color: colors.primary,
+    marginBottom: 5,
   },
   card: {
     backgroundColor: '#ffffff',

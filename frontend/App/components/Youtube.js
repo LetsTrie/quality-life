@@ -59,7 +59,7 @@ export default function YouTube({ videoId, needAction = true }) {
 
   return (
     <View style={{ padding: 10 }}>
-      <Loader visible={showLoader} />
+      <Loader visible={showLoader} style={{ marginBottom: 20, marginTop: -5 }} />
       <YoutubePlayer
         height={200}
         play={playing}

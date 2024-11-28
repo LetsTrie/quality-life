@@ -3,7 +3,6 @@ export default {
   USER_REGISTER_CONSENT: 'UserRegisterConsent',
   REGISTER_WITH_EXTRA_INFORMATION: 'AdditionalInformation',
   ONBOARDING_GUIDELINE: 'StartingGuideline',
-  TEST_PAGE: 'CircularQuiz',
   LOGIN: 'Login',
   REGISTER: 'Register',
   HOMEPAGE: 'Homepage',
@@ -56,4 +55,6 @@ export default {
   SIDEBAR_APP_GUIDELINE: 'DrawerGuideline',
 
   RATING: 'Rating',
+  MENTAL_HEALTH_ASSESSMENT: 'HomepageScale',
+  MENTAL_HEALTH_ASSESSMENT_RESULT: 'CircularQuizResult',
 };

@@ -8,20 +8,6 @@ import {
 } from './utils';
 import BaseUrl from '../config/BaseUrl';
 
-export const submitIntroTest = async ({ answers, score, isPostTest, jwtToken }) => {
-  try {
-    console.log('API: ', endpoints.INTRO_TEST);
-    const response = await axios.post(
-      endpoints.INTRO_TEST,
-      { answers, score, postTest: isPostTest },
-      { headers: configHeaders({ jwtToken }) }
-    );
-    return sendSuccessResponse(response.data);
-  } catch (error) {
-    return sendErrorResponse(error);
-  }
-};
-
 export const findProfessionalsForUser = async ({ jwtToken, page = 1 }) => {
   try {
     console.log('API: ', endpoints.FIND_PROFESSIONALS_FOR_USER);

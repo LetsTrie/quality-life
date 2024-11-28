@@ -1,1 +1,1 @@
-export default 'https://6af1-118-179-19-82.ngrok-free.app';
+export default 'https://2480-118-179-19-82.ngrok-free.app';

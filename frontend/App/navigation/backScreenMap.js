@@ -48,4 +48,6 @@ export default {
   [constants.SIDEBAR_APP_GUIDELINE]: constants.HOMEPAGE,
 
   [constants.RATING]: constants.VIDEO_EXERCISE_LIST,
+  [constants.MENTAL_HEALTH_ASSESSMENT]: constants.HOMEPAGE,
+  [constants.MENTAL_HEALTH_ASSESSMENT_RESULT]: constants.HOMEPAGE,
 };

@@ -1,98 +1,93 @@
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, View, BackHandler, Text } from 'react-native';
-import { connect } from 'react-redux';
+import { ScrollView, View } from 'react-native';
+import { useDispatch } from 'react-redux';
 import Quizes from '../components/Quiz/Quizes';
-// import Quizes from '../components/CircularQuiz/Quizes';
-import BaseUrl from '../config/BaseUrl';
 import questions from '../data/mentalHealthRating';
 import { updateMsmAction } from '../redux/actions/user';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useBackPress, useHelper } from '../hooks';
+import constants from '../navigation/constants';
+import { ApiDefinitions } from '../services/api';
 
-const HomepageScale = ({ navigation, route, ...props }) => {
+const SCREEN_NAME = constants.MENTAL_HEALTH_ASSESSMENT;
+const MentalHealthAssessment = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const dispatch = useDispatch();
+
+  const { ApiExecutor } = useHelper();
+
+  const { goToBack, fromVideo = false, preTest } = route.params || {};
+
+  useBackPress(SCREEN_NAME, goToBack);
+
+  const postTest = !preTest;
+
   const [submitted, setSubmitted] = useState(false);
-  const { updateMsmAction } = props;
   const [isLoading, setIsLoading] = useState(false);
 
-  let { preTest } = route.params;
-  let postTest = !preTest;
-
-  const [answers, setAnswers] = useState(
-    new Array(questions.length).fill(null)
-  );
-
-  let { fromVideo, goToBack } = route.params;
-  if (!fromVideo) fromVideo = false;
-  if (!goToBack) goToBack = 'Homepage';
-
-  function handleBackButtonClick() {
-    navigation.navigate(goToBack);
-    return true;
-  }
+  const [answers, setAnswers] = useState(new Array(questions.length).fill(null));
 
   useEffect(() => {
-    BackHandler.addEventListener('hardwareBackPress', handleBackButtonClick);
-    return () => {
-      BackHandler.removeEventListener(
-        'hardwareBackPress',
-        handleBackButtonClick
-      );
-    };
-  }, []);
+    if (!submitted) return;
 
-  useEffect(() => {
-    if (submitted) {
-      let index = 0;
-      let w = 0;
+    (async () => {
+      setIsLoading(true);
+
+      const questionAnswers = answers.map((answer, index) => ({
+        question: questions[index].question,
+        answer,
+      }));
+
+      let _score = 0;
       let maxWeight = 0;
 
-      for (let a of answers) {
-        w += questions[index].options.filter((x) => x.label === a)[0].weight;
-        let mx = -1;
-        for (let o of questions[index].options)
-          if (mx < o.weight) mx = o.weight;
+      answers.map((answer, index) => {
+        const question = questions[index];
+        _score += questions[index].options.filter((x) => x.label === answer)[0].weight;
 
-        maxWeight += mx;
-        index++;
-      }
-      w = Math.round(w);
+        const questionMaxWeight = Math.max(...question.options.map((o) => o.weight));
+        maxWeight += questionMaxWeight;
+      });
+
+      _score = Math.round(_score);
 
       let range = [35, 55];
-
       let stage;
-      if (w <= range[1]) stage = 'তীব্র মাত্রা';
-      else if (w <= range[0]) stage = 'মাঝামাঝি মাত্রা';
+
+      if (_score <= range[1]) stage = 'তীব্র মাত্রা';
+      else if (_score <= range[0]) stage = 'মাঝামাঝি মাত্রা';
       else stage = 'স্বাভাবিক মাত্রা';
 
-      setIsLoading(true);
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${props.jwtToken}`,
+      const payload = {
+        questionAnswers,
+        type: 'manoshikShasthoMullayon',
+        score: _score * 4,
+        severity: stage,
+        totalScore: maxWeight,
+        fromVideo,
+        postTest,
       };
 
-      const score = w * 4;
+      const response = await ApiExecutor(ApiDefinitions.submitTest({ payload }));
+      setIsLoading(false);
 
-      axios
-        .post(
-          `${BaseUrl}/user/intro-Test-Submit`,
-          { answers, score, fromVideo, postTest },
-          { headers }
-        )
-        .then(async (res) => {
-          const { mDate } = res.data;
-          updateMsmAction(score, mDate);
-          navigation.navigate('CircularQuizResult', {
-            ...route.params,
-            goToBack,
-            meanResult: score
-          });
-          setIsLoading(false);
-        })
-        .catch((e) => {
-          setIsLoading(false);
-          console.log(e);
-        });
+      if (!response.success) {
+        console.error(`Failed to submit test: ${response.error.message}`);
+        return;
+      }
 
-    }
+      const { mDate } = response.data;
+      const { score } = response.data.test;
+
+      dispatch(updateMsmAction(score, mDate));
+
+      navigation.replace(constants.MENTAL_HEALTH_ASSESSMENT_RESULT, {
+        ...route.params,
+        goToBack,
+        meanResult: score,
+      });
+    })();
   }, [submitted]);
 
   return (
@@ -110,10 +105,4 @@ const HomepageScale = ({ navigation, route, ...props }) => {
   );
 };
 
-const mapStateToProps = (state) => ({
-  name: state.auth.name,
-  photoUrl: state.auth.photoUrl,
-  jwtToken: state.auth.jwtToken,
-});
-
-export default connect(mapStateToProps, { updateMsmAction })(HomepageScale);
+export default MentalHealthAssessment;

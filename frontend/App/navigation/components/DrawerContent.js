@@ -87,7 +87,7 @@ const DrawerContent = () => {
                     icon={({ color, size }) => (
                       <MaterialCommunityIcons name={'bell'} size={size} color={colors.info} />
                     )}
-                    label="নোটিফিকেশান"
+                    label="নোটিফিকেশন"
                     onPress={() => navigation.navigate('UserNotifications')}
                     style={{ paddingHorizontal: 5, marginBottom: 3 }}
                   />

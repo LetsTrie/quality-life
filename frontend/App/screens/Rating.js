@@ -108,14 +108,14 @@ const RatingComponent = () => {
         lastScore={msm_score ? `${msm_score}/100` : undefined}
         lastDate={msm_date ? msm_date : undefined}
         onPress={() =>
-          navigation.replace('HomepageScale', {
-            ToHomepage: false,
+          navigation.replace(constants.MENTAL_HEALTH_ASSESSMENT, {
+            goToBack: constants.VIDEO_EXERCISE_LIST,
+
             type: 'manoshikShasthoMullayon',
             fromVideo: true,
             videoTitle: nextVideo?.name,
             videoIsCompleted: false,
             videoId: nextVideo?.videoId,
-            goToBack: 'Rating',
             preTest: false,
           })
         }

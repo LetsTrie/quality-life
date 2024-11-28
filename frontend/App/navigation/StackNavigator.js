@@ -9,12 +9,11 @@ import AllProfessionals from '../screens/AllProfessionals.js';
 import AppointmentSuccess from '../screens/AppointmentSuccess.js';
 import AskForTest from '../screens/AskForTest.js';
 import CentralHelpCenter from '../screens/CentralHelpCenter.js';
-import CircularQuiz from '../screens/CircularQuiz.js';
-import CircularQuizResult from '../screens/CircularQuizResult.js';
+import MentalHealthAssessmentResult from '../screens/CircularQuizResult.js';
 import DrawerGuideline from '../screens/DrawerGuideline.js';
 import HelpCenter from '../screens/HelpCenter.js';
 import Homepage from '../screens/Homepage.js';
-import HomepageScale from '../screens/HomepageScale.js';
+import MentalHealthAssessment from '../screens/HomepageScale.js';
 import { StartingGuideline, Welcome, UserLogin } from '../screens/pages2024/index.js';
 import WaitForVerification from '../screens/prof/WaitForVerification.js';
 import ProAssessmentDetails from '../screens/prof/AssessmentDetails.js';
@@ -120,14 +119,6 @@ const StackNavigator = () => {
         component={StartingGuideline}
         options={() => ({
           title: 'অভিনন্দন',
-          headerLeft: () => undefined,
-        })}
-      />
-      <Stack.Screen
-        name={constants.TEST_PAGE}
-        component={CircularQuiz}
-        options={() => ({
-          title: 'মানসিক স্বাস্থ্য মূল্যায়ন',
           headerLeft: () => undefined,
         })}
       />
@@ -472,10 +463,10 @@ const StackNavigator = () => {
         })}
       />
       <Stack.Screen
-        name="HomepageScale"
-        component={HomepageScale}
-        options={({ navigation }) => ({
-          title: 'Qlife',
+        name={constants.MENTAL_HEALTH_ASSESSMENT}
+        component={MentalHealthAssessment}
+        options={() => ({
+          title: 'মানসিক স্বাস্থ্য মূল্যায়ন',
         })}
       />
       <Stack.Screen
@@ -576,15 +567,19 @@ const StackNavigator = () => {
         })}
       />
       <Stack.Screen
-        name="CircularQuizResult"
-        component={CircularQuizResult}
+        name={constants.MENTAL_HEALTH_ASSESSMENT_RESULT}
+        component={MentalHealthAssessmentResult}
         options={({ navigation, route }) => ({
           title: 'ফলাফল',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(route.params.goToBack);
+                if (route.params.goToBack) {
+                  navigation.replace(route.params.goToBack);
+                } else {
+                  navigation.navigate(backScreenMap[constants.MENTAL_HEALTH_ASSESSMENT_RESULT]);
+                }
               }}
             />
           ),
