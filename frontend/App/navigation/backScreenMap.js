@@ -19,6 +19,7 @@ export default {
   [constants.PROF_REGISTER_STEP_3]: constants.SPECIAL_LOGOUT_ACTION,
   [constants.PROF_REGISTER_STEP_4]: constants.SPECIAL_LOGOUT_ACTION,
   [constants.PROF_HOMEPAGE]: constants.WELCOME,
+  [constants.HOMEPAGE]: constants.WELCOME,
   [constants.PROF_LOGIN]: constants.WELCOME,
 
   [constants.PROF_PROFILE]: constants.PROF_HOMEPAGE,

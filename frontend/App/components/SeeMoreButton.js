@@ -1,17 +1,13 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import colors from '../config/colors';
 
 export const SeeMoreButton = ({ icon, text, onPress }) => {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.button}>
-        {icon && (
-          <MaterialCommunityIcons
-            name={icon}
-            style={styles.icon}
-          />
-        )}
+        {icon && <MaterialCommunityIcons name={icon} style={styles.icon} />}
         <Text style={styles.text}>{text}</Text>
       </View>
     </TouchableOpacity>
@@ -24,7 +20,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   button: {
-    backgroundColor: '#139b64',
+    backgroundColor: colors.secondary,
     flexDirection: 'row',
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -39,7 +35,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: 'white',
-    fontSize: 15,
+    fontSize: 14.5,
     paddingLeft: 6,
   },
 });

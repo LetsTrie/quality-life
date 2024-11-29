@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema(
     mentalHealthProfile: [String],
     shownVideo: [String],
     suggestedScale: [String],
+
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

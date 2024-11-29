@@ -1,5 +1,4 @@
 const chalk = require("chalk");
-const httpStatus = require("http-status");
 
 const pino = require("pino");
 const logger = pino({
@@ -17,7 +16,7 @@ const sendErrorResponse = function (res, status, type, content) {
   const errorBody = {
     success: false,
     status: status,
-    type: type || httpStatus.INTERNAL_SERVER_ERROR,
+    type: type || "INTERNAL_SERVER_ERROR",
     errors: Array.isArray(content) ? content : [content],
   };
 

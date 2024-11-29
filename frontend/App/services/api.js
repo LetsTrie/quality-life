@@ -8,30 +8,6 @@ import {
 } from './utils';
 import BaseUrl from '../config/BaseUrl';
 
-export const findProfessionalsForUser = async ({ jwtToken, page = 1 }) => {
-  try {
-    console.log('API: ', endpoints.FIND_PROFESSIONALS_FOR_USER);
-    const response = await axios.get(endpoints.FIND_PROFESSIONALS_FOR_USER + `?page=${page}`, {
-      headers: configHeaders({ jwtToken }),
-    });
-    return sendSuccessResponse(response.data.data);
-  } catch (error) {
-    return sendErrorResponse(error);
-  }
-};
-
-export const takeAppointment = async ({ payload, jwtToken }) => {
-  try {
-    console.log('API: ', endpoints.TAKE_APPOINTMENT);
-    const response = await axios.post(endpoints.TAKE_APPOINTMENT, payload, {
-      headers: configHeaders({ jwtToken }),
-    });
-    return sendSuccessResponse(response.data.data);
-  } catch (error) {
-    return sendErrorResponseV2(error);
-  }
-};
-
 export const seenAppointmentRequest = async ({ jwtToken, appointmentId }) => {
   try {
     const endpoint = endpoints.SEEN_APPOINTMENT_REQUEST + '/' + appointmentId;
@@ -60,19 +36,6 @@ export const updateProfProfile = async ({ _id, payload, jwtToken }) => {
     const apiUrl = `${BaseUrl}/prof/${_id}/update/profile`;
     const response = await axios.post(apiUrl, payload, { headers: configHeaders({ jwtToken }) });
     return sendSuccessResponse(response.data.data.professional);
-  } catch (error) {
-    return sendErrorResponse(error);
-  }
-};
-
-export const findAppointmentById = async ({ appointmentId, jwtToken }) => {
-  try {
-    const endpoint = endpoints.APPOINTMENT_DETAILS + '/' + appointmentId;
-    console.log('API: ', endpoint);
-    const response = await axios.get(endpoint, {
-      headers: configHeaders({ jwtToken }),
-    });
-    return sendSuccessResponse(response.data.data);
   } catch (error) {
     return sendErrorResponse(error);
   }
@@ -161,11 +124,9 @@ export const ApiDefinitions = {
   }),
   getProfessionalHomepageNotificationCount: () => ({
     endpoint: endpoints.PROF_HOMEPAGE_NOTIFICATION_COUNT,
-    method: 'GET',
   }),
   getAppointments: ({ page = 1 }) => ({
     endpoint: endpoints.GET_APPOINTMENTS + `?page=${page}`,
-    method: 'GET',
   }),
   userLogin: ({ payload }) => ({
     endpoint: endpoints.LOGIN,
@@ -174,7 +135,6 @@ export const ApiDefinitions = {
   }),
   userProfile: () => ({
     endpoint: endpoints.USER_PROFILE,
-    method: 'GET',
   }),
   submitTest: ({ payload }) => ({
     endpoint: endpoints.SUBMIT_TEST,
@@ -211,6 +171,17 @@ export const ApiDefinitions = {
   }),
   submitUserRating: ({ payload }) => ({
     endpoint: endpoints.ADD_USER_RATING,
+    method: 'POST',
+    payload,
+  }),
+  getAllProfessionalsForUser: ({ page = 1 }) => ({
+    endpoint: endpoints.FIND_PROFESSIONALS_FOR_USER + `?page=${page}`,
+  }),
+  findAppointmentById: ({ appointmentId }) => ({
+    endpoint: endpoints.APPOINTMENT_DETAILS + '/' + appointmentId,
+  }),
+  takeAppointment: ({ payload }) => ({
+    endpoint: endpoints.TAKE_APPOINTMENT,
     method: 'POST',
     payload,
   }),

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, ToastAndroid, View } from 'react-native';
-import { useSelector } from 'react-redux';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import Button from '../components/Button';
 import Picker from '../components/Picker';
 import Text from '../components/Text';
@@ -9,7 +8,8 @@ import { useBackPress, useHelper } from '../hooks';
 import constants from '../navigation/constants';
 import { numberWithCommas } from '../utils/number';
 import { RadioButton } from 'react-native-paper';
-import { takeAppointment } from '../services/api';
+import { ApiDefinitions } from '../services/api';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const days = [
   { label: 'Sunday', value: 'Sunday', id: 0, genId: 3 },
@@ -64,13 +64,15 @@ days.forEach((d) => {
 });
 
 const SCREEN_NAME = constants.PROFESSIONAL_DETAILS;
-const ProfessionalDetails = ({ navigation, route, ...props }) => {
+const ProfessionalDetails = () => {
   useBackPress(SCREEN_NAME);
+
+  const navigation = useNavigation();
+  const route = useRoute();
 
   const prof = route.params.prof || {};
 
-  const { processApiError } = useHelper();
-  const { jwtToken } = useSelector((state) => state.auth);
+  const { ApiExecutor } = useHelper();
 
   const dateTime = {};
   prof.availableTime.forEach((t) => {
@@ -153,15 +155,15 @@ const ProfessionalDetails = ({ navigation, route, ...props }) => {
     appointmentDate.setHours(hours, minutes, 0, 0);
     payload.dateByClient = appointmentDate.toISOString();
 
-    const response = await takeAppointment({ payload, jwtToken });
-    if (!response.success) {
-      processApiError(response);
-      ToastAndroid.show(response.error.message, ToastAndroid.SHORT);
-    } else {
-      navigation.navigate('AppointmentSuccess');
-    }
-
+    const response = await ApiExecutor(
+      ApiDefinitions.takeAppointment({
+        payload,
+      })
+    );
     setIsLoading(false);
+    if (!response.success) return;
+
+    navigation.navigate(constants.USER_APPOINTMENT_TAKEN);
   };
   return (
     <ScrollView style={{ backgroundColor: 'white' }}>
@@ -322,7 +324,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   eachBlock: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.secondary,
     color: 'white',
     margin: 2,
     padding: 4,

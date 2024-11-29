@@ -5,7 +5,7 @@ import Text from '../components/Text';
 import constants from '../navigation/constants';
 import { useBackPress } from '../hooks';
 
-const SCREEN_NAME = constants.USER_APPOINTMENT_TAKEN
+const SCREEN_NAME = constants.USER_APPOINTMENT_TAKEN;
 const AppointmentSuccess = () => {
   useBackPress(SCREEN_NAME);
 
@@ -14,7 +14,8 @@ const AppointmentSuccess = () => {
       <View style={styles.blockContainer}>
         <AuthIcon />
         <Text style={styles.headerText}>
-          অ্যাপয়েন্টমেন্ট নেওয়ার জন্য আপনাকে ধন্যবাদ। মেইলের মাধ্যমে আপনাকে পরবর্তী আপডেট জানানো হবে!
+          অ্যাপয়েন্টমেন্ট নেওয়ার জন্য আপনাকে ধন্যবাদ। মেইলের মাধ্যমে আপনাকে পরবর্তী আপডেট জানানো
+          হবে!
         </Text>
       </View>
     </ScrollView>
@@ -48,7 +49,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 2,
     fontWeight: 'bold',
-    lineHeight: 28
+    lineHeight: 28,
   },
 });
 

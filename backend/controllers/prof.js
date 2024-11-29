@@ -195,26 +195,26 @@ exports.registerProfessionalStep4 = asyncHandler(async (req, res) => {
 exports.profLogin = asyncHandler(async (req, res, _next) => {
   const prof = await Professional.findOne({ email: req.body.email });
   if (!prof) {
-    return sendErrorResponse(res, 401, httpStatus.UNAUTHORIZED, {
+    return sendErrorResponse(res, 401, "UNAUTHORIZED", {
       message: "ব্যবহারকারী পাওয়া যায়নি",
     });
   }
 
   const isMatch = await bcrypt.compare(req.body.password, prof.password);
   if (!isMatch) {
-    return sendErrorResponse(res, 401, httpStatus.UNAUTHORIZED, {
+    return sendErrorResponse(res, 401, "UNAUTHORIZED", {
       message: "পাসওয়ার্ড মেলেনি",
     });
   }
 
   if (!prof.isVerified) {
-    return sendErrorResponse(res, 401, httpStatus.UNAUTHORIZED, {
+    return sendErrorResponse(res, 401, "UNAUTHORIZED", {
       message: "অ্যাকাউন্ট এখনও যাচাই করা হয়নি",
     });
   }
 
   if (prof.hasRejected) {
-    return sendErrorResponse(res, 401, httpStatus.UNAUTHORIZED, {
+    return sendErrorResponse(res, 401, "UNAUTHORIZED", {
       message: "আপনার অ্যাকাউন্ট বাতিল করা হয়েছে",
     });
   }
@@ -454,7 +454,7 @@ exports.suggestAscale = asyncHandler(async (req, res, _next) => {
   const { userId, assessmentSlug } = req.body;
 
   if (!userId || !assessmentSlug) {
-    return sendErrorResponse(res, 400, httpStatus.BAD_REQUEST, {
+    return sendErrorResponse(res, 400, "BAD_REQUEST", {
       message: "Invalid request",
     });
   }
@@ -482,7 +482,7 @@ exports.getUserCompleteProfile = asyncHandler(async (req, res, next) => {
 
   const user = await User.findById(userId);
   if (!user) {
-    return sendErrorResponse(res, 404, httpStatus.NOT_FOUND, {
+    return sendErrorResponse(res, 404, "NOT_FOUND", {
       message: "User not found",
     });
   }
@@ -563,40 +563,33 @@ exports.allProf = asyncHandler(async (req, res, next) => {
 });
 
 exports.deleteProfessionalAccount = asyncHandler(async (req, res, _next) => {
-  try {
-    const { profId } = req.params;
+  const { profId } = req.params;
 
-    const prof = await Professional.findByIdAndDelete(profId);
-    if (!prof) {
-      return sendErrorResponse(res, httpStatus.NOT_FOUND, {
-        message: "Professional not found",
-      });
-    }
-
-    await MyClient.deleteMany({ prof: profId });
-
-    await Appointment.deleteMany({ prof: profId });
-    await AppointmentMeta.deleteMany({ prof: profId });
-
-    await ProfAssessment.deleteMany({ prof: profId });
-    await AssessmentResult.deleteMany({ prof: profId });
-
-    await UserNotification.deleteMany({ prof: profId });
-    await ProfNotification.deleteMany({ prof: profId });
-
-    return sendJSONresponse(res, httpStatus.OK, { success: true });
-  } catch (err) {
-    // TODO: Need a better catch handler
-    return sendErrorResponse(res, httpStatus.INTERNAL_SERVER_ERROR, {
-      message: "Internal Server Error",
+  const prof = await Professional.findByIdAndDelete(profId);
+  if (!prof) {
+    return sendErrorResponse(res, "NOT_FOUND", {
+      message: "Professional not found",
     });
   }
+
+  await MyClient.deleteMany({ prof: profId });
+
+  await Appointment.deleteMany({ prof: profId });
+  await AppointmentMeta.deleteMany({ prof: profId });
+
+  await ProfAssessment.deleteMany({ prof: profId });
+  await AssessmentResult.deleteMany({ prof: profId });
+
+  await UserNotification.deleteMany({ prof: profId });
+  await ProfNotification.deleteMany({ prof: profId });
+
+  return sendJSONresponse(res, httpStatus.OK, { success: true });
 });
 
 exports.profVisibility = asyncHandler(async (req, res, _next) => {
   const prof = await Professional.findById(req.params.profId);
   if (!prof) {
-    return sendErrorResponse(res, httpStatus.NOT_FOUND, {
+    return sendErrorResponse(res, "NOT_FOUND", {
       message: "Professional not found",
     });
   }

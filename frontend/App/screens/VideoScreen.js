@@ -41,7 +41,7 @@ const VideoScreen = () => {
           <Text style={styles.textStyle}>{videoScreen.postDescription}</Text>
         </View>
         <View style={styles.youTubeVideoContainer}>
-          <Loader visible={!isLoading} />
+          <Loader visible={isLoading} />
           {!isLoading && <YouTube videoId={videoScreen.videoId} needAction={needAction} />}
         </View>
       </ScrollView>

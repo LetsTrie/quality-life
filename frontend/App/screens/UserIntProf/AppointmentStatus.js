@@ -11,8 +11,7 @@ import {
 } from 'react-native';
 import Text from '../../components/Text';
 import colors from '../../config/colors';
-import { findAppointmentById } from '../../services/api';
-import { useSelector } from 'react-redux';
+import { ApiDefinitions } from '../../services/api';
 import { formatDateTime } from '../../utils/date';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useBackPress, useHelper } from '../../hooks';
@@ -24,8 +23,7 @@ const AppointmentStatus = () => {
 
   const navigation = useNavigation();
   const route = useRoute();
-  const { processApiError } = useHelper();
-  const { jwtToken } = useSelector((state) => state.auth);
+  const { ApiExecutor } = useHelper();
 
   const [isLoading, setIsLoading] = useState(true);
   const [curAppointment, setCurAppointment] = useState(null);
@@ -33,15 +31,17 @@ const AppointmentStatus = () => {
   const { appointmentId, notificationId } = route.params;
 
   const getAppointmentDetails = async () => {
-    const response = await findAppointmentById({ appointmentId, jwtToken });
-    if (response.success) {
-      const { appointment } = response.data;
-      setCurAppointment(appointment);
-    } else {
-      processApiError(response);
-    }
-
+    const response = await ApiExecutor(
+      ApiDefinitions.findAppointmentById({
+        appointmentId,
+      })
+    );
     setIsLoading(false);
+
+    if (!response.success) return;
+
+    const { appointment } = response.data;
+    setCurAppointment(appointment);
   };
 
   const dialCall = async (number) => {

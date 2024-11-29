@@ -72,7 +72,7 @@ const DrawerContent = () => {
                       <MaterialCommunityIcons
                         name={'badge-account-horizontal'}
                         size={size}
-                        color={colors.highlight}
+                        color={colors.info}
                       />
                     )}
                     label="আমাদের প্রোফেসনালস"
@@ -85,7 +85,7 @@ const DrawerContent = () => {
 
                   <DrawerItem
                     icon={({ color, size }) => (
-                      <MaterialCommunityIcons name={'bell'} size={size} color={colors.info} />
+                      <MaterialCommunityIcons name={'bell'} size={size} color={colors.highlight} />
                     )}
                     label="নোটিফিকেশন"
                     onPress={() => navigation.navigate('UserNotifications')}

@@ -1,4 +1,3 @@
-const httpStatus = require("http-status");
 const {
   Professional,
   Appointment,
@@ -41,14 +40,16 @@ exports.findProfessionals = asyncHandler(async (req, res, _next) => {
     }).lean();
   }
 
-  const LIMIT = 5;
+  const LIMIT = 2;
   response.professionals = await Professional.find({
     isVerified: true,
     hasRejected: false,
     visibility: true,
+    step: 4,
   })
     .limit(LIMIT)
     .skip(LIMIT * page - LIMIT)
+    .sort({ _id: -1 })
     .lean();
 
   return sendJSONresponse(res, 200, { data: response });
@@ -60,7 +61,7 @@ exports.takeAppointment = asyncHandler(async (req, res, _next) => {
 
   const isExists = await Professional.findById(profId).lean();
   if (!isExists) {
-    return sendErrorResponse(res, 404, httpStatus.NOT_FOUND, {
+    return sendErrorResponse(res, 404, "NOT_FOUND", {
       message: "এই নামে কোন প্রোফেসনাল খুঁজে পাওয়া যাইনি!",
     });
   }
@@ -120,7 +121,7 @@ exports.appointmentSeen = asyncHandler(async (req, res, _next) => {
   const appointment = await Appointment.findById(appointmentId);
 
   if (!appointment) {
-    return sendErrorResponse(res, 404, httpStatus.NOT_FOUND, {
+    return sendErrorResponse(res, 404, "NOT_FOUND", {
       message: "অ্যাপয়েন্টমেন্ট পাওয়া যায়নি",
     });
   }
@@ -164,13 +165,13 @@ exports.respondToAppointment = asyncHandler(async (req, res, _next) => {
 
   const appointment = await Appointment.findById(appointmentId);
   if (!appointment) {
-    return sendErrorResponse(res, 404, httpStatus.NOT_FOUND, {
+    return sendErrorResponse(res, 404, "NOT_FOUND", {
       message: "অ্যাপয়েন্টমেন্ট পাওয়া যায়নি",
     });
   }
 
   if (appointment.hasProfRespondedToClient) {
-    return sendErrorResponse(res, 400, httpStatus.BAD_REQUEST, {
+    return sendErrorResponse(res, 400, "BAD_REQUEST", {
       message: "Professional already responded to client",
     });
   }
@@ -250,7 +251,7 @@ exports.getAppointmentDetailsForUser = asyncHandler(async (req, res, _next) => {
     },
   ]);
   if (!appointment) {
-    return sendErrorResponse(res, 404, httpStatus.NOT_FOUND, {
+    return sendErrorResponse(res, 404, "NOT_FOUND", {
       message: "অ্যাপয়েন্টমেন্ট পাওয়া যায়নি",
     });
   }

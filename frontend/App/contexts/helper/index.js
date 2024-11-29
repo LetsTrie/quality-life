@@ -19,9 +19,12 @@ import { RoleEnum } from '../../utils/roles';
 
 const HelperContext = createContext();
 
+const INCOMPLETE_PROFILE = 'INCOMPLETE_PROFILE:';
+
 export const HelperProvider = ({ children }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+
   const { role, accessToken, refreshToken } = useSelector((state) => state.auth);
 
   const logout = () => {
@@ -63,7 +66,37 @@ export const HelperProvider = ({ children }) => {
         return sendSuccessResponse(response?.data?.data);
       } catch (error) {
         const isTokenExpired =
-          error.response?.status === 401 && error.response?.data?.type === 'InvalidToken';
+          error?.response?.status === 401 && error?.response?.data?.type === 'InvalidToken';
+
+        const isIncompleteProfile =
+          error?.response?.status === 401 &&
+          error?.response?.data?.type?.startsWith?.(INCOMPLETE_PROFILE);
+
+        if (isIncompleteProfile) {
+          const step = parseInt(
+            error.response?.data?.type?.split(INCOMPLETE_PROFILE + 'STEP:')[1],
+            10
+          );
+
+          console.log({ step });
+
+          if (role === RoleEnum.PROFESSIONAL) {
+            if (step === 1) {
+              navigation.navigate(constants.PROF_REGISTER_STEP_2);
+            } else if (step === 2) {
+              navigation.navigate(constants.PROF_REGISTER_STEP_3);
+            } else if (step === 3) {
+              navigation.navigate(constants.PROF_REGISTER_STEP_4);
+            } else {
+              navigation.navigate(constants.PROF_HOMEPAGE);
+            }
+          } else if (role === RoleEnum.USER) {
+            console.log(navigation);
+            navigation.navigate(constants.REGISTER_WITH_EXTRA_INFORMATION);
+          }
+
+          return sendErrorResponseV2(error);
+        }
 
         if (isTokenExpired) {
           // ToastAndroid.show('Refreshing token...', ToastAndroid.SHORT);

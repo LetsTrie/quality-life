@@ -8,15 +8,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSelector } from 'react-redux';
 import Text from '../components/Text';
 import colors from '../config/colors';
 import { numberWithCommas } from '../utils/number';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useBackPress, useHelper } from '../hooks';
 import constants from '../navigation/constants';
 import SeeMoreButton from '../components/SeeMoreButton';
-import { findProfessionalsForUser } from '../services/api';
+import { ApiDefinitions } from '../services/api';
+import { Loader } from '../components';
 
 const SEE_FEE = 'ফি দেখুন';
 const SCREEN_NAME = constants.PROFESSIONALS_LIST;
@@ -39,20 +39,14 @@ const FeeComponent = ({ feeValue }) => {
   );
 };
 
-const wait = (timeout) => {
-  return new Promise((resolve) => setTimeout(resolve, timeout));
-};
-
 const AllProfessionals = () => {
   useBackPress(SCREEN_NAME);
 
   const navigation = useNavigation();
-  const { processApiError } = useHelper();
+  const { ApiExecutor } = useHelper();
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const { jwtToken } = useSelector((state) => state.auth);
 
   const [professionals, setProfessionals] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,38 +66,39 @@ const AllProfessionals = () => {
       setIsSeeMoreLoading(true);
     }
 
-    const response = await findProfessionalsForUser({ jwtToken, page });
-
-    if (response.success) {
-      const { professionalsCount, professionals, appointmentsTaken, isClient } = response.data;
-
-      if (Array.isArray(professionals) && professionals.length > 0) setCurrentPage(page);
-
-      setProfessionals((prev) => [...(prev ?? []), ...professionals]);
-
-      if (page === 1) {
-        setTotalProfessionalsCount(professionalsCount);
-        setContactedProfessionals(appointmentsTaken);
-        setProfessionalsClient(isClient);
-      }
-    } else {
-      console.log(response.error.message);
-      processApiError(response);
-    }
+    const response = await ApiExecutor(ApiDefinitions.getAllProfessionalsForUser({ page }));
 
     if (page === 1) setIsLoading(false);
     else setIsSeeMoreLoading(false);
+
+    if (!response.success) {
+      return;
+    }
+
+    const { professionalsCount, professionals, appointmentsTaken, isClient } = response.data;
+    if (Array.isArray(professionals) && professionals.length > 0) setCurrentPage(page);
+    setProfessionals((prev) => [...(prev ?? []), ...professionals]);
+
+    if (page === 1) {
+      setTotalProfessionalsCount(professionalsCount);
+      setContactedProfessionals(appointmentsTaken);
+      setProfessionalsClient(isClient);
+    }
   };
 
   const onRefresh = React.useCallback(() => {
-    setIsRefreshing(true);
-    fetchProfessionals();
-    wait(2000).then(() => setIsRefreshing(false));
+    (async () => {
+      setIsRefreshing(true);
+      await fetchProfessionals();
+      setIsRefreshing(false);
+    })();
   }, []);
 
   useEffect(() => {
-    fetchProfessionals();
-  }, [jwtToken]);
+    (async () => {
+      await fetchProfessionals();
+    })();
+  }, []);
 
   useEffect(() => {
     setIsSeeMoreHidden(professionals.length >= totalProfessionalsCount);
@@ -152,12 +147,6 @@ const AllProfessionals = () => {
         prof,
       });
     }
-    // else if (exists.status === constants.APPOINTMENT_ACCEPTED) {
-    //   navigation.navigate(constants.APPOINTMENT_STATUS, {
-    //     appointmentId: exists.appointmentId,
-    //     professionalId: prof._id,
-    //   });
-    // }
   };
 
   return (
@@ -218,20 +207,10 @@ const AllProfessionals = () => {
               </React.Fragment>
             ))}
 
-            {isSeeMoreLoading && (
-              <View
-                style={{
-                  textAlign: 'center',
-                  width: '100%',
-                  paddingTop: 10,
-                }}
-              >
-                <ActivityIndicator size="large" color={colors.primary} />
-              </View>
-            )}
+            <Loader visible={isSeeMoreLoading} style={{ marginVertical: 10 }} />
             {!isSeeMoreHidden && (
               <SeeMoreButton
-                text={'See more'}
+                text={'আরো দেখুন'}
                 onPress={() => fetchProfessionals(currentPage + 1)}
               />
             )}
@@ -252,12 +231,12 @@ const styles = StyleSheet.create({
   twoButtonTouchable: {
     backgroundColor: colors.primary,
     borderRadius: 3,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
   twoButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 14,
   },
   eProContiner: {
     elevation: 2,
@@ -275,16 +254,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 2,
   },
-  iconStyle: { fontSize: 19, paddingLeft: 2, paddingRight: 2, color: '#444' },
+  iconStyle: {
+    fontSize: 19,
+    paddingLeft: 2,
+    paddingRight: 2,
+    paddingTop: 2,
+    color: '#444',
+  },
   textStyle: {
     fontSize: 15,
     paddingLeft: 6,
     color: 'gray',
   },
   HighlightedtextStyle: {
-    color: '#333',
-    fontSize: 24,
-    fontWeight: '700',
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: 'bold',
+    paddingBottom: 3,
   },
   noProfessionalsText: {
     fontSize: 18,

@@ -103,7 +103,6 @@ const Test = () => {
         const scaleIds = [
           Keys.CHILD_CARE,
           Keys.DOMESTIC_VIOLENCE,
-          // Keys.CORONA_PROFILE,
           Keys.SUICIDE_IDEATION,
           Keys.PSYCHOTIC_PROFILE,
         ];
@@ -112,7 +111,7 @@ const Test = () => {
         const anyNoAnswerExists = uniqueAnswers.length === 1 && uniqueAnswers[0] === 'না';
 
         if (scaleIds.includes(scaleId) && anyNoAnswerExists) {
-          navigation.navigate('Profile');
+          navigation.navigate(constants.PROFILE);
           return;
         }
 

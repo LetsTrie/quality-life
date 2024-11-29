@@ -217,6 +217,7 @@ const RegisterStep1 = () => {
             name="confirmPassword"
             placeholder="পুনরায় পাসওয়ার্ড দিন"
             // secureTextEntry
+            textContentType="password"
             keyboardType="default"
             onChangeText={(text) => createChangeHandler(text, 'confirmPassword')}
           />

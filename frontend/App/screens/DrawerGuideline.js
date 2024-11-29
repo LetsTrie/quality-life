@@ -32,8 +32,9 @@ const DrawerGuideline = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
-    padding: 10,
+    backgroundColor: colors.background,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   desc: {
     marginVertical: 15,

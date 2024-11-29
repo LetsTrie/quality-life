@@ -459,7 +459,7 @@ const StackNavigator = () => {
         name={constants.PROFESSIONALS_LIST}
         component={AllProfessionals}
         options={() => ({
-          title: 'Our Professionals',
+          title: 'আমাদের প্রফেশনালস',
         })}
       />
       <Stack.Screen

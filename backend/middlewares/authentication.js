@@ -3,6 +3,16 @@ const Professional = require("../models/prof");
 const User = require("../models/user");
 const { sendErrorResponse } = require("../utils");
 
+const INCOMPLETE_PROFILE = "INCOMPLETE_PROFILE:";
+
+const ignoreApiForIncompleteProfileCheck = [
+  "/user/add-info",
+  "/prof/register/step-1",
+  "/prof/register/step-2",
+  "/prof/register/step-3",
+  "/prof/register/step-4",
+];
+
 exports.verifyToken = (role) => async (req, res, next) => {
   if (!["user", "prof"].includes(role)) {
     return sendErrorResponse(res, 400, "ValidationError", {
@@ -33,7 +43,10 @@ exports.verifyToken = (role) => async (req, res, next) => {
       });
     }
 
-    const Model = role === "user" ? User : Professional;
+    const isUser = role === "user";
+    const isProfessional = role === "prof";
+
+    const Model = isUser ? User : Professional;
     const user = await Model.findById(decoded.id);
 
     if (!user) {
@@ -42,8 +55,34 @@ exports.verifyToken = (role) => async (req, res, next) => {
       });
     }
 
+    // if (!user.isEmailVerified) {
+    //   return sendErrorResponse(res, 401, "EmailNotVerified", {
+    //     message: "Incomplete profile",
+    //   });
+    // }
+
+    if (!ignoreApiForIncompleteProfileCheck.includes(req.originalUrl)) {
+      if (isUser) {
+        if (!user.age) {
+          const _type = INCOMPLETE_PROFILE + "STEP:2";
+          return sendErrorResponse(res, 401, _type, {
+            message:
+              "অনুগ্রহ করে প্রোফাইল সম্পূর্ণ করতে প্রয়োজনীয় ধাপগুলো সম্পন্ন করুন",
+          });
+        }
+      } else if (isProfessional) {
+        if (user.step < 4) {
+          const _type = INCOMPLETE_PROFILE + "STEP:" + user.step;
+          return sendErrorResponse(res, 401, _type, {
+            message:
+              "অনুগ্রহ করে প্রোফাইল সম্পূর্ণ করতে প্রয়োজনীয় ধাপগুলো সম্পন্ন করুন",
+          });
+        }
+      }
+    }
+
     req.user = user;
-    if (role === "prof") req.prof = user;
+    if (isProfessional) req.prof = user;
 
     next();
   } catch (error) {
@@ -60,7 +99,6 @@ exports.verifyToken = (role) => async (req, res, next) => {
       });
     }
 
-    // Handle unexpected errors
     return sendErrorResponse(res, 500, "ServerError", {
       success: false,
       message: "An error occurred while processing the token",

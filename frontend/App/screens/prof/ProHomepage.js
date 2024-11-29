@@ -11,7 +11,7 @@ import {
 import Text from '../../components/Text';
 import BaseUrl from '../../config/BaseUrl';
 import { numOfNewNotificationsAction } from '../../redux/actions/prof';
-import { connect } from 'react-redux';
+import { connect, useSelector } from 'react-redux';
 import DeleteAccountModal from '../../components/DeleteAccountModal';
 import ProfileActModal from './ProfileActModal';
 import constants from '../../navigation/constants';
@@ -20,28 +20,13 @@ import { AppButton } from '../../components';
 import { ApiDefinitions } from '../../services/api';
 import { numberWithCommas } from '../../utils/number';
 import { MaterialIcons } from '@expo/vector-icons';
+import colors from '../../config/colors';
 
 const wait = (timeout) => {
   return new Promise((resolve) => setTimeout(resolve, timeout));
 };
 
 const SCREEN_NAME = constants.PROF_HOMEPAGE;
-
-const colors = {
-  primary: '#2C3E50',
-  secondary: '#34495E',
-  accent: '#3498DB',
-  success: '#27AE60',
-  warning: '#F39C12',
-  danger: '#E74C3C',
-  background: '#F8FAFC',
-  cardBackground: '#FFFFFF',
-  text: {
-    primary: '#2C3E50',
-    secondary: '#5D6D7E',
-    light: '#8395A7',
-  },
-};
 
 const CardItem = ({ icon, title, subtitle, color, onPress, badge }) => (
   <TouchableOpacity
@@ -55,6 +40,7 @@ const CardItem = ({ icon, title, subtitle, color, onPress, badge }) => (
         borderColor: color,
         transform: [{ translateX: 0 }],
         marginRight: 5,
+        backgroundColor: colors.white,
       },
     ]}
   >
@@ -63,9 +49,9 @@ const CardItem = ({ icon, title, subtitle, color, onPress, badge }) => (
         <MaterialIcons name={icon} size={24} color={color} />
       </View>
       <View style={styles.cardTextContainer}>
-        <Text style={[styles.cardTitle, { color: colors.text.primary }]}>{title}</Text>
+        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{title}</Text>
         {subtitle && (
-          <Text style={[styles.cardSubtitle, { color: colors.text.secondary }]}>{subtitle}</Text>
+          <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
         )}
       </View>
       {badge && (
@@ -73,7 +59,7 @@ const CardItem = ({ icon, title, subtitle, color, onPress, badge }) => (
           <Text style={styles.badgeText}>{badge}</Text>
         </View>
       )}
-      <MaterialIcons name="chevron-right" size={24} color={colors.text.light} />
+      <MaterialIcons name="chevron-right" size={24} color={colors.light} />
     </View>
   </TouchableOpacity>
 );
@@ -160,7 +146,7 @@ const Homepage = ({ navigation, route, ...props }) => {
     >
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.accent} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <View style={styles.content}>
@@ -171,7 +157,7 @@ const Homepage = ({ navigation, route, ...props }) => {
               icon="notifications-active"
               title="New Notifications"
               subtitle={`You have ${numberWithCommas(numOfNewNotifications)} new notifications`}
-              color={colors.warning}
+              color={colors.highlight}
               onPress={() => navigation.navigate('ProNotification', { goToBack: SCREEN_NAME })}
             />
           )}
@@ -180,7 +166,7 @@ const Homepage = ({ navigation, route, ...props }) => {
             icon="people"
             title="Client Requests"
             badge={numOfNewClientRequests > 0 ? numOfNewClientRequests.toString() : null}
-            color={colors.accent}
+            color={colors.focus}
             onPress={() => navigation.navigate(constants.PROF_CLIENT_REQUEST)}
           />
 
@@ -209,7 +195,7 @@ const Homepage = ({ navigation, route, ...props }) => {
             <CardItem
               icon="notifications"
               title="Notifications"
-              color={colors.text.light}
+              color={colors.highlight}
               onPress={() => navigation.navigate('ProNotification', { goToBack: SCREEN_NAME })}
             />
           )}
@@ -267,7 +253,6 @@ const styles = StyleSheet.create({
   },
   card: {
     marginVertical: 8,
-    backgroundColor: colors.cardBackground,
     borderRadius: 8,
   },
   cardContent: {
@@ -302,7 +287,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   badgeText: {
-    color: colors.cardBackground,
     fontSize: 12,
     fontWeight: 'bold',
   },

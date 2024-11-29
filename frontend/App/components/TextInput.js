@@ -53,12 +53,14 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 10,
+    marginLeft: 4,
   },
   textInputStyle: {
     flex: 1,
   },
   eyeIcon: {
-    marginLeft: 10,
+    paddingLeft: 10,
+    paddingRight: 8,
     alignSelf: 'center',
   },
 });

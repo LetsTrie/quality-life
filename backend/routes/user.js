@@ -9,7 +9,6 @@ const AuthCtrl = require("../controllers/auth");
 const ROLE = "user";
 
 router.post("/delete-account", M.verifyToken(ROLE), AuthCtrl.deleteUserAccount);
-
 router.post("/sign-in", validate(userValidation.loginAsUser), AuthCtrl.signIn);
 
 router.post(

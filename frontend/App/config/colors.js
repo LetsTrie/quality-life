@@ -6,12 +6,12 @@ export default {
   medium: '#8C9A7A', // Soft Olive Green - balanced neutral
   light: '#F5F1EC', // Soft Warm Ivory - even more gentle background
   dark: '#4A5F4A', // Rich Forest Green - depth with organic touch
-  danger: '#C97B6B', // Soft Terracotta Red - gentle, empathetic alert
+  danger: '#de654d', // Soft Terracotta Red - gentle, empathetic alert
   success: '#6E8E5A', // Fresh Sage Green - natural growth and renewal
   info: '#7A6F5B', // Soft Warm Gray-Brown - calm, sophisticated information
   warning: '#D4A76A', // Soft Golden Yellow - gentle caution (kept consistent)
   background: '#f4ebe3', // Warm, luminous neutral
-  highlight: '#A47C5B', // Rich Copper - subtle sophistication
+  highlight: '#ffa62a' /* Soft Golden Yellow - gentle sophistication */,
   accent: '#8E6B4A', // Deep Earthy Brown - grounding element
   neutral: '#C1B1A1', // Soft Warm Greige
   shadow: '#9E8F7F', // Subtle Warm Shadow (kept consistent)
