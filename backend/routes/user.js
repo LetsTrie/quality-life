@@ -36,7 +36,7 @@ router.get("/homepage", M.verifyToken(ROLE), C.userHomepage);
 router.post("/intro-Test-Submit", M.verifyToken(ROLE), C.introTestSubmit);
 
 router.get("/profile/all", M.verifyToken(ROLE), C.getProfileDetails);
-router.get("/all-information", M.verifyToken(ROLE), C.getAllInformation);
+router.get("/all-informations", M.verifyToken(ROLE), C.getAllInformations);
 router.post("/seen-video/:videoUrl", M.verifyToken(ROLE), C.submitAVideo);
 
 router.post("/add-rating", M.verifyToken(ROLE), C.rating);

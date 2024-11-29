@@ -36,11 +36,17 @@ router.post(
   professionalController.registerProfessionalStep4
 );
 
+router.get(
+  "/all-informations",
+  M.verifyToken(ROLE),
+  professionalController.getAllInformations
+);
+
 router.get("/all", professionalController.getAllProfs);
 router.post("/action", professionalController.profAction);
 
-router.delete(
-  "/:profId",
+router.post(
+  "/delete-account",
   M.verifyToken(ROLE),
   professionalController.deleteProfessionalAccount
 );
@@ -66,11 +72,6 @@ router.post(
   professionalController.seenNotification
 );
 
-router.get(
-  "/recently-contacted",
-  M.verifyToken(ROLE),
-  professionalController.recentlyContactedClients
-);
 router.post(
   "/add-as-client",
   M.verifyToken(ROLE),
@@ -111,102 +112,6 @@ router.post(
 );
 router.post("/getCode", professionalController.getVerificationCode);
 router.post("/changePassword", professionalController.changePassword);
-
-//ClinicalActL30
-router.post(
-  "/table/getClinicalActL30",
-  professionalController.getClinicalActL30
-);
-router.post(
-  "/table/createClinicalActL30",
-  professionalController.createClinicalActL30
-);
-router.post(
-  "/table/delClinicalActL30",
-  professionalController.delClinicalActL30
-);
-router.post(
-  "/table/updateClinicalActL30",
-  professionalController.updateClinicalActL30
-);
-
-//PDAL30_1_1
-router.post("/table/getPDAL30_1_1", professionalController.getPDAL30_1_1);
-router.post("/table/createPDAL30_1_1", professionalController.createPDAL30_1_1);
-router.post("/table/delPDAL30_1_1", professionalController.delPDAL30_1_1);
-router.post("/table/updatePDAL30_1_1", professionalController.updatePDAL30_1_1);
-
-// Supervision
-router.post("/table/getSupervision", professionalController.getSupervision);
-router.post(
-  "/table/createSupervision",
-  professionalController.createSupervision
-);
-router.post("/table/delSupervision", professionalController.delSupervision);
-router.post(
-  "/table/updateSupervision",
-  professionalController.updateSupervision
-);
-
-// SeminarWorkshop
-router.post(
-  "/table/getSeminarWorkshop",
-  professionalController.getSeminarWorkshop
-);
-router.post(
-  "/table/createSeminarWorkshop",
-  professionalController.createSeminarWorkshop
-);
-router.post(
-  "/table/delSeminarWorkshop",
-  professionalController.delSeminarWorkshop
-);
-router.post(
-  "/table/updateSeminarWorkshop",
-  professionalController.updateSeminarWorkshop
-);
-
-// Conference
-router.post("/table/getConference", professionalController.getConference);
-router.post("/table/createConference", professionalController.createConference);
-router.post("/table/delConference", professionalController.delConference);
-router.post("/table/updateConference", professionalController.updateConference);
-
-//Research
-router.post("/table/getResearch", professionalController.getResearch);
-router.post("/table/createResearch", professionalController.createResearch);
-router.post("/table/delResearch", professionalController.delResearch);
-router.post("/table/updateResearch", professionalController.updateResearch);
-
-//OtherPAL30
-router.post("/table/getOtherPAL30", professionalController.getOtherPAL30);
-router.post("/table/createOtherPAL30", professionalController.createOtherPAL30);
-router.post("/table/delOtherPAL30", professionalController.delOtherPAL30);
-router.post("/table/updateOtherPAL30", professionalController.updateOtherPAL30);
-
-//SystemicCL
-router.post("/table/getSystemicCL", professionalController.getSystemicCL);
-router.post("/table/createSystemicCL", professionalController.createSystemicCL);
-router.post("/table/delSystemicCL", professionalController.delSystemicCL);
-router.post("/table/updateSystemicCL", professionalController.updateSystemicCL);
-
-//PsychodramaDoc
-router.post(
-  "/table/getPsychodramaDoc",
-  professionalController.getPsychodramaDoc
-);
-router.post(
-  "/table/createPsychodramaDoc",
-  professionalController.createPsychodramaDoc
-);
-router.post(
-  "/table/delPsychodramaDoc",
-  professionalController.delPsychodramaDoc
-);
-router.post(
-  "/table/updatePsychodramaDoc",
-  professionalController.updatePsychodramaDoc
-);
 
 // ****************************************************************
 // ****************************************************************

@@ -9,8 +9,6 @@ import {
 const initialState = {
   _id: null,
   prof: null,
-  jwtToken: null,
-  isAuthenticated: false,
   numOfNewNotifications: 0,
   numOfNewClientRequests: 0,
   name: null,
@@ -20,11 +18,14 @@ const initialState = {
   eduQualification: null,
   experience: null,
   fee: null,
+  step: null,
 };
 
 export default function (state = initialState, action) {
   switch (action.type) {
     case SET_PROFESSIONAL_INFO:
+      console.log('SET_PROFESSIONAL_INFO', action.payload);
+
       return {
         ...state,
         prof: action.payload.prof,
@@ -37,6 +38,8 @@ export default function (state = initialState, action) {
         eduQualification: action.payload.prof.eduQualification,
         experience: action.payload.prof.experience,
         fee: action.payload.prof.fee,
+
+        step: action.payload.prof.step,
       };
 
     case PROF_SIGN_OUT:

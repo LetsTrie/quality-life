@@ -10,21 +10,15 @@ import {
 } from 'react-native';
 import Text from '../../components/Text';
 import BaseUrl from '../../config/BaseUrl';
-import { numOfNewNotificationsAction } from '../../redux/actions/prof';
-import { connect, useSelector } from 'react-redux';
-import DeleteAccountModal from '../../components/DeleteAccountModal';
+import { numOfNewNotificationsAction, storeProfessionalsProfile } from '../../redux/actions/prof';
+import { connect, useDispatch } from 'react-redux';
 import ProfileActModal from './ProfileActModal';
 import constants from '../../navigation/constants';
 import { useBackPress, useHelper } from '../../hooks';
-import { AppButton } from '../../components';
 import { ApiDefinitions } from '../../services/api';
 import { numberWithCommas } from '../../utils/number';
 import { MaterialIcons } from '@expo/vector-icons';
 import colors from '../../config/colors';
-
-const wait = (timeout) => {
-  return new Promise((resolve) => setTimeout(resolve, timeout));
-};
 
 const SCREEN_NAME = constants.PROF_HOMEPAGE;
 
@@ -67,7 +61,9 @@ const CardItem = ({ icon, title, subtitle, color, onPress, badge }) => (
 const Homepage = ({ navigation, route, ...props }) => {
   useBackPress(SCREEN_NAME);
 
-  const { ApiExecutor, logout } = useHelper();
+  const dispatch = useDispatch();
+
+  const { ApiExecutor } = useHelper();
 
   const {
     _id,
@@ -79,12 +75,9 @@ const Homepage = ({ navigation, route, ...props }) => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
   const [modalVisibleAct, setModalVisibleAct] = useState(false);
   const [activeText, setActiveText] = useState(visibility);
   const [error, setError] = useState(null);
-
-  const logoutHandler = logout;
 
   async function getHomepageData() {
     setIsLoading(true);
@@ -96,8 +89,6 @@ const Homepage = ({ navigation, route, ...props }) => {
       return;
     }
 
-    console.log(response);
-
     const { notificationCount, appointmentCount } = response.data;
     numOfNewNotificationsAction(parseFloat(notificationCount), parseFloat(appointmentCount));
   }
@@ -105,25 +96,12 @@ const Homepage = ({ navigation, route, ...props }) => {
   const anyNewNotifications = !(!numOfNewNotifications || numOfNewNotifications <= 0);
 
   const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    getHomepageData();
-    wait(2000).then(() => setRefreshing(false));
+    (async () => {
+      setRefreshing(true);
+      await getHomepageData();
+      setRefreshing(false);
+    })();
   }, []);
-
-  const deleteAccount = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    const response = await ApiExecutor(ApiDefinitions.deleteProfessionalAccount({ profId: _id }));
-    setIsLoading(false);
-
-    if (!response.success) {
-      setError(response.error.message);
-      return;
-    }
-
-    logoutHandler();
-  };
 
   const activation = async () => {
     const variable = { _id: _id, visibility: activeText };
@@ -136,7 +114,17 @@ const Homepage = ({ navigation, route, ...props }) => {
   };
 
   useEffect(() => {
-    getHomepageData();
+    (async () => {
+      await getHomepageData();
+
+      setIsLoading(true);
+      const response = await ApiExecutor(ApiDefinitions.getProfessionalsProfile());
+      if (response.success) {
+        const { prof } = response.data;
+        dispatch(storeProfessionalsProfile(prof));
+      }
+      setIsLoading(false);
+    })();
   }, []);
 
   return (
@@ -178,13 +166,6 @@ const Homepage = ({ navigation, route, ...props }) => {
           />
 
           <CardItem
-            icon="person"
-            title="My Profile"
-            color={colors.success}
-            onPress={() => navigation.navigate(constants.PROF_PROFILE)}
-          />
-
-          <CardItem
             icon="group"
             title="My Clients"
             color={colors.primary}
@@ -206,23 +187,6 @@ const Homepage = ({ navigation, route, ...props }) => {
             subtitle={!activeText ? 'Activate Account' : 'Deactivate Account'}
             color={colors.secondary}
             onPress={() => setModalVisibleAct(true)}
-          />
-
-          <CardItem
-            icon="delete"
-            title="Delete Account"
-            color={colors.danger}
-            onPress={() => setModalVisible(true)}
-          />
-
-          <View style={styles.buttonContainer}>
-            <AppButton title="Sign Out" onPress={logoutHandler} style={styles.signOutButton} />
-          </View>
-
-          <DeleteAccountModal
-            modalVisible={modalVisible}
-            setModalVisible={setModalVisible}
-            onDelete={deleteAccount}
           />
 
           <ProfileActModal

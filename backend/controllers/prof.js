@@ -4,7 +4,6 @@ const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const Appointment = require("../models/appointment");
 const ProfAssessment = require("../models/profAssessment");
-const RecentlyContacted = require("../models/recentlyContacted");
 const AppointmentMeta = require("../models/appointmentMeta");
 
 const MyClient = require("../models/myClient");
@@ -13,21 +12,12 @@ const UserNotification = require("../models/userNotification");
 
 const AssessmentResult = require("../models/profAssessmentResult");
 const VerificationCode = require("../models/verificationCode");
-const ClinicalActL30 = require("../models/clinicalActL30");
-const PDAL30_1_1 = require("../models/pDAL30_1_1");
-const Supervision = require("../models/supervision");
-const SeminarWorkshop = require("../models/seminarWorkshop");
-const Conference = require("../models/conference");
-const OtherPAL30 = require("../models/otherPAL30");
-const Research = require("../models/research");
-const SystemicCL = require("../models/systemicCL");
-const PsychodramaDoc = require("../models/psychodramaDoc");
 
 const nodemailer = require("nodemailer");
 const hbs = require("nodemailer-express-handlebars");
 
-const logger = require("../config/winston");
 const Test = require("../models/test");
+
 const LIMIT = 10;
 
 const { getProgress } = require("./helpers");
@@ -35,7 +25,6 @@ const {
   sendErrorResponse,
   sendJSONresponse,
   logInfo,
-  logWarn,
   logError,
 } = require("../utils");
 const httpStatus = require("http-status");
@@ -192,6 +181,14 @@ exports.registerProfessionalStep4 = asyncHandler(async (req, res) => {
   });
 });
 
+exports.getAllInformations = asyncHandler(async (req, res, _next) => {
+  return sendJSONresponse(res, 200, {
+    data: {
+      prof: req.user,
+    },
+  });
+});
+
 exports.profLogin = asyncHandler(async (req, res, _next) => {
   const prof = await Professional.findOne({ email: req.body.email });
   if (!prof) {
@@ -324,40 +321,6 @@ function modifyAppointmentData(appointment) {
     proposedAppointmentDate: appointment.dateByClient,
   };
 }
-
-exports.recentlyContactedClients = asyncHandler(async (req, res, next) => {
-  const profId = req.user._id;
-  let contacts = await RecentlyContacted.find({
-    prof: profId,
-  }).populate({
-    path: "user",
-    select: "name age isMarried location",
-  });
-  let mContacts = [];
-
-  for (let i = 0; i < contacts.length; i++) {
-    c = contacts[i];
-    const userObject = {
-      _id: c._id,
-      userId: c.user._id,
-      profId,
-      name: c.user.name,
-      status: `${c.user.isMarried ? "বিবাহিত" : "অবিবাহিত"}, বয়স - ${
-        c.user.age
-      }`,
-      location: [
-        c.user.location.union,
-        c.user.location.upazila,
-        c.user.location.zila,
-      ]
-        .filter(Boolean)
-        .join(", "),
-    };
-    mContacts.push(userObject);
-  }
-
-  return res.json({ contacts: mContacts });
-});
 
 const makeClientObject = (c) => ({
   _id: c._id,
@@ -563,7 +526,7 @@ exports.allProf = asyncHandler(async (req, res, next) => {
 });
 
 exports.deleteProfessionalAccount = asyncHandler(async (req, res, _next) => {
-  const { profId } = req.params;
+  const profId = req.user._id;
 
   const prof = await Professional.findByIdAndDelete(profId);
   if (!prof) {
@@ -660,394 +623,3 @@ exports.changePassword = async (req, res) => {
     return res.status(400).json({ err });
   }
 };
-
-//// handling table data
-
-//ClinicalActL30
-
-exports.getClinicalActL30 = async (req, res, next) => {
-  try {
-    const clinicalActL30 = await ClinicalActL30.find({
-      userId: req.body.userId,
-    });
-    return res.status(200).json({ success: true, clinicalActL30 });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ err });
-  }
-};
-
-exports.createClinicalActL30 = async (req, res, next) => {
-  try {
-    const clinicalActL30 = new ClinicalActL30(req.body);
-    await clinicalActL30.save();
-    return res.status(200).json("success");
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.delClinicalActL30 = async (req, res, next) => {
-  try {
-    await ClinicalActL30.findByIdAndDelete(req.body._id);
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-exports.updateClinicalActL30 = async (req, res, next) => {
-  try {
-    const clinicalActL30Up = await ClinicalActL30.findById(req.body._id);
-    for (let r in req.body) clinicalActL30Up[r] = req.body[r];
-    await clinicalActL30Up.save();
-
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-// PDAL30_1_1
-
-exports.getPDAL30_1_1 = async (req, res, next) => {
-  try {
-    const pDAL30_1_1 = await PDAL30_1_1.find({ userId: req.body.userId });
-    return res.status(200).json({ success: true, pDAL30_1_1 });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ err });
-  }
-};
-
-exports.createPDAL30_1_1 = async (req, res, next) => {
-  try {
-    const pDAL30_1_1 = new PDAL30_1_1(req.body);
-    await pDAL30_1_1.save();
-    return res.status(200).json("success");
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.delPDAL30_1_1 = async (req, res, next) => {
-  try {
-    await PDAL30_1_1.findByIdAndDelete(req.body._id);
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-exports.updatePDAL30_1_1 = async (req, res, next) => {
-  try {
-    const pDAL30_1_1Up = await PDAL30_1_1.findById(req.body._id);
-    for (let r in req.body) pDAL30_1_1Up[r] = req.body[r];
-    await pDAL30_1_1Up.save();
-
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-//Supervision
-
-exports.getSupervision = async (req, res, next) => {
-  try {
-    const supervision = await Supervision.find({ userId: req.body.userId });
-    return res.status(200).json({ success: true, supervision });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ err });
-  }
-};
-
-exports.createSupervision = async (req, res, next) => {
-  try {
-    const supervision = new Supervision(req.body);
-    await supervision.save();
-    return res.status(200).json("success");
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.delSupervision = async (req, res, next) => {
-  try {
-    await Supervision.findByIdAndDelete(req.body._id);
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-exports.updateSupervision = async (req, res, next) => {
-  try {
-    const supervisionUp = await Supervision.findById(req.body._id);
-    for (let r in req.body) supervisionUp[r] = req.body[r];
-    await supervisionUp.save();
-
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-//SeminarWorkshop
-exports.getSeminarWorkshop = async (req, res, next) => {
-  try {
-    const seminarWorkshop = await SeminarWorkshop.find({
-      userId: req.body.userId,
-    });
-    return res.status(200).json({ success: true, seminarWorkshop });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ err });
-  }
-};
-
-exports.createSeminarWorkshop = async (req, res, next) => {
-  try {
-    const seminarWorkshop = new SeminarWorkshop(req.body);
-    await seminarWorkshop.save();
-    return res.status(200).json("success");
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.delSeminarWorkshop = async (req, res, next) => {
-  try {
-    await SeminarWorkshop.findByIdAndDelete(req.body._id);
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-exports.updateSeminarWorkshop = async (req, res, next) => {
-  try {
-    const seminarWorkshopUp = await SeminarWorkshop.findById(req.body._id);
-    for (let r in req.body) seminarWorkshopUp[r] = req.body[r];
-    await seminarWorkshopUp.save();
-
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-// Conference
-exports.getConference = async (req, res, next) => {
-  try {
-    const conference = await Conference.find({ userId: req.body.userId });
-    return res.status(200).json({ success: true, conference });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ err });
-  }
-};
-
-exports.createConference = async (req, res, next) => {
-  try {
-    const conference = new Conference(req.body);
-    await conference.save();
-    return res.status(200).json("success");
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.delConference = async (req, res, next) => {
-  try {
-    await Conference.findByIdAndDelete(req.body._id);
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-exports.updateConference = async (req, res, next) => {
-  try {
-    const conferenceUp = await Conference.findById(req.body._id);
-    for (let r in req.body) conferenceUp[r] = req.body[r];
-    await conferenceUp.save();
-
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-// Research
-exports.getResearch = async (req, res, next) => {
-  try {
-    const research = await Research.find({ userId: req.body.userId });
-    return res.status(200).json({ success: true, research });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ err });
-  }
-};
-
-exports.createResearch = async (req, res, next) => {
-  try {
-    const research = new Research(req.body);
-    await research.save();
-    return res.status(200).json("success");
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.delResearch = async (req, res, next) => {
-  try {
-    await Research.findByIdAndDelete(req.body._id);
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-exports.updateResearch = async (req, res, next) => {
-  try {
-    const researchUp = await Research.findById(req.body._id);
-    for (let r in req.body) researchUp[r] = req.body[r];
-    await researchUp.save();
-
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-//OtherPAL30
-exports.getOtherPAL30 = async (req, res, next) => {
-  try {
-    const otherPAL30 = await OtherPAL30.find({ userId: req.body.userId });
-    return res.status(200).json({ success: true, otherPAL30 });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ err });
-  }
-};
-
-exports.createOtherPAL30 = async (req, res, next) => {
-  try {
-    const otherPAL30 = new OtherPAL30(req.body);
-    await otherPAL30.save();
-    return res.status(200).json("success");
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.delOtherPAL30 = async (req, res, next) => {
-  try {
-    await OtherPAL30.findByIdAndDelete(req.body._id);
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-exports.updateOtherPAL30 = async (req, res, next) => {
-  try {
-    const otherPAL30Up = await OtherPAL30.findById(req.body._id);
-    for (let r in req.body) otherPAL30Up[r] = req.body[r];
-    await otherPAL30Up.save();
-
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-//SystemicCL
-exports.getSystemicCL = async (req, res, next) => {
-  try {
-    const systemicCL = await SystemicCL.find({ userId: req.body.userId });
-    return res.status(200).json({ success: true, systemicCL });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ err });
-  }
-};
-
-exports.createSystemicCL = async (req, res, next) => {
-  try {
-    const systemicCL = new SystemicCL(req.body);
-    await systemicCL.save();
-    return res.status(200).json("success");
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.delSystemicCL = async (req, res, next) => {
-  try {
-    await SystemicCL.findByIdAndDelete(req.body._id);
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-exports.updateSystemicCL = async (req, res, next) => {
-  try {
-    const systemicCLUp = await SystemicCL.findById(req.body._id);
-    for (let r in req.body) systemicCLUp[r] = req.body[r];
-    await systemicCLUp.save();
-
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-//PsychodramaDoc
-exports.getPsychodramaDoc = async (req, res, next) => {
-  try {
-    const psychodramaDoc = await PsychodramaDoc.find({
-      userId: req.body.userId,
-    });
-    return res.status(200).json({ success: true, psychodramaDoc });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ err });
-  }
-};
-
-exports.createPsychodramaDoc = async (req, res, next) => {
-  try {
-    const psychodramaDoc = new PsychodramaDoc(req.body);
-    await psychodramaDoc.save();
-    return res.status(200).json("success");
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.delPsychodramaDoc = async (req, res, next) => {
-  try {
-    await PsychodramaDoc.findByIdAndDelete(req.body._id);
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-exports.updatePsychodramaDoc = async (req, res, next) => {
-  try {
-    const psychodramaDocUp = await PsychodramaDoc.findById(req.body._id);
-    for (let r in req.body) psychodramaDocUp[r] = req.body[r];
-    await psychodramaDocUp.save();
-
-    return res.status(200).json("success");
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-//testing heroku

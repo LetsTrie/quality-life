@@ -118,9 +118,9 @@ export const ApiDefinitions = {
     method: 'POST',
     payload,
   }),
-  deleteProfessionalAccount: ({ profId }) => ({
-    endpoint: endpoints.DELETE_PROF_ACCOUNT + profId,
-    method: 'DELETE',
+  deleteProfessionalAccount: () => ({
+    endpoint: endpoints.DELETE_PROF_ACCOUNT,
+    method: 'POST',
   }),
   getProfessionalHomepageNotificationCount: () => ({
     endpoint: endpoints.PROF_HOMEPAGE_NOTIFICATION_COUNT,
@@ -135,6 +135,9 @@ export const ApiDefinitions = {
   }),
   userProfile: () => ({
     endpoint: endpoints.USER_PROFILE,
+  }),
+  getProfessionalsProfile: () => ({
+    endpoint: endpoints.PROF_PROFILE,
   }),
   submitTest: ({ payload }) => ({
     endpoint: endpoints.SUBMIT_TEST,

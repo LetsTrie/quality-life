@@ -8,7 +8,7 @@ import {
   UPDATE_PROFILE_PROF,
 } from './types';
 
-export const setProfessionalInfo = (prof) => (dispatch) => {
+export const storeProfessionalsProfile = (prof) => (dispatch) => {
   dispatch({
     type: SET_PROFESSIONAL_INFO,
     payload: { prof },

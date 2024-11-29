@@ -56,12 +56,8 @@ export const UserLogin = () => {
     payload.password = payload.password.toString().trim().toLowerCase();
 
     const lResponse = await ApiExecutor(ApiDefinitions.userLogin({ payload }));
-    console.log(lResponse);
 
-    if (!lResponse.success) {
-      setError(lResponse?.error?.message);
-      return;
-    }
+    if (!lResponse.success) return;
 
     dispatch(setAuthToken(RoleEnum.USER, lResponse.data.accessToken, lResponse.data.refreshToken));
     setTimeout(() => {

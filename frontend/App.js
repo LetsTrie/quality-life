@@ -22,7 +22,10 @@ export default function App() {
               <BackPressProvider>
                 <Drawer.Navigator
                   drawerContent={(props) => <DrawerContent {...props} />}
-                  screenOptions={{ headerShown: false }}
+                  screenOptions={{
+                    headerShown: false,
+                    swipeEnabled: false,
+                  }}
                 >
                   <Drawer.Screen name="Drawer" component={MainStackNavigator} />
                 </Drawer.Navigator>

@@ -7,7 +7,8 @@ export const endpoints = {
   REFRESH_TOKEN: `${BaseUrl}/auth/refresh-token`,
   USER_ADDITIONAL_INFO: `${BaseUrl}/user/add-info`,
   UPDATE_PROFILE: `${BaseUrl}/user/update/profile`,
-  USER_PROFILE: `${BaseUrl}/user/all-information`,
+  USER_PROFILE: `${BaseUrl}/user/all-informations`,
+  PROF_PROFILE: `${BaseUrl}/prof/all-informations`,
   APPOINTMENT_DETAILS: `${BaseUrl}/user/appointment-details`,
 
   PROF_LOGIN: `${BaseUrl}/prof/login`,
@@ -15,7 +16,7 @@ export const endpoints = {
   PROF_REGISTER_STEP2: `${BaseUrl}/prof/register/step-2`,
   PROF_REGISTER_STEP3: `${BaseUrl}/prof/register/step-3`,
   PROF_REGISTER_STEP4: `${BaseUrl}/prof/register/step-4`,
-  DELETE_PROF_ACCOUNT: `${BaseUrl}/prof/`,
+  DELETE_PROF_ACCOUNT: `${BaseUrl}/prof/delete-account`,
 
   PROF_PROFILE_UPDATE: `${BaseUrl}/prof/update/profile`,
   FIND_PROFESSIONALS_FOR_USER: `${BaseUrl}/user/professionals`,

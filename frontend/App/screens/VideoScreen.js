@@ -8,9 +8,6 @@ import videoScreenPages from '../data/videoScreenPages';
 import { useBackPress } from '../hooks';
 import constants from '../navigation/constants';
 
-// Updated At: 22/03/2024
-// Updated By: MD. Sakib Khan
-
 const VideoScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();

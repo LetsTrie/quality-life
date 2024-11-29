@@ -24,10 +24,8 @@ import ClientTestResult from '../screens/prof/ClientTestResult.js';
 import LoginPro from '../screens/prof/Login.js';
 import ProMyClients from '../screens/prof/MyClients.js';
 import ProNotification from '../screens/prof/Notification.js';
-import ProActivityLog from '../screens/prof/ProActivityLog.js';
 import ProfileProf from '../screens/prof/ProfileProf.js';
 import ProHomepage from '../screens/prof/ProHomepage.js';
-import recentlyContacted from '../screens/prof/recentlyContacted.js';
 import RecoverAccount from '../screens/prof/RecoverAccount.js';
 import RegisterConsentPro from '../screens/prof/RegisterConsentPro.js';
 
@@ -242,36 +240,6 @@ const StackNavigator = () => {
           ),
         })}
       />
-      <Stack.Screen
-        name="ProActivityLog"
-        component={ProActivityLog}
-        options={({ navigation, route, ...props }) => ({
-          title: 'Clinical Documentation Form',
-          headerLeft: (props) => (
-            <HeaderBackButton
-              {...props}
-              onPress={() => {
-                navigation.navigate(route.params.goToBack);
-              }}
-            />
-          ),
-        })}
-      />
-      <Stack.Screen
-        name="recentlyContacted"
-        component={recentlyContacted}
-        options={({ navigation, route, ...props }) => ({
-          title: 'Requested Clients',
-          headerLeft: (props) => (
-            <HeaderBackButton
-              {...props}
-              onPress={() => {
-                navigation.navigate(route.params.goToBack);
-              }}
-            />
-          ),
-        })}
-      />
       <Stack.Screen name="Register" component={Register} options={dontShowHeader} />
       <Stack.Screen name="LoginPro" component={LoginPro} options={dontShowHeader} />
       <Stack.Screen name="RecoverAccount" component={RecoverAccount} options={dontShowHeader} />
@@ -353,7 +321,6 @@ const StackNavigator = () => {
         component={ProHomepage}
         options={() => ({
           title: constants.HOMEPAGE,
-          headerLeft: () => null,
         })}
       />
       <Stack.Screen

@@ -4,6 +4,8 @@ import { BackHandler } from 'react-native';
 import backScreenMap from '../navigation/backScreenMap';
 import { useHelper } from './helper';
 import constants from '../navigation/constants';
+import { selectHomepageByRole } from '../utils/roles';
+import { useSelector } from 'react-redux';
 
 const BackPressContext = createContext();
 
@@ -11,13 +13,15 @@ export const useBackPress = (screenName, previousPage = null) => {
   const navigation = useNavigation();
   const { logout } = useHelper();
 
+  const { role } = useSelector((state) => state.auth);
+
   const handleBackPress = () => {
     if (backScreenMap[screenName] === constants.SPECIAL_LOGOUT_ACTION) {
       logout();
     } else if (previousPage) {
-      navigation.replace(previousPage);
+      navigation.replace(selectHomepageByRole(previousPage, role));
     } else {
-      navigation.navigate(backScreenMap[screenName]);
+      navigation.navigate(selectHomepageByRole(backScreenMap[screenName], role));
     }
 
     return true;

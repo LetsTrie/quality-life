@@ -10,7 +10,7 @@ import useFormFields from '../../components/HandleForm';
 import TextInput from '../../components/TextInput';
 import colors from '../../config/colors';
 import constants from '../../navigation/constants';
-import { setProfessionalInfo } from '../../redux/actions/prof';
+import { storeProfessionalsProfile } from '../../redux/actions/prof';
 import { useBackPress, useHelper } from '../../hooks';
 import { ApiDefinitions } from '../../services/api';
 import { RoleEnum } from '../../utils/roles';
@@ -83,7 +83,7 @@ const ProfLoginComponent = () => {
     }
 
     dispatch(setAuthToken(RoleEnum.PROFESSIONAL, accessToken, refreshToken));
-    dispatch(setProfessionalInfo(prof));
+    dispatch(storeProfessionalsProfile(prof));
 
     if (prof.step == 1) {
       navigation.navigate(constants.PROF_REGISTER_STEP_2);

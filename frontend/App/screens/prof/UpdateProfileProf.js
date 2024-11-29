@@ -48,7 +48,7 @@ const UpdateProfileProf = () => {
     eduQualification,
     experience,
     fee,
-  } = useSelector((state) => state.prof.prof);
+  } = useSelector((state) => state.prof.prof || {});
   const { jwtToken } = useSelector((state) => state.auth);
 
   useEffect(() => {

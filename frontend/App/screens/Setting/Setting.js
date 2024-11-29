@@ -10,20 +10,26 @@ import constants from '../../navigation/constants';
 import colors from '../../config/colors';
 import DeleteAccountModal from '../../components/DeleteAccountModal';
 import { ApiDefinitions } from '../../services/api';
+import { useSelector } from 'react-redux';
+import { isProfessional, isUser } from '../../utils/roles';
 
 const SCREEN_NAME = constants.SETTINGS;
 const Setting = () => {
   useBackPress(SCREEN_NAME);
 
-  const { ApiExecutor } = useHelper();
-
+  const { ApiExecutor, logout } = useHelper();
   const navigation = useNavigation();
-  const { logout } = useHelper();
 
+  const { role } = useSelector((state) => state.auth);
   const [modalVisible, setModalVisible] = useState(false);
 
   const onDelete = async () => {
-    await ApiExecutor(ApiDefinitions.deleteUserAccount());
+    if (isUser(role)) {
+      await ApiExecutor(ApiDefinitions.deleteUserAccount());
+    } else if (isProfessional(role)) {
+      await ApiExecutor(ApiDefinitions.deleteProfessionalAccount());
+    }
+
     setModalVisible(false);
     logout();
   };

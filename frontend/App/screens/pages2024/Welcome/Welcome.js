@@ -10,6 +10,7 @@ import { ApiDefinitions } from '../../../services/api';
 import { useHelper } from '../../../hooks';
 import { storeUserProfile } from '../../../redux/actions/user';
 import colors from '../../../config/colors';
+import { storeProfessionalsProfile } from '../../../redux/actions/prof';
 
 const ImageSlider = () => {
   return (
@@ -49,15 +50,20 @@ export const Welcome = () => {
 
     try {
       switch (role) {
-        case RoleEnum.USER: {
+        case RoleEnum.USER:
           const userResponse = await ApiExecutor(ApiDefinitions.userProfile());
           if (!userResponse.success) return;
 
           dispatch(storeUserProfile(userResponse.data.user));
           navigation.navigate(constants.HOMEPAGE);
           break;
-        }
+
         case RoleEnum.PROFESSIONAL:
+          const profResponse = await ApiExecutor(ApiDefinitions.getProfessionalsProfile());
+
+          if (!profResponse.success) return;
+
+          dispatch(storeProfessionalsProfile(profResponse.data.prof));
           navigation.navigate(constants.PROF_HOMEPAGE);
           break;
 

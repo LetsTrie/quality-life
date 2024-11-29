@@ -260,7 +260,7 @@ exports.getProfileDetails = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.getAllInformation = asyncHandler(async (req, res, next) => {
+exports.getAllInformations = asyncHandler(async (req, res, next) => {
   const { name, age, gender, isMarried, location, email } = req.user;
   const { union, zila, upazila } = location;
   let address = [union, upazila, zila].filter(Boolean).join(", ");
