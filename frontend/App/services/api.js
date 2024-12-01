@@ -8,29 +8,6 @@ import {
 } from './utils';
 import BaseUrl from '../config/BaseUrl';
 
-export const seenAppointmentRequest = async ({ jwtToken, appointmentId }) => {
-  try {
-    const endpoint = endpoints.SEEN_APPOINTMENT_REQUEST + '/' + appointmentId;
-    console.log('API: ', endpoint);
-    const response = await axios.post(endpoint, {}, { headers: configHeaders({ jwtToken }) });
-    return sendSuccessResponse(response.data.data);
-  } catch (error) {
-    return sendErrorResponseV2(error);
-  }
-};
-
-export const respondToClientRequest = async ({ jwtToken, appointmentId, payload }) => {
-  try {
-    const endpoint = endpoints.RESPOND_TO_CLIENT_REQUEST + '/' + appointmentId;
-    console.log('API: ', endpoint);
-    const response = await axios.post(endpoint, payload, { headers: configHeaders({ jwtToken }) });
-    return sendSuccessResponse(response.data.data);
-  } catch (error) {
-    console.log(error);
-    return sendErrorResponseV2(error);
-  }
-};
-
 export const updateProfProfile = async ({ _id, payload, jwtToken }) => {
   try {
     const apiUrl = `${BaseUrl}/prof/${_id}/update/profile`;
@@ -183,8 +160,20 @@ export const ApiDefinitions = {
   findAppointmentById: ({ appointmentId }) => ({
     endpoint: endpoints.APPOINTMENT_DETAILS + '/' + appointmentId,
   }),
-  takeAppointment: ({ payload }) => ({
+  requestForAppointment: ({ payload }) => ({
     endpoint: endpoints.TAKE_APPOINTMENT,
+    method: 'POST',
+    payload,
+  }),
+  getProfessionalsUnreadNotifications: ({ page = 1 }) => ({
+    endpoint: endpoints.PROF_UNREAD_NOTIFICATIONS + `?page=${page}`,
+  }),
+  seenAppointmentRequest: ({ appointmentId }) => ({
+    endpoint: endpoints.SEEN_APPOINTMENT_REQUEST + '/' + appointmentId,
+    method: 'POST',
+  }),
+  respondToClientRequest: ({ appointmentId, payload }) => ({
+    endpoint: endpoints.RESPOND_TO_CLIENT_REQUEST + '/' + appointmentId,
     method: 'POST',
     payload,
   }),

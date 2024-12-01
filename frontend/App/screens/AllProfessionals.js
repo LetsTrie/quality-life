@@ -1,13 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Text from '../components/Text';
 import colors from '../config/colors';
 import { numberWithCommas } from '../utils/number';
@@ -48,13 +41,16 @@ const AllProfessionals = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const [professionals, setProfessionals] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isSeeMoreLoading, setIsSeeMoreLoading] = useState(false);
   const [isSeeMoreHidden, setIsSeeMoreHidden] = useState(true);
+
+  const [professionals, setProfessionals] = useState([]);
   const [totalProfessionalsCount, setTotalProfessionalsCount] = useState(0);
-  const [contactedProfessionals, setContactedProfessionals] = useState([]);
-  const [professionalsClient, setProfessionalsClient] = useState([]);
+
+  const [contactedProfessionals, setContactedProfessionals] = useState([]); // not approved yet
+  const [professionalsClient, setProfessionalsClient] = useState([]); // already approved client
+  const [recentlyContactedProfessionals, setRecentlyContactedProfessionals] = useState([]);
 
   const fetchProfessionals = async (page = 1) => {
     if (page == 1) {
@@ -62,6 +58,7 @@ const AllProfessionals = () => {
       setProfessionals([]);
       setTotalProfessionalsCount(0);
       setContactedProfessionals([]);
+      setRecentlyContactedProfessionals([]);
     } else {
       setIsSeeMoreLoading(true);
     }
@@ -75,7 +72,14 @@ const AllProfessionals = () => {
       return;
     }
 
-    const { professionalsCount, professionals, appointmentsTaken, isClient } = response.data;
+    const {
+      professionalsCount,
+      professionals,
+      appointmentsTaken,
+      isClient,
+      recentlyContactedProfessionals,
+    } = response.data;
+
     if (Array.isArray(professionals) && professionals.length > 0) setCurrentPage(page);
     setProfessionals((prev) => [...(prev ?? []), ...professionals]);
 
@@ -83,6 +87,7 @@ const AllProfessionals = () => {
       setTotalProfessionalsCount(professionalsCount);
       setContactedProfessionals(appointmentsTaken);
       setProfessionalsClient(isClient);
+      setRecentlyContactedProfessionals(recentlyContactedProfessionals);
     }
   };
 
@@ -101,79 +106,103 @@ const AllProfessionals = () => {
   }, []);
 
   useEffect(() => {
-    setIsSeeMoreHidden(professionals.length >= totalProfessionalsCount);
-  }, [professionals, totalProfessionalsCount]);
+    setIsSeeMoreHidden(
+      professionals.length + recentlyContactedProfessionals.length >= totalProfessionalsCount
+    );
+  }, [professionals, totalProfessionalsCount, recentlyContactedProfessionals]);
 
   const RequestAppointmentBtn = ({ prof }) => {
     const isClient = professionalsClient.find((c) => c.prof === prof._id);
     const existingAp = contactedProfessionals.find((c) => c.prof === prof._id);
 
-    let message = 'অ্যাপয়েন্টমেন্ট নিন';
+    const message = isClient
+      ? 'যোগাযোগ করুন'
+      : existingAp
+        ? existingAp.status === constants.APPOINTMENT_REQUESTED
+          ? 'ইতোমধ্যেই অনুরোধ করা হয়েছে'
+          : existingAp.status === constants.APPOINTMENT_ACCEPTED
+            ? 'আপডেট দেখুন'
+            : 'অ্যাপয়েন্টমেন্ট নিন'
+        : 'অ্যাপয়েন্টমেন্ট নিন';
 
-    if (isClient) {
-      message = 'যোগাযোগ করুন';
-    } else if (existingAp) {
-      if (existingAp.status === constants.APPOINTMENT_REQUESTED) {
-        message = 'ইতোমধ্যেই অনুরোধ করা হয়েছে';
-      } else if (existingAp.status === constants.APPOINTMENT_ACCEPTED) {
-        message = 'আপডেট দেখুন';
+    const handleAppointmentAction = () => {
+      if (isClient) {
+        navigation.navigate(constants.APPOINTMENT_STATUS, {
+          appointmentId: existingAp._id,
+          professionalId: existingAp.prof,
+        });
+      } else if (!existingAp) {
+        navigation.replace(constants.PROFESSIONAL_DETAILS, { prof });
       }
-    }
-
-    console.log(message);
+    };
 
     return (
-      <TouchableOpacity
-        style={styles.twoButtonTouchable}
-        onPress={() => requestAppointmentButton(prof)}
-      >
+      <TouchableOpacity style={styles.twoButtonTouchable} onPress={handleAppointmentAction}>
         <Text style={styles.twoButtonText}>{message}</Text>
       </TouchableOpacity>
     );
   };
 
-  const requestAppointmentButton = (prof) => {
-    const isClient = professionalsClient.find((c) => c.prof === prof._id);
-    const existingAp = contactedProfessionals.find((c) => c.prof === prof._id);
-    console.log(isClient, existingAp);
-
-    if (isClient) {
-      navigation.navigate(constants.APPOINTMENT_STATUS, {
-        appointmentId: existingAp._id,
-        professionalId: existingAp.prof,
-      });
-    } else if (!existingAp) {
-      navigation.navigate(constants.PROFESSIONAL_DETAILS, {
-        prof,
-      });
-    }
-  };
-
   return (
     <ScrollView
-      style={{ backgroundColor: '#eee', padding: 10 }}
+      style={{ backgroundColor: colors.background, padding: 10 }}
       refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />}
     >
       {isLoading ? (
-        <View
-          style={{
-            textAlign: 'center',
-            width: '100%',
-            paddingTop: 10,
-          }}
-        >
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <Loader visible={isLoading} style={{ marginVertical: 10 }} />
       ) : (
         <>
           <View>
-            {professionals.length === 0 && !isLoading && (
-              <Text style={styles.noProfessionalsText}>
-                No professionals available at the moment.
-              </Text>
+            {professionals.length + recentlyContactedProfessionals.length === 0 && (
+              <Text style={styles.noProfessionalsText}>এ মুহূর্তে কোনো প্রফেশনাল নেই।</Text>
             )}
           </View>
           <View style={{ paddingBottom: 10 }}>
+            {recentlyContactedProfessionals.length > 0 && (
+              <>
+                {professionals.length > 0 && (
+                  <Text style={styles.headerText}>আপনার অ্যাপয়েন্টমেন্ট তালিকা</Text>
+                )}
+                {recentlyContactedProfessionals.map((professional, index) => (
+                  <React.Fragment key={index}>
+                    <View style={styles.eProContiner} key={professional._id}>
+                      <View style={[styles.proInfoContainer, { paddingBottom: 5 }]}>
+                        <Text style={styles.HighlightedtextStyle}>{professional.name}</Text>
+                      </View>
+                      <View style={styles.proInfoContainer}>
+                        <MaterialCommunityIcons
+                          name={'card-account-details-star'}
+                          style={styles.iconStyle}
+                        />
+                        <Text style={styles.textStyle}>{professional.profession}</Text>
+                      </View>
+                      <View style={styles.proInfoContainer}>
+                        <MaterialCommunityIcons
+                          name={'briefcase-account'}
+                          style={styles.iconStyle}
+                        />
+                        <Text style={styles.textStyle}>{professional.designation}</Text>
+                      </View>
+                      <View style={styles.proInfoContainer}>
+                        <MaterialCommunityIcons name={'map-marker'} style={styles.iconStyle} />
+                        <Text style={styles.textStyle}>
+                          {[professional.union, professional.upazila, professional.zila]
+                            .filter(Boolean)
+                            .join(', ')}
+                        </Text>
+                      </View>
+                      <View style={styles.twoButtonContainer}>
+                        <FeeComponent feeValue={professional.fee} />
+                        <RequestAppointmentBtn prof={professional} />
+                      </View>
+                    </View>
+                  </React.Fragment>
+                ))}
+                {professionals.length > 0 && (
+                  <Text style={[styles.headerText]}> বিশেষজ্ঞদের তালিকা </Text>
+                )}
+              </>
+            )}
             {professionals.map((professional, index) => (
               <React.Fragment key={index}>
                 <View style={styles.eProContiner} key={professional._id}>
@@ -208,12 +237,11 @@ const AllProfessionals = () => {
             ))}
 
             <Loader visible={isSeeMoreLoading} style={{ marginVertical: 10 }} />
-            {!isSeeMoreHidden && (
-              <SeeMoreButton
-                text={'আরো দেখুন'}
-                onPress={() => fetchProfessionals(currentPage + 1)}
-              />
-            )}
+            <SeeMoreButton
+              visible={!isSeeMoreHidden && !isSeeMoreLoading}
+              text={'আরো দেখুন'}
+              onPress={() => fetchProfessionals(currentPage + 1)}
+            />
           </View>
         </>
       )}
@@ -278,6 +306,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 20,
     fontWeight: 'bold',
+  },
+  headerText: {
+    fontSize: 18,
+    color: colors.black,
+    marginVertical: 10,
+    marginBottom: 18,
+    paddingLeft: 5,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

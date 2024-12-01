@@ -9,20 +9,23 @@ export const AppButton = ({
   textStyle,
   color = 'primary',
   disabled = false,
+  visible = true,
 }) => {
   return (
-    <TouchableOpacity
-      style={[
-        styles.button,
-        { backgroundColor: disabled ? colors.gray : colors[color] },
-        style,
-        disabled && styles.disabledButton,
-      ]}
-      onPress={!disabled ? onPress : null}
-      activeOpacity={disabled ? 1 : 0.7}
-    >
-      <Text style={[styles.text, textStyle, disabled && styles.disabledText]}>{title}</Text>
-    </TouchableOpacity>
+    visible && (
+      <TouchableOpacity
+        style={[
+          styles.button,
+          { backgroundColor: disabled ? colors.gray : colors[color] },
+          style,
+          disabled && styles.disabledButton,
+        ]}
+        onPress={!disabled ? onPress : null}
+        activeOpacity={disabled ? 1 : 0.7}
+      >
+        <Text style={[styles.text, textStyle, disabled && styles.disabledText]}>{title}</Text>
+      </TouchableOpacity>
+    )
   );
 };
 

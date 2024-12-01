@@ -20,6 +20,7 @@ exports.findProfessionals = asyncHandler(async (req, res, _next) => {
   const page = +req.query.page || 1;
 
   const response = {};
+  let myProfIds = [];
 
   if (page === 1) {
     response.professionalsCount = await Professional.countDocuments({
@@ -38,14 +39,32 @@ exports.findProfessionals = asyncHandler(async (req, res, _next) => {
       user,
       isActive: true,
     }).lean();
+
+    myProfIds = [
+      ...new Set([
+        ...response.appointmentsTaken.map((appointment) =>
+          appointment.prof.toString()
+        ),
+        ...response.isClient.map((client) => client.prof.toString()),
+      ]),
+    ];
+
+    response.recentlyContactedProfessionals = await Professional.find({
+      _id: {
+        $in: myProfIds,
+      },
+    })
+      .sort({ _id: -1 })
+      .lean();
   }
 
-  const LIMIT = 2;
+  const LIMIT = 10;
   response.professionals = await Professional.find({
     isVerified: true,
     hasRejected: false,
     visibility: true,
     step: 4,
+    _id: { $nin: myProfIds },
   })
     .limit(LIMIT)
     .skip(LIMIT * page - LIMIT)
@@ -55,7 +74,7 @@ exports.findProfessionals = asyncHandler(async (req, res, _next) => {
   return sendJSONresponse(res, 200, { data: response });
 });
 
-exports.takeAppointment = asyncHandler(async (req, res, _next) => {
+exports.requestForAppointment = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
   const { profId, permissionToSeeProfile, dateByClient } = req.body;
 
@@ -63,6 +82,19 @@ exports.takeAppointment = asyncHandler(async (req, res, _next) => {
   if (!isExists) {
     return sendErrorResponse(res, 404, "NOT_FOUND", {
       message: "এই নামে কোন প্রোফেসনাল খুঁজে পাওয়া যাইনি!",
+    });
+  }
+
+  const existingAppointment = await Appointment.findOne({
+    user: userId,
+    prof: profId,
+    isActive: true,
+  });
+
+  if (existingAppointment) {
+    return sendErrorResponse(res, 400, "BAD_REQUEST", {
+      message:
+        "আপনি ইতোমধ্যে এই প্রোফেসনালের সাথে একটি অ্যাপয়েন্টমেন্ট করেছেন!",
     });
   }
 
@@ -80,6 +112,9 @@ exports.takeAppointment = asyncHandler(async (req, res, _next) => {
     appointmentId: newAppointment._id,
   });
 
+  // TODO: Send Mail Notification to Professional
+  // TODO: FCM Push Notification to Professional
+
   return sendJSONresponse(res, 201, {
     data: {
       appointmentId: newAppointment._id,
@@ -95,6 +130,7 @@ exports.showAllClientRequests = asyncHandler(async (req, res, _next) => {
   const query = {
     prof: professionalId,
     hasProfRespondedToClient: false,
+    isActive: true,
   };
 
   if (page === 1) {
@@ -118,7 +154,10 @@ exports.showAllClientRequests = asyncHandler(async (req, res, _next) => {
 // POST prof/appointment-seen/:appointmentId
 exports.appointmentSeen = asyncHandler(async (req, res, _next) => {
   const { appointmentId } = req.params;
-  const appointment = await Appointment.findById(appointmentId);
+  const appointment = await Appointment.findById(appointmentId).populate({
+    path: "user",
+    select: "name age isMarried location email",
+  });
 
   if (!appointment) {
     return sendErrorResponse(res, 404, "NOT_FOUND", {

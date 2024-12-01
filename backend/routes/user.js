@@ -81,7 +81,7 @@ router.get(
 router.post(
   "/take-appointment",
   M.verifyToken(ROLE),
-  userProfCtrl.takeAppointment
+  userProfCtrl.requestForAppointment
 );
 
 router.get(

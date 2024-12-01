@@ -252,7 +252,7 @@ const StackNavigator = () => {
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(backScreenMap[constants.PROFESSIONAL_DETAILS]);
+                navigation.replace(backScreenMap[constants.PROFESSIONAL_DETAILS]);
               }}
             />
           ),
@@ -274,15 +274,15 @@ const StackNavigator = () => {
         })}
       />
       <Stack.Screen
-        name="ProNotification"
+        name={constants.PROFESSIONALS_NOTIFICATIONS}
         component={ProNotification}
         options={({ navigation, route, ...props }) => ({
-          title: 'Notification',
+          title: 'Notifications',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(route.params.goToBack);
+                navigation.navigate(backScreenMap[constants.PROFESSIONALS_NOTIFICATIONS]);
               }}
             />
           ),

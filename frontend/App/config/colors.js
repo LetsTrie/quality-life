@@ -11,7 +11,7 @@ export default {
   info: '#7A6F5B', // Soft Warm Gray-Brown - calm, sophisticated information
   warning: '#D4A76A', // Soft Golden Yellow - gentle caution (kept consistent)
   background: '#f4ebe3', // Warm, luminous neutral
-  highlight: '#ffa62a' /* Soft Golden Yellow - gentle sophistication */,
+  highlight: '#ffb223' /* Soft Golden Yellow - gentle sophistication */,
   accent: '#8E6B4A', // Deep Earthy Brown - grounding element
   neutral: '#C1B1A1', // Soft Warm Greige
   shadow: '#9E8F7F', // Subtle Warm Shadow (kept consistent)

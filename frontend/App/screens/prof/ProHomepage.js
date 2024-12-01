@@ -53,7 +53,7 @@ const CardItem = ({ icon, title, subtitle, color, onPress, badge }) => (
           <Text style={styles.badgeText}>{badge}</Text>
         </View>
       )}
-      <MaterialIcons name="chevron-right" size={24} color={colors.light} />
+      <MaterialIcons name="chevron-right" size={24} color={colors.primary} />
     </View>
   </TouchableOpacity>
 );
@@ -144,7 +144,7 @@ const Homepage = ({ navigation, route, ...props }) => {
             <CardItem
               icon="notifications-active"
               title="New Notifications"
-              subtitle={`You have ${numberWithCommas(numOfNewNotifications)} new notifications`}
+              subtitle={`You have ${numOfNewNotifications} new notifications`}
               color={colors.highlight}
               onPress={() => navigation.navigate('ProNotification', { goToBack: SCREEN_NAME })}
             />
@@ -153,7 +153,7 @@ const Homepage = ({ navigation, route, ...props }) => {
           <CardItem
             icon="people"
             title="Client Requests"
-            badge={numOfNewClientRequests > 0 ? numOfNewClientRequests.toString() : null}
+            badge={numOfNewClientRequests > 0 ? numOfNewClientRequests : null}
             color={colors.focus}
             onPress={() => navigation.navigate(constants.PROF_CLIENT_REQUEST)}
           />
@@ -253,6 +253,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: 'bold',
+    color: colors.light,
   },
   errorText: {
     color: colors.danger,

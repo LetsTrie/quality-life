@@ -242,20 +242,24 @@ exports.getHomepageInformationProf = asyncHandler(async (req, res, _next) => {
   });
 });
 
-// OKAY
-exports.getUnreadNotifications = asyncHandler(async (req, res, next) => {
-  const profId = req.user._id;
-  const page = +req.query.page || 1;
-
-  let numberOfNotifications;
-
-  if (page === 1) {
-    numberOfNotifications = await ProfNotification.countDocuments({
-      prof: profId,
-    });
+const countDocuments = async (model, query) => {
+  try {
+    return await model.countDocuments(query);
+  } catch (error) {
+    throw new Error(`Error counting documents: ${error.message}`);
   }
+};
 
-  const notifications = await ProfNotification.find({
+exports.getProfUnreadNotifications = asyncHandler(async (req, res, _next) => {
+  const { _id: profId } = req.user;
+  const page = parseInt(req.query.page, 10) || 1;
+
+  const countPromise =
+    page === 1
+      ? countDocuments(ProfNotification, { prof: profId })
+      : Promise.resolve(undefined);
+
+  const notificationsPromise = ProfNotification.find({
     prof: profId,
   })
     .sort({ _id: -1 })
@@ -264,9 +268,17 @@ exports.getUnreadNotifications = asyncHandler(async (req, res, next) => {
       select: "name",
     })
     .limit(LIMIT)
-    .skip(LIMIT * page - LIMIT);
+    .skip(LIMIT * page - LIMIT)
+    .lean();
 
-  return res.json({ notifications, numberOfNotifications });
+  const [numberOfNotifications, notifications] = await Promise.all([
+    countPromise,
+    notificationsPromise,
+  ]);
+
+  return sendJSONresponse(res, 200, {
+    data: { notifications, numberOfNotifications },
+  });
 });
 
 // OKAY
@@ -356,7 +368,6 @@ exports.AddasClient = asyncHandler(async (req, res, next) => {
     });
   }
 
-  await RecentlyContacted.findByIdAndDelete(req.body.recContactedPersonId);
   await UserNotification.deleteOne({
     user: req.body.user,
     prof: profId,

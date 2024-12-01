@@ -57,4 +57,5 @@ export default {
   RATING: 'Rating',
   MENTAL_HEALTH_ASSESSMENT: 'HomepageScale',
   MENTAL_HEALTH_ASSESSMENT_RESULT: 'CircularQuizResult',
+  PROFESSIONALS_NOTIFICATIONS: 'ProNotification',
 };

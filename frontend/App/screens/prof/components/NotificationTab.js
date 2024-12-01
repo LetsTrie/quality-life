@@ -1,131 +1,129 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/core';
-import React, { useEffect } from 'react';
-import { TouchableOpacity, View } from 'react-native';
-import { connect } from 'react-redux';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import Text from '../../../components/Text';
-import { logoutAction } from '../../../redux/actions/prof';
-import {
-  addMoreNotificationAction,
-  addNotificationAction,
-  removeNotificationAction,
-  seenNotificationAction,
-} from '../../../redux/actions/prof_noti';
-import BaseUrl from '../../../config/BaseUrl';
-import axios from 'axios';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Example for icons
+import colors from '../../../config/colors';
+import { useNavigation } from '@react-navigation/native';
+import { TYPES } from '../../../utils/type';
+import constants from '../../../navigation/constants';
+import { formatDistanceToNow } from 'date-fns';
+import { capitalizeFirstLetter } from '../../../utils/string';
 
-const NotificationTab = ({ notificationId, goToBack, ...props }) => {
-  const {
-    jwtToken,
-    notifications,
-    seenNotificationAction,
-    logoutAction,
-    setIsLoading,
-  } = props;
-  const info = notifications.find((n) => n._id === notificationId);
+const NotificationTab = ({ notification }) => {
+  console.log(notification.prof);
   const navigation = useNavigation();
 
-  const seenNotifications = async () => {
-    try {
-      const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${jwtToken}`,
-      };
-      if (info.type === 'APPOINTMENT_REQUESTED') {
-        const response = await axios.post(
-          `${BaseUrl}/prof/notifications/seen`,
-          { notificationId: info._id, user: info.user._id },
-          { headers }
-        );
-        const { requestInformation } = response.data;
-        seenNotificationAction(info);
-        navigation.navigate('ResponseClientRequest', {
-          appointmentInfo: requestInformation,
-          goToBack,
-        });
-      } else if (info.type === 'SCALE_FILL_UP') {
-        setIsLoading(true);
-        const response = await axios.post(
-          `${BaseUrl}/prof/result-suggested-scale`,
-          {
-            notificationId: info._id,
-            assessmentDbId: info.associateID.assessmentResultId,
-          },
-          { headers }
-        );
-        const { assessment } = response.data;
-        console.log({ assessment });
-        seenNotificationAction(info);
-        navigation.navigate('ProfSideScaleResult', {
-          assessmentResult: assessment,
-          goToBack,
-        });
-      }
-    } catch (err) {
-      console.log(err);
-      if (err?.response?.status === 401) {
-        logoutAction();
-        navigation.navigate('LoginPro');
-      }
-    }
+  const username = notification.user?.name;
+  if (!username) return null;
+
+  let message = '';
+  let screen = '';
+  let params = {};
+
+  if (notification.type === TYPES.APPOINTMENT_REQUESTED) {
+    message = `{${username}} requested for an appointment.`;
+    screen = constants.PROF_RESPONSE_CLIENT_REQUEST;
+    params = {
+      appointmentId: notification.appointmentId,
+      goToBack: constants.PROFESSIONALS_NOTIFICATIONS,
+    };
+  } else {
+    return null;
+  }
+
+  const timeAgo = formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true });
+
+  const renderMessage = () => {
+    const parts = message.split(/(\{.*?\})/); // Split by text inside {}
+    return parts.map((part, index) =>
+      part.startsWith('{') && part.endsWith('}') ? (
+        <Text key={index} style={[styles.messageText, styles.boldText]}>
+          {capitalizeFirstLetter(part.slice(1, -1))}
+        </Text>
+      ) : (
+        <Text key={index} style={[styles.messageText]}>
+          {part}
+        </Text>
+      )
+    );
   };
 
   return (
     <TouchableOpacity
-      style={{
-        backgroundColor: '#eee',
-        padding: 8,
-        paddingVertical: 10,
-        borderColor: '#eee',
-        borderWidth: 1,
-        borderRadius: 5,
-        marginBottom: 8,
-      }}
-      onPress={seenNotifications}
+      style={[
+        styles.notificationContainer,
+        !notification.hasSeen && {
+          backgroundColor: colors.highlight,
+          borderColor: colors.highlight,
+        },
+      ]}
+      onPress={() => navigation.replace(screen, params)}
     >
-      {!info.hasSeen && (
-        <Text
-          style={{
-            fontSize: 12,
-            backgroundColor: '#17b978',
-            color: 'white',
-            textAlign: 'center',
-            width: 40,
-            paddingVertical: 3,
-            borderRadius: 3,
-            marginBottom: 2,
-          }}
-        >
-          New
-        </Text>
-      )}
-      <View style={{ flexDirection: 'row', width: '95%' }}>
-        <MaterialCommunityIcons
-          name={info.icon}
-          size={14}
-          color={'#333'}
-          style={{ alignSelf: 'center', marginRight: 8 }}
+      <View style={styles.iconContainer}>
+        <Icon
+          name="calendar-check"
+          style={[
+            styles.iconStyle,
+            !notification.hasSeen && {
+              color: colors.textPrimary,
+            },
+          ]}
         />
-        <Text style={{ color: '#333', fontSize: 13.5, lineHeight: 19 }}>
-          {info.message}
-        </Text>
+      </View>
+      <View style={styles.textContainer}>
+        <Text style={styles.messageText}>{renderMessage()}</Text>
+        <Text style={styles.timestamp}>{timeAgo}</Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-const mapStateToProps = (state) => ({
-  jwtToken: state.prof.jwtToken,
-  isAuthenticated: state.prof.isAuthenticated,
-  notifications: state.profNotifications.notifications,
+const styles = StyleSheet.create({
+  notificationContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    marginBottom: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: 25,
+    width: 50,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 3,
+  },
+  iconStyle: {
+    fontSize: 24,
+    color: colors.primary,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  messageText: {
+    fontSize: 16,
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  timestamp: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: colors.textPrimary,
+  },
 });
 
-const mapActionToProps = {
-  logoutAction,
-  addNotificationAction,
-  addMoreNotificationAction,
-  seenNotificationAction,
-  removeNotificationAction,
-};
-
-export default connect(mapStateToProps, mapActionToProps)(NotificationTab);
+export default NotificationTab;

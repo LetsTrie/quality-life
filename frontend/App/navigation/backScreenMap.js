@@ -31,7 +31,7 @@ export default {
   [constants.PROFESSIONALS_CLIENT]: constants.PROF_HOMEPAGE,
   [constants.CLIENT_PROFILE]: constants.PROFESSIONALS_CLIENT,
 
-  [constants.USER_APPOINTMENT_TAKEN]: constants.HOMEPAGE,
+  [constants.USER_APPOINTMENT_TAKEN]: constants.PROFESSIONALS_LIST,
   [constants.ASK_FOR_TEST]: constants.HOMEPAGE,
   [constants.TEST]: constants.HOMEPAGE,
   [constants.HELP_CENTER]: constants.HOMEPAGE,
@@ -51,4 +51,5 @@ export default {
   [constants.RATING]: constants.VIDEO_EXERCISE_LIST,
   [constants.MENTAL_HEALTH_ASSESSMENT]: constants.HOMEPAGE,
   [constants.MENTAL_HEALTH_ASSESSMENT_RESULT]: constants.HOMEPAGE,
+  [constants.PROFESSIONALS_NOTIFICATIONS]: constants.PROF_HOMEPAGE,
 };

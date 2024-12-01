@@ -3,7 +3,8 @@ import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from '../config/colors';
 
-export const SeeMoreButton = ({ icon, text, onPress }) => {
+export const SeeMoreButton = ({ icon, text, onPress, visible = true }) => {
+  if (!visible) return null;
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.button}>

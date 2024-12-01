@@ -63,10 +63,7 @@ const appointmentSchema = Schema(
   { timestamps: true }
 );
 
-appointmentSchema.index(
-  { user: 1, prof: 1, isActive: 1 },
-  { unique: true }
-);
+appointmentSchema.index({ user: 1, prof: 1, isActive: 1 }, { unique: true });
 
 const Appointment = mongoose.model(MODEL_NAME.APPOINTMENT, appointmentSchema);
 module.exports = Appointment;

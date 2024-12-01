@@ -64,7 +64,7 @@ router.get(
 router.get(
   "/notifications/unread",
   M.verifyToken(ROLE),
-  professionalController.getUnreadNotifications
+  professionalController.getProfUnreadNotifications
 );
 router.post(
   "/notifications/seen",

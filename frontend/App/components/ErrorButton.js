@@ -3,13 +3,14 @@ import AppButton from './Button';
 import { StyleSheet } from 'react-native';
 import colors from '../config/colors';
 
-export const ErrorButton = ({ title, visible, style, textStyle }) => {
+export const ErrorButton = ({ title, visible, style, textStyle, ...props }) => {
   return (
     !!visible && (
       <AppButton
         title={title}
         style={[styles.btn, style]}
         textStyle={[styles.btnText, textStyle]}
+        {...props}
       />
     )
   );

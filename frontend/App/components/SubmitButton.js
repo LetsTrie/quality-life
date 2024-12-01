@@ -3,13 +3,14 @@ import AppButton from './Button';
 import { StyleSheet } from 'react-native';
 import colors from '../config/colors';
 
-export const SubmitButton = ({ title, onPress, style, textStyle }) => {
+export const SubmitButton = ({ title, onPress, style, textStyle, ...props }) => {
   return (
     <AppButton
       title={title}
       style={[styles.btn, style]}
       textStyle={[styles.btnText, textStyle]}
       onPress={onPress}
+      {...props}
     />
   );
 };

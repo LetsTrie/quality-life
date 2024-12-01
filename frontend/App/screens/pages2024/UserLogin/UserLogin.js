@@ -57,7 +57,10 @@ export const UserLogin = () => {
 
     const lResponse = await ApiExecutor(ApiDefinitions.userLogin({ payload }));
 
-    if (!lResponse.success) return;
+    if (!lResponse.success) {
+      setError(lResponse?.error?.message);
+      return;
+    }
 
     dispatch(setAuthToken(RoleEnum.USER, lResponse.data.accessToken, lResponse.data.refreshToken));
     setTimeout(() => {
@@ -80,7 +83,6 @@ export const UserLogin = () => {
       setIsLoading(false);
 
       if (!userResponse.success) {
-        setError(userResponse?.error?.message);
         return;
       }
 
@@ -124,8 +126,8 @@ export const UserLogin = () => {
           />
 
           <Loader visible={isLoading} style={{ marginTop: 10 }} />
-          <ErrorButton visible={!!error} title={error} />
-          <SubmitButton title={'লগইন করুন'} onPress={submitLoginForm} />
+          <ErrorButton visible={!!error && !isLoading} title={error} />
+          <SubmitButton title={'লগইন করুন'} onPress={submitLoginForm} visible={!isLoading} />
 
           <EndOptions
             title1={'আপনার কি অ্যাকাউন্ট নেই?'}

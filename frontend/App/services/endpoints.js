@@ -38,4 +38,7 @@ export const endpoints = {
 
   DELETE_ACCOUNT: `${BaseUrl}/user/delete-account`,
   ADD_USER_RATING: `${BaseUrl}/user/add-rating`,
+
+  PROF_UNREAD_NOTIFICATIONS: `${BaseUrl}/prof/notifications/unread`,
+  APPOINTMENT_DETAILS_FOR_PROFESSIONAL: `${BaseUrl}/prof/appointment`,
 };

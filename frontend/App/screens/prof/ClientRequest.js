@@ -73,7 +73,7 @@ const ClientRequest = () => {
   const handleSendResponse = (apRequest) => {
     dispatch(seenRequestAction(apRequest));
     navigation.navigate(constants.PROF_RESPONSE_CLIENT_REQUEST, {
-      appointmentInfo: apRequest,
+      appointmentId: apRequest._id,
       goToBack: SCREEN_NAME,
     });
   };

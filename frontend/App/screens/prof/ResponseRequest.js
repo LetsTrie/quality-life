@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -8,50 +7,19 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Button from '../../components/Button';
 import Picker from '../../components/Picker';
 import Text from '../../components/Text';
 import colors from '../../config/colors';
 import assessments from '../../data/profScales';
 
-import { useDispatch, useSelector } from 'react-redux';
 import constants from '../../navigation/constants';
 import { useBackPress, useHelper } from '../../hooks';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { respondToClientRequest, seenAppointmentRequest } from '../../services/api';
+import { ApiDefinitions } from '../../services/api';
 import { formatDateTime, isValidDate } from '../../utils/date';
 import AppDateTimePicker from '../../components/DateTimePicker';
-
-const days = [
-  {
-    value: 'Sunday',
-    label: 'রবিবার',
-  },
-  {
-    value: 'Monday',
-    label: 'সোমবার',
-  },
-  {
-    value: 'Tuesday',
-    label: 'মঙ্গলবার',
-  },
-  {
-    value: 'Wednesday',
-    label: 'বুধবার',
-  },
-  {
-    value: 'Thursday',
-    label: 'বৃহস্পতিবার',
-  },
-  {
-    value: 'Friday',
-    label: 'শুক্রবার',
-  },
-  {
-    value: 'Saturday',
-    label: 'শনিবার',
-  },
-];
+import { ErrorButton, Loader, SubmitButton } from '../../components';
+import backScreenMap from '../../navigation/backScreenMap';
 
 function calculateTime(from, fromAmPm) {
   if (from > 24) {
@@ -76,70 +44,68 @@ for (let i = 0; i < 24; i++) {
   });
 }
 
+const assessmentList = assessments.map((ap) => ({
+  label: ap.name,
+  value: ap.name,
+  id: ap.id,
+}));
+
 const SCREEN_NAME = constants.PROF_RESPONSE_CLIENT_REQUEST;
 const ResponseClientRequest = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const dispatch = useDispatch();
-  const { jwtToken } = useSelector((state) => state.prof);
-  const { processApiError } = useHelper();
-
-  const { goToBack: previousPage, appointmentInfo } = route.params;
-  useBackPress(SCREEN_NAME, previousPage);
-
-  const { permissionToSeeProfile } = appointmentInfo;
-
-  const userId = appointmentInfo?.user?._id;
+  const { ApiExecutor } = useHelper();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoading2, setIsLoading2] = useState(false);
-  const [responseAlreadySent, setResponseAlreadySent] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [appointmentInfo, setAppointmentInfo] = useState(null);
+
+  const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [day, setDay] = useState(null);
   const [time, setTime] = useState(null);
   const [assessment, setAssessment] = useState(null);
   const [message, setMessage] = useState(null);
-  const [alreadyExists, setAlreadyExists] = useState(false);
+
+  const { goToBack: previousPage = backScreenMap[SCREEN_NAME], appointmentId } = route.params;
+  useBackPress(SCREEN_NAME, previousPage);
 
   useEffect(() => {
-    async function seenAppointment() {
-      const { _id: appointmentId } = appointmentInfo;
-      const response = await seenAppointmentRequest({
-        jwtToken,
-        appointmentId,
-      });
-      if (!response.success) {
-        processApiError(response);
-      } else {
-        const { appointment } = response.data;
-
-        setResponseAlreadySent(appointment.hasProfRespondedToClient);
-
-        if (appointment.hasProfRespondedToClient) {
-          setAlreadyExists(true);
-        }
-      }
-      setIsLoading(false);
+    if (!appointmentId) {
+      setError('অনুগ্রহ করে আবার চেষ্টা করুন');
+      return;
     }
 
-    seenAppointment();
-  }, []);
+    (async () => {
+      setIsLoading(true);
+      const seenResponse = await ApiExecutor(
+        ApiDefinitions.seenAppointmentRequest({ appointmentId })
+      );
+      setIsLoading(false);
 
-  let asList = assessments.map((ap) => ({
-    label: ap.name,
-    value: ap.name,
-    id: ap.id,
-  }));
+      if (!seenResponse.success) {
+        setError(seenResponse.error?.message);
+        return;
+      }
+
+      if (seenResponse.hasProfRespondedToClient) {
+        setError('ইতোমধ্যে রেসপন্স দেওয়া হয়েছে');
+        return;
+      }
+
+      setError(null);
+      setAppointmentInfo(seenResponse.data.appointment);
+    })();
+  }, [appointmentId]);
 
   const onSubmitHandler = async () => {
-    setIsLoading2(true);
-
     let appointmentDateTime = new Date(appointmentInfo.dateByClient);
 
     if (day && isValidDate(day)) {
       appointmentDateTime.setFullYear(day.getFullYear());
       appointmentDateTime.setMonth(day.getMonth());
       appointmentDateTime.setDate(day.getDate());
-    } 
+    }
 
     if (time && isValidDate(time)) {
       appointmentDateTime.setHours(time.getHours());
@@ -149,65 +115,51 @@ const ResponseClientRequest = () => {
     appointmentDateTime.setSeconds(0);
     appointmentDateTime.setMilliseconds(0);
 
-    console.log(assessment)
-
     const payload = {
       dateByProfessional: appointmentDateTime,
       message,
       initAssessmentSlug: assessment?._id,
-      userId, 
+      userId,
+    };
+
+    setIsSubmitLoading(true);
+    const response = await ApiExecutor(
+      ApiDefinitions.respondToClientRequest({
+        appointmentId,
+        payload,
+      })
+    );
+    setIsSubmitLoading(false);
+
+    if (!response.success) {
+      setError(response.error?.message);
+      return;
     }
 
-    console.log(payload)
-
-    const response = await respondToClientRequest({
-      jwtToken,
-      appointmentId: appointmentInfo._id,
-      payload,
-    });
-
-    if(!response.success) {
-      processApiError(response);
-    } else {
-      ToastAndroid.show("ক্লায়েন্টের অনুরোধটি গ্রহণ করা হয়েছে", ToastAndroid.SHORT);
-      navigation.replace(goToBack)
-    }
-
-    setIsLoading2(false);
+    ToastAndroid.show('ক্লায়েন্টের অনুরোধটি গ্রহণ করা হয়েছে', ToastAndroid.SHORT);
+    navigation.replace(goToBack);
   };
 
+  if (!appointmentInfo) return null;
+
+  console.log(appointmentInfo);
+  const userId = appointmentInfo?.user?._id;
+  const username = appointmentInfo?.user?.name;
   const proposedAppointmentDate = formatDateTime(appointmentInfo?.dateByClient);
+  const { permissionToSeeProfile } = appointmentInfo;
 
   return (
     <ScrollView style={{ backgroundColor: 'white' }}>
       {isLoading ? (
-        <View
-          style={{
-            textAlign: 'center',
-            width: '100%',
-            paddingTop: 10,
-          }}
-        >
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <Loader visible={isLoading} style={{ marginVertical: 10 }} />
       ) : (
         <>
-          {alreadyExists ? (
-            <Text
-              style={{
-                padding: 10,
-                marginTop: 15,
-                fontSize: 20,
-                fontWeight: 'bold',
-                textAlign: 'center',
-              }}
-            >
-              ইতোমধ্যে রেসপন্স দেওয়া হয়েছে
-            </Text>
+          {error ? (
+            <ErrorButton visible={error} title={error} style={{ marginVertical: 10 }} />
           ) : (
             <View style={{ marginHorizontal: 10 }}>
               <View style={styles.nameContainer}>
-                <Text style={styles.nameTextStyle}> {appointmentInfo.user.name} </Text>
+                <Text style={styles.nameTextStyle}> {username} </Text>
               </View>
               {permissionToSeeProfile === true ? (
                 <TouchableOpacity style={styles.seeProfileContainerStyle}>
@@ -215,8 +167,8 @@ const ResponseClientRequest = () => {
                     style={styles.seeProfileStyle}
                     onPress={() =>
                       navigation.navigate('ClientProfile', {
-                        userId: appointmentInfo.user._id,
-                        goToBack: 'ResponseClientRequest',
+                        userId,
+                        goToBack: SCREEN_NAME,
                       })
                     }
                   >
@@ -228,132 +180,122 @@ const ResponseClientRequest = () => {
                   ইউজার তার প্রফাইলের তথ্য দেখার অনুমতি প্রদান করেনি
                 </Text>
               )}
-              {responseAlreadySent ? (
-                <Text style={{ textAlign: 'center', paddingTop: 15, fontSize: 20 }}>
-                  Response has been sent to Client!
-                </Text>
-              ) : (
+
+              <View>
+                <View style={{ paddingTop: 10 }}>
+                  <Text style={styles.blockHeadingStyle}>Proposed time:</Text>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      paddingTop: 2,
+                      color: '#333',
+                      paddingBottom: 7,
+                    }}
+                  >
+                    {proposedAppointmentDate}
+                  </Text>
+                </View>
                 <View>
-                  <View style={{ paddingTop: 10 }}>
-                    <Text style={styles.blockHeadingStyle}>Proposed time:</Text>
+                  <Text style={styles.blockHeadingStyle}>
+                    Select a flexible time:{' '}
                     <Text
                       style={{
-                        fontSize: 16,
-                        paddingTop: 2,
-                        color: '#333',
-                        paddingBottom: 7,
+                        fontWeight: 'normal',
+                        fontSize: 14.5,
+                        color: '#555',
                       }}
                     >
-                      {proposedAppointmentDate}
+                      (optional)
                     </Text>
-                  </View>
-                  <View>
-                    <Text style={styles.blockHeadingStyle}>
-                      Select a flexible time:{' '}
-                      <Text
-                        style={{
-                          fontWeight: 'normal',
-                          fontSize: 14.5,
-                          color: '#555',
-                        }}
-                      >
-                        (optional)
-                      </Text>
-                    </Text>
-                    <View style={styles.pickerContainer}>
-                      <View style={{ width: '50%' }}>
-                        <AppDateTimePicker
-                          width="98%"
-                          placeholder="Select Date"
-                          mode="date" // or "time"
-                          onSelectDateTime={(date) => setDay(date)}
-                          selectedDateTime={day}
-                        />
-                      </View>
-                      <View style={{ width: '50%' }}>
-                        <AppDateTimePicker
-                          placeholder="Select Time"
-                          mode="time"
-                          onSelectDateTime={(date) => setTime(date)}
-                          selectedDateTime={time}
-                        />
-                      </View>
+                  </Text>
+                  <View style={styles.pickerContainer}>
+                    <View style={{ width: '50%' }}>
+                      <AppDateTimePicker
+                        width="98%"
+                        placeholder="Select Date"
+                        mode="date" // or "time"
+                        onSelectDateTime={(date) => setDay(date)}
+                        selectedDateTime={day}
+                      />
                     </View>
-                  </View>
-                  <View>
-                    <Text style={styles.blockHeadingStyle}>
-                      Select an Assessment Tool:{' '}
-                      <Text
-                        style={{
-                          fontWeight: 'normal',
-                          fontSize: 14.5,
-                          color: '#555',
-                        }}
-                      >
-                        (optional)
-                      </Text>
-                    </Text>
-                    <View style={styles.pickerContainer}>
-                      <Picker
-                        width="100%"
-                        placeholder="Assessment Tools"
-                        selectedItem={assessment}
-                        onSelectItem={(g) => setAssessment(g)}
-                        items={asList}
-                        style={{
-                          borderRadius: 5,
-                          borderWidth: 1,
-                          borderColor: '#ccc',
-                          marginRight: 5,
-                          padding: 10,
-                          backgroundColor: '#fff',
-                        }}
+                    <View style={{ width: '50%' }}>
+                      <AppDateTimePicker
+                        placeholder="Select Time"
+                        mode="time"
+                        onSelectDateTime={(date) => setTime(date)}
+                        selectedDateTime={time}
                       />
                     </View>
                   </View>
-                  <View>
-                    <Text style={styles.blockHeadingStyle}>
-                      Send a message:{' '}
-                      <Text
-                        style={{
-                          fontWeight: 'normal',
-                          fontSize: 14.5,
-                          color: '#555',
-                        }}
-                      >
-                        (optional)
-                      </Text>
+                </View>
+                <View>
+                  <Text style={styles.blockHeadingStyle}>
+                    Select an Assessment Tool:{' '}
+                    <Text
+                      style={{
+                        fontWeight: 'normal',
+                        fontSize: 14.5,
+                        color: '#555',
+                      }}
+                    >
+                      (optional)
                     </Text>
-                    <TextInput
-                      multiline={true}
-                      numberOfLines={5}
-                      onChangeText={(text) => setMessage(text)}
-                      style={styles.textAreaStyle}
-                      placeholder="Details about how to communicate with you. (i.e. please contact me from Sunday to Thursday within 9 AM to 3 PM at +8801*****)"
-                      placeholderTextColor="#6e6969"
+                  </Text>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      width="100%"
+                      placeholder="Assessment Tools"
+                      selectedItem={assessment}
+                      onSelectItem={(g) => setAssessment(g)}
+                      items={assessmentList}
+                      style={{
+                        borderRadius: 5,
+                        borderWidth: 1,
+                        borderColor: '#ccc',
+                        marginRight: 5,
+                        padding: 10,
+                        backgroundColor: '#fff',
+                      }}
                     />
                   </View>
-                  <Text
-                    style={{
-                      color: 'gray',
-                      fontSize: 13,
-                      marginBottom: 6,
-                      lineHeight: 16,
-                      textAlign: 'center',
-                    }}
-                  >
-                    After confirming the request, your phone number will be send to client.
-                  </Text>
-                  {isLoading2 && (
-                    <ActivityIndicator
-                      size="large"
-                      color={colors.primary}
-                      style={{ paddingTop: 10 }}
-                    />
-                  )}
-                  <Button title="Confirm Request" onPress={onSubmitHandler} />
                 </View>
-              )}
+                <View>
+                  <Text style={styles.blockHeadingStyle}>
+                    Send a message:{' '}
+                    <Text
+                      style={{
+                        fontWeight: 'normal',
+                        fontSize: 14.5,
+                        color: '#555',
+                      }}
+                    >
+                      (optional)
+                    </Text>
+                  </Text>
+                  <TextInput
+                    multiline={true}
+                    numberOfLines={5}
+                    onChangeText={(text) => setMessage(text)}
+                    style={styles.textAreaStyle}
+                    placeholder="Details about how to communicate with you. (i.e. please contact me from Sunday to Thursday within 9 AM to 3 PM at +8801*****)"
+                    placeholderTextColor="#6e6969"
+                  />
+                </View>
+                <Text
+                  style={{
+                    color: 'gray',
+                    fontSize: 13,
+                    marginBottom: 6,
+                    lineHeight: 16,
+                    textAlign: 'center',
+                  }}
+                >
+                  After confirming the request, your phone number will be send to client.
+                </Text>
+
+                <Loader visible={isSubmitLoading} style={{ marginVertical: 10 }} />
+                <SubmitButton title={'Confirm Request'} onPress={onSubmitHandler} />
+              </View>
             </View>
           )}
         </>
