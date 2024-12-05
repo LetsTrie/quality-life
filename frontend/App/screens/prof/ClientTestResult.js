@@ -1,145 +1,192 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, View, ActivityIndicator } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Text from '../../components/Text';
 import colors from '../../config/colors';
-import BaseUrl from '../../config/BaseUrl';
-import axios from 'axios';
-
-import anxiety from '../../data/scales/ANXIETY';
-import ghq from '../../data/scales/GHQ';
-import pss from '../../data/scales/PSS';
-
-import childCare from '../../data/childCare';
-import coronaProfile from '../../data/coronaProfile';
-import domesticViolence from '../../data/domesticViolence';
-import psychoticProfile from '../../data/psychoticProfile';
-import suicideIdeation from '../../data/suicideIdeation';
 import { useRoute } from '@react-navigation/native';
+import { Loader } from '../../components';
+import { numberWithCommas } from '../../utils/number';
+import { ApiDefinitions } from '../../services/api';
+import { useBackPress, useHelper } from '../../hooks';
+import constants from '../../navigation/constants';
+import { ErrorButton } from '../../components/ErrorButton';
+import { formatDateTime } from '../../utils/date';
+import { typeLabelMap } from '../../utils/type';
 
+const SCREEN_NAME = constants.CLIENT_TEST_RESULT;
 const ClientTestResult = () => {
-  const route = useRoute();
+  useBackPress(SCREEN_NAME);
+  const { ApiExecutor } = useHelper();
 
-  const [answers, setAnswers] = useState([]);
-  const [testInfo, setTestInfo] = useState([]);
   const [isLoading, setLoading] = useState(true);
-  const testId = route.params.test_id;
-  const testname = route.params.testname;
-  let questions = [];
-  if (testname === 'মানসিক অবস্থা যাচাইকরণ') {
-    questions = ghq.questions.map((q) => q.question);
-  } else if (testname === 'মানসিক চাপ নির্ণয়') {
-    questions = pss.questions.map((q) => q.question);
-  } else if (testname === 'দুশ্চিন্তা নির্ণয়') {
-    questions = anxiety.questions.map((q) => q.question);
-  } else if (testname === 'করোনা সম্পর্কিত তথ্য') {
-    questions = coronaProfile.questions.map((q) => q.question);
-  } else if (testname === 'গুরুতর সমস্যা সম্পর্কিত তথ্য') {
-    questions = psychoticProfile.questions.map((q) => q.question);
-  } else if (testname === 'আত্মহত্যা পরিকল্পনা সম্পর্কিত তথ্য') {
-    questions = suicideIdeation.questions.map((q) => q.question);
-  } else if (testname === 'পারিবারিক সহিংসতা সম্পর্কিত তথ্য') {
-    questions = domesticViolence.questions.map((q) => q.question);
-  } else if (testname === 'সন্তান পালন সম্পর্কিত তথ্য') {
-    questions = childCare.questions.map((q) => q.question);
-  }
+  const [error, setError] = useState(null);
+
+  const route = useRoute();
+  const { testId, isSpecialTest } = route.params || {};
+
+  const [type, setType] = useState(null);
+  const [severity, setSeverity] = useState(null);
+  const [questionAnswers, setQuestionAnswers] = useState([]);
+  const [score, setScore] = useState(0);
+  const [completedAt, setCompletedAt] = useState(null);
 
   const getResult = async () => {
-    const response = await axios.get(`${BaseUrl}/prof/test-details/${testId}`);
-    setAnswers(response.data.result);
-    setTestInfo(response.data.test);
-    setLoading(false);
+    if (!isLoading) setLoading(true);
+
+    if (isSpecialTest) {
+      const response = await ApiExecutor(
+        ApiDefinitions.getAssessmentDetails({ assessmentId: testId })
+      );
+      setLoading(false);
+
+      if (!response.success) {
+        setError(response.error.message);
+        return;
+      }
+
+      const { scale } = response.data;
+      console.log(scale);
+
+      setType(scale.assessmentSlug);
+      setSeverity(scale.stage);
+      setQuestionAnswers(Array.isArray(scale.questionAnswers) ? scale.questionAnswers : []);
+      setScore(+scale.totalWeight);
+      setCompletedAt(formatDateTime(scale.completedAt));
+    } else {
+      const response = await ApiExecutor(ApiDefinitions.getPrimaryTestResult({ testId }));
+      setLoading(false);
+
+      if (!response.success) {
+        setError(response.error.message);
+        return;
+      }
+
+      const { test } = response.data;
+
+      setType(test.type);
+      setSeverity(test.severity);
+      setQuestionAnswers(Array.isArray(test.questionAnswers) ? test.questionAnswers : []);
+      setScore(+test.score);
+      setCompletedAt(formatDateTime(test.createdAt));
+    }
   };
 
   useEffect(() => {
-    getResult();
+    (async () => {
+      await getResult();
+    })();
   }, []);
 
+  if (isLoading) {
+    return <Loader visible={isLoading} style={{ marginVertical: 20 }} />;
+  }
+
+  if (error) {
+    return <ErrorButton onPress={() => getResult()} />;
+  }
+
+  if (!type || questionAnswers.length === 0) {
+    return null;
+  }
+
   return (
-    <ScrollView style={{ backgroundColor: 'white' }}>
-      <View>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View
+        style={{
+          backgroundColor: 'white',
+          borderBottomColor: colors.background,
+          borderBottomWidth: 3,
+        }}
+      >
         <View style={styles.headingStyle}>
-          <Text style={styles.headingTextStyle}> {testname} </Text>
-          <Text style={styles.headingInfoStyle}>Score: {testInfo.score} </Text>
-          <Text style={styles.headingInfoStyle}>Severity: {testInfo?.severity} </Text>
+          <Text style={styles.headingTextStyle}>{typeLabelMap(type)}</Text>
+          {severity && <Text style={styles.headingInfoStyle}>{severity} </Text>}
+          {score > 0 && (
+            <Text style={styles.headingInfoStyle}>স্কোর: {numberWithCommas(score)} </Text>
+          )}
+          <Text style={styles.completedAtTextStyle}>{completedAt}</Text>
         </View>
-        {isLoading ? (
-          <View
-            style={{
-              textAlign: 'center',
-              width: '100%',
-              paddingTop: 10,
-            }}
-          >
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : (
-          <View style={styles.questionAllStyle}>
-            {questions.map((q, index) => (
-              <View style={styles.questionStyle} key={index}>
-                <Text style={styles.questionTextStyle}>
-                  {index + 1}. {q}
-                </Text>
-                <View style={styles.responseStyle}>
-                  <MaterialCommunityIcons name={'arrow-right'} style={styles.responseIconStyle} />
-                  <Text style={styles.responseTextStyle}>{answers[index]}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
       </View>
-    </ScrollView>
+      <ScrollView style={{ flex: 1 }}>
+        <View style={styles.questionAllStyle}>
+          {questionAnswers.map((qa, index) => (
+            <View style={styles.questionStyle} key={index}>
+              <Text style={styles.questionTextStyle}>
+                {index + 1}. {qa.question}
+              </Text>
+              <View style={styles.responseStyle}>
+                <MaterialCommunityIcons name={'arrow-right'} style={styles.responseIconStyle} />
+                <Text style={styles.responseTextStyle}>{qa.answer}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 };
-
 const styles = StyleSheet.create({
   headingStyle: {
-    padding: 5,
-    paddingVertical: 10,
-    paddingTop: 15,
+    padding: 10,
+    paddingVertical: 25,
   },
   headingTextStyle: {
     textAlign: 'center',
-    fontSize: 25,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-    paddingBottom: 5,
+    color: colors.primary,
+    paddingBottom: 8,
   },
   headingInfoStyle: {
     fontSize: 15,
-    fontWeight: 'bold',
-    color: '#333',
+    color: colors.secondary,
+    textAlign: 'center',
+    marginBottom: 5,
   },
   questionAllStyle: {
-    padding: 10,
-    paddingTop: 5,
+    padding: 15,
+    backgroundColor: colors.background,
+    elevation: 2,
   },
   questionStyle: {
-    paddingBottom: 12,
+    marginBottom: 10,
+
+    backgroundColor: colors.white,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    marginTop: 0,
+
+    borderRadius: 10,
+    padding: 15,
   },
   questionTextStyle: {
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 23,
     textAlign: 'justify',
-    color: '#333',
+    color: colors.textPrimary,
+    marginBottom: 10,
   },
   responseStyle: {
     flexDirection: 'row',
-    paddingTop: 3.5,
+    alignItems: 'center',
   },
   responseIconStyle: {
     fontSize: 18,
-    marginTop: 1,
-    alignSelf: 'center',
-    marginRight: 5,
-    fontWeight: 'bold',
-    color: colors.primary,
+    marginRight: 10,
+    color: colors.textSecondary,
   },
   responseTextStyle: {
-    fontSize: 16.5,
-    color: colors.primary,
-    fontWeight: 'bold',
+    fontSize: 15,
+    color: colors.textSecondary,
+  },
+  completedAtTextStyle: {
+    fontSize: 15,
+    color: colors.shadow,
+    textAlign: 'center',
+    marginTop: 5,
   },
 });
 

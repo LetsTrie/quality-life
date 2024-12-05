@@ -1,50 +1,59 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState, useCallback, useEffect } from 'react';
-import {
-  ActivityIndicator,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Text from '../../components/Text';
-import colors from '../../config/colors';
-import { useSelector } from 'react-redux';
 import { useBackPress, useHelper } from '../../hooks';
-import { useNavigation } from '@react-navigation/native';
-import { getProfessionalsClient } from '../../services/api';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { ApiDefinitions } from '../../services/api';
+import { ErrorButton, Loader } from '../../components';
+import constants from '../../navigation/constants';
+import { numberWithCommas } from '../../utils/number';
+import { capitalizeFirstLetter } from '../../utils/string';
+import colors from '../../config/colors';
 
-const SCREEN_NAME = 'PROFESSIONALS_CLIENT';
+const genderMap = (gender) => {
+  if (gender === 'Male') return 'পুরুষ';
+  if (gender === 'Female') return 'মহিলা';
+  return 'অন্যান্য';
+};
 
-const wait = (timeout) => new Promise((resolve) => setTimeout(resolve, timeout));
-
+const SCREEN_NAME = constants.PROFESSIONALS_CLIENT;
 const MyClients = () => {
-  useBackPress(SCREEN_NAME);
+  const route = useRoute();
+  const { goToBack } = route.params || {};
+  useBackPress(SCREEN_NAME, goToBack);
 
-  const { jwtToken } = useSelector((state) => state.auth);
   const [clients, setClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   const navigation = useNavigation();
-  const { processApiError } = useHelper();
+  const { ApiExecutor } = useHelper();
 
   const fetchClients = async () => {
-    const response = await getProfessionalsClient({ jwtToken });
-    if (!response.success) processApiError(response);
-    else setClients(response.data.clients);
+    const response = await ApiExecutor(ApiDefinitions.getProfessionalsClient());
     setIsLoading(false);
+
+    if (!response.success) {
+      setError(response.error.message);
+      return;
+    }
+
+    setClients([...response.data.clients]);
   };
 
   const onRefresh = useCallback(() => {
-    setIsRefreshing(true);
-    fetchClients();
-    wait(1000).then(() => setIsRefreshing(false));
+    (async () => {
+      setIsRefreshing(true);
+      await fetchClients();
+      setIsRefreshing(false);
+    })();
   }, []);
 
   useEffect(() => {
-    fetchClients();
+    (async () => {
+      await fetchClients();
+    })();
   }, []);
 
   return (
@@ -53,17 +62,21 @@ const MyClients = () => {
       style={styles.scrollView}
     >
       {isLoading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <Loader visible={isLoading} style={{ marginVertical: 20 }} />
+      ) : error ? (
+        <ErrorButton visible={error} title={error} style={{ marginVertical: 10 }} />
       ) : (
         <View>
           {clients.map((client) => (
             <View style={styles.clientCard} key={client._id}>
               <Text style={styles.clientId}>ID: {client.customId}</Text>
-              <Text style={styles.clientName}>{client.user.name}</Text>
+              <Text style={styles.clientName}>{capitalizeFirstLetter(client.user.name)}</Text>
               <View style={styles.locationContainer}>
-                <MaterialCommunityIcons name="map-marker-radius" style={styles.locationIcon} />
+                <Text style={styles.locationText}>
+                  {`বয়স - ${numberWithCommas(client.user.age)} বছর, ${genderMap(client.user.gender)}, ${client.user.isMarried ? 'বিবাহিত' : 'অবিবাহিত'}`}
+                </Text>
+              </View>
+              <View style={styles.locationContainer}>
                 <Text style={styles.locationText}>
                   {[
                     client.user.location.union,
@@ -77,7 +90,8 @@ const MyClients = () => {
               <TouchableOpacity
                 style={styles.profileButton}
                 onPress={() =>
-                  navigation.navigate('ClientProfile', {
+                  navigation.navigate(constants.CLIENT_PROFILE, {
+                    clientId: client._id,
                     userId: client.user._id,
                     goToBack: SCREEN_NAME,
                   })
@@ -130,12 +144,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#212121',
-    marginBottom: 8,
+    marginBottom: 5,
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 3,
   },
   locationIcon: {
     color: '#f44336',
@@ -150,7 +164,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   profileButtonContainer: {
-    backgroundColor: '#f44336',
+    backgroundColor: colors.secondary,
     borderRadius: 6,
     paddingVertical: 8,
     paddingHorizontal: 16,

@@ -1,5 +1,3 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -9,30 +7,29 @@ import colors from '../config/colors';
 import * as T from '../data/type';
 import getMatra from '../helpers/getMatra';
 import { storeUserProfile } from '../redux/actions/user';
-import BaseUrl from '../config/BaseUrl';
 import { useNavigation } from '@react-navigation/native';
 import { useBackPress, useHelper } from '../hooks';
 import constants from '../navigation/constants';
 import { ApiDefinitions } from '../services/api';
 import { ErrorButton, Loader } from '../components';
 import { numberWithCommas } from '../utils/number';
-
-const wait = (timeout) => {
-  return new Promise((resolve) => setTimeout(resolve, timeout));
-};
+import { useIsFocused } from '@react-navigation/native';
 
 const SCREEN_NAME = constants.HOMEPAGE;
-const Homepage = (props) => {
+const Homepage = () => {
+  const isFocused = useIsFocused();
+
   const navigation = useNavigation();
   const dispatch = useDispatch();
   useBackPress(SCREEN_NAME);
 
   const [refreshing, setRefreshing] = useState(false);
-  const [notificationCounter, setNotificationCounter] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { ApiExecutor } = useHelper();
+  const unreadNotificationCount = useSelector((state) => state.notifications.unreadCount);
+
+  const { ApiExecutor, refreshNotificationCount } = useHelper();
 
   const {
     msm_score,
@@ -62,31 +59,17 @@ const Homepage = (props) => {
     dn_score
   );
 
-  const getNotifications = async () => {
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${props.jwtToken}`,
-    };
-    try {
-      const response = await axios.get(`${BaseUrl}/user/notifications/unread/h/`, { headers });
-      setNotificationCounter(response.data.nNotifications ?? 0);
-    } catch (err) {
-      console.log(err.response);
-      setNotificationCounter(0);
-    }
-  };
-
   const onRefresh = React.useCallback(() => {
     (async () => {
       setRefreshing(true);
-      await getNotifications();
+      await refreshNotificationCount();
       setRefreshing(false);
     })();
   }, []);
 
   useEffect(() => {
     (async () => {
-      await getNotifications();
+      if (!isFocused) return;
 
       const userResponse = await ApiExecutor(ApiDefinitions.userProfile());
       setIsLoading(false);
@@ -97,10 +80,12 @@ const Homepage = (props) => {
       }
 
       dispatch(storeUserProfile(userResponse.data.user));
-    })();
-  }, []);
 
-  const notificationMessage = `আপনার কাছে ${numberWithCommas(notificationCounter)} টি নতুন নোটিফিকেশন রয়েছে`;
+      await refreshNotificationCount();
+    })();
+  }, [isFocused]);
+
+  const notificationMessage = `আপনার কাছে ${numberWithCommas(unreadNotificationCount)} টি নতুন নোটিফিকেশন রয়েছে`;
 
   return (
     <ScrollView
@@ -113,24 +98,24 @@ const Homepage = (props) => {
         <ErrorButton visible={error} title={error} style={{ marginVertical: 20 }} />
       ) : (
         <View>
-          {!isProfileCompleted && (
-            <TouchableOpacity
-              style={[styles.profileButton, { backgroundColor: colors.secondary }]}
-              onPress={() => navigation.navigate(constants.PROFILE)}
-            >
-              <Text style={styles.buttonText}>আপনার প্রোফাইল সম্পূর্ণ করুন</Text>
-            </TouchableOpacity>
-          )}
-          {notificationCounter !== 0 && (
+          {unreadNotificationCount !== 0 && (
             <TouchableOpacity
               style={[
                 styles.profileButton,
                 { paddingVertical: 15 },
                 !isProfileCompleted && { marginTop: 10 },
               ]}
-              onPress={() => navigation.navigate('UserNotifications')}
+              onPress={() => navigation.navigate(constants.NOTIFICATIONS)}
             >
               <Text style={[styles.buttonText, { fontSize: 16 }]}>{notificationMessage}</Text>
+            </TouchableOpacity>
+          )}
+          {!isProfileCompleted && (
+            <TouchableOpacity
+              style={[styles.profileButton, { backgroundColor: colors.secondary, marginTop: 10 }]}
+              onPress={() => navigation.navigate(constants.PROFILE)}
+            >
+              <Text style={styles.buttonText}>আপনার প্রোফাইল সম্পূর্ণ করুন</Text>
             </TouchableOpacity>
           )}
           <Text style={styles.headingText}>

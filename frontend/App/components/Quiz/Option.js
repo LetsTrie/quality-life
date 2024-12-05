@@ -21,14 +21,8 @@ const Option = ({
   const checked = selected === text || answers[currentQuestion] === text;
   return (
     <TouchableWithoutFeedback onPress={onPress}>
-      <View
-        style={[styles.optionContainer, checked ? styles.selectedOption : {}]}
-      >
-        <Text
-          style={[styles.optionText, checked ? styles.selectedOptionText : {}]}
-        >
-          {text}
-        </Text>
+      <View style={[styles.optionContainer, checked ? styles.selectedOption : {}]}>
+        <Text style={[styles.optionText, checked ? styles.selectedOptionText : {}]}>{text}</Text>
         <RadioButton
           value={text}
           status={checked ? 'checked' : 'unchecked'}
@@ -61,7 +55,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     flex: 1,
-    fontSize: 20,
+    fontSize: 18,
     color: '#333',
     alignSelf: 'center',
   },

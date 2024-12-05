@@ -1,59 +1,91 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, ActivityIndicator } from 'react-native';
-import { connect } from 'react-redux';
 import Quizes from '../components/Quiz/Quizes';
 import data from '../data/profScales';
-import BaseUrl from '../config/BaseUrl';
-import axios from 'axios';
-import { logoutAction } from '../redux/actions/auth';
 import Text from '../components/Text';
 import colors from '../config/colors';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import constants from '../navigation/constants';
+import { Loader } from '../components/Loader';
+import { useBackPress, useHelper } from '../hooks';
+import { ApiDefinitions } from '../services/api';
+import { ErrorButton } from '../components';
 
-const ProfSuggestedScale = ({ navigation, route, ...props }) => {
-  const { jwtToken, logoutAction } = props;
-  const { profId, notificationId, questionId, appointmentId } = route.params;
-  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+const SCREEN_NAME = constants.PROF_SUGGESTED_SCALE;
+const ProfSuggestedScale = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { ApiExecutor } = useHelper();
 
-  const questionObject = data.find((d) => d.id === questionId);
-  const questions = questionObject?.ques;
-
-  const [answers, setAnswers] = useState(
-    new Array(questions.length).fill(null)
-  );
   const [isLoading, setIsLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState(null);
 
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${jwtToken}`,
-  };
+  const { goToBack, assessmentId } = route.params || {};
+
+  useBackPress(SCREEN_NAME, goToBack);
+
+  if (!assessmentId) {
+    throw new Error('Params is missing!!');
+  }
+
+  const [slug, setSlug] = useState(null);
+  const [questions, setQuestions] = useState(null);
+  const [questionObject, setQuestionObject] = useState(null);
+  const [answers, setAnswers] = useState([]);
 
   useEffect(() => {
-    const fld = {
-      profId,
-      questionId,
-    };
-    axios
-      .post(`${BaseUrl}/user/suggested-scale/check`, fld, { headers })
-      .then((res) => {
-        if (res.data.found) {
-          setAlreadySubmitted(true);
-        }
-      })
-      .catch((err) => console.log(err))
-      .finally(() => setIsLoading(false));
+    (async () => {
+      const response = await ApiExecutor(
+        ApiDefinitions.checkIfAssessmentIsAlreadyTaken({ assessmentId })
+      );
+
+      console.log('CheckIfAssessmentIsAlreadyTaken: ', response);
+      if (!response.success) {
+        setError(response.error.message);
+        return;
+      }
+
+      const _assessment = response.data.assessment;
+      setSlug(_assessment.assessmentSlug);
+
+      const _questionObject = data.find((d) => d.id === _assessment.assessmentSlug);
+      const _question = _questionObject?.ques;
+
+      setQuestionObject(_questionObject);
+      setQuestions(_question);
+      setAnswers(new Array(_question.length).fill(null));
+
+      setIsLoading(false);
+    })();
   }, []);
 
   useEffect(() => {
-    if (submitted) {
+    if (error) {
+      setIsLoading(false);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (!submitted) return;
+
+    if (!slug) {
+      throw new Error('slug is missing!!');
+    }
+
+    (async () => {
       setIsLoading(true);
+
+      const questionAnswers = questions.map((q, index) => ({
+        question: q.question,
+        answer: answers[index],
+      }));
+
       let totalWeight = 0;
       let maxWeight = 0;
       for (let index = 0; index < answers.length; index++) {
         const maxx = Math.max(...questions[index].options.map((o) => o.weight));
-        const wght = questions[index].options.find(
-          (o) => o.label === answers[index]
-        ).weight;
+        const wght = questions[index].options.find((o) => o.label === answers[index]).weight;
         totalWeight += wght;
         maxWeight += maxx;
       }
@@ -68,74 +100,63 @@ const ProfSuggestedScale = ({ navigation, route, ...props }) => {
         }
       }
 
-      const fld = {
-        profId,
-        notificationId,
-        appointmentId,
-        questionId,
+      const payload = {
+        questionAnswers,
+        assessmentId,
         totalWeight,
         stage,
         maxWeight,
-        answers,
       };
-      axios
-        .post(`${BaseUrl}/user/submit-prof-scale`, fld, { headers })
-        .then((res) => {
-          navigation.navigate('ProfScaleResult', {
-            totalWeight,
-            stage,
-            maxWeight,
-            questionId,
-          });
+
+      console.log('>>> payload: ', payload);
+
+      const response = await ApiExecutor(
+        ApiDefinitions.submitSuggestedScale({
+          payload,
         })
-        .catch((err) => {
-          console.log(err);
-          logoutAction();
-        })
-        .finally(() => {
-          setIsLoading(true);
-        });
-    }
+      );
+
+      console.log(response);
+
+      setIsLoading(false);
+
+      navigation.replace(constants.PROF_SUGGESTED_SCALE_RESULT, {
+        slug,
+
+        totalWeight,
+        stage,
+        maxWeight,
+
+        goToBack,
+      });
+    })();
   }, [submitted]);
+
+  if (isLoading) {
+    return <Loader visible={isLoading} style={{ marginVertical: 10 }} />;
+  }
+
+  if (error) {
+    return <ErrorButton visible={!!error} title={error} />;
+  }
+
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return null;
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: 'white' }}>
-      {isLoading ? (
-        <ActivityIndicator size='large' color={colors.primary} />
-      ) : (
-        <>
-          {alreadySubmitted ? (
-            <Text
-              style={{
-                paddingTop: 10,
-                textAlign: 'center',
-                fontSize: 25,
-                fontWeight: 'bold',
-              }}
-            >
-              Already Submitted
-            </Text>
-          ) : (
-            <ScrollView>
-              <Quizes
-                questions={questions}
-                answers={answers}
-                setAnswers={setAnswers}
-                setSubmitted={setSubmitted}
-                isLoading={isLoading}
-              />
-            </ScrollView>
-          )}
-        </>
-      )}
+      <ScrollView>
+        <Quizes
+          questions={questions}
+          answers={answers}
+          setAnswers={setAnswers}
+          setSubmitted={setSubmitted}
+          isLoading={isLoading}
+        />
+      </ScrollView>
     </View>
   );
 };
 
-const mapStateToProps = (state) => ({
-  name: state.auth.name,
-  photoUrl: state.auth.photoUrl,
-  jwtToken: state.auth.jwtToken,
-});
-
-export default connect(mapStateToProps, { logoutAction })(ProfSuggestedScale);
+export default ProfSuggestedScale;

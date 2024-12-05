@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const { constants } = require("../utils");
+const { MODEL_NAME } = require("./model_name");
 
 const profSchema = new mongoose.Schema(
   {
@@ -78,6 +79,6 @@ profSchema.methods.generateTokens = async (id) => {
   return [accessToken, refreshToken];
 };
 
-const Prof = mongoose.model("qlife_prof", profSchema);
+const Prof = mongoose.model(MODEL_NAME.PROFESSIONAL, profSchema);
 
 module.exports = Prof;

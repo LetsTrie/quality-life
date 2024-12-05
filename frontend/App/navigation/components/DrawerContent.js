@@ -27,7 +27,7 @@ const DrawerContent = () => {
   };
 
   const onNotificationClick = () => {
-    if (isUserRole) navigation.navigate('UserNotifications');
+    navigation.navigate(constants.NOTIFICATIONS);
   };
 
   return (
@@ -51,6 +51,17 @@ const DrawerContent = () => {
                 </View>
               </View>
               <View style={{ marginTop: 20 }}>
+                <DrawerItem
+                  icon={({ color, size }) => (
+                    <MaterialCommunityIcons name={'home'} size={size} color={colors.primary} />
+                  )}
+                  label={({ color }) => <Text style={{ color }}>হোমপেইজ</Text>}
+                  onPress={() =>
+                    navigation.navigate(isUserRole ? constants.HOMEPAGE : constants.PROF_HOMEPAGE)
+                  }
+                  style={{ paddingHorizontal: 5, marginBottom: 3 }}
+                />
+
                 <DrawerItem
                   icon={({ color, size }) => (
                     <MaterialCommunityIcons name={'account'} size={size} color={colors.success} />

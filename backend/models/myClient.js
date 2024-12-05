@@ -29,5 +29,8 @@ const profsClient = Schema(
 
 profsClient.index({ user: 1, prof: 1, isActive: 1 }, { unique: true });
 
-const ProfsClient = mongoose.model("qlife_profs-client", profsClient);
+const ProfsClient = mongoose.model(
+  MODEL_NAME.PROFESSIONALS_CLIENT,
+  profsClient
+);
 module.exports = ProfsClient;

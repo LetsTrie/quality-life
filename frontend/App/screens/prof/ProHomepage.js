@@ -11,14 +11,16 @@ import {
 import Text from '../../components/Text';
 import BaseUrl from '../../config/BaseUrl';
 import { numOfNewNotificationsAction, storeProfessionalsProfile } from '../../redux/actions/prof';
-import { connect, useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import ProfileActModal from './ProfileActModal';
 import constants from '../../navigation/constants';
 import { useBackPress, useHelper } from '../../hooks';
 import { ApiDefinitions } from '../../services/api';
-import { numberWithCommas } from '../../utils/number';
 import { MaterialIcons } from '@expo/vector-icons';
 import colors from '../../config/colors';
+import { useNavigation } from '@react-navigation/native';
+import { setUnreadNotificationCount } from '../../redux/actions';
+import { useIsFocused } from '@react-navigation/native';
 
 const SCREEN_NAME = constants.PROF_HOMEPAGE;
 
@@ -58,20 +60,18 @@ const CardItem = ({ icon, title, subtitle, color, onPress, badge }) => (
   </TouchableOpacity>
 );
 
-const Homepage = ({ navigation, route, ...props }) => {
+const Homepage = () => {
+  const isFocused = useIsFocused();
+
   useBackPress(SCREEN_NAME);
 
+  const navigation = useNavigation();
   const dispatch = useDispatch();
-
   const { ApiExecutor } = useHelper();
 
-  const {
-    _id,
-    visibility,
-    numOfNewNotifications,
-    numOfNewClientRequests,
-    numOfNewNotificationsAction,
-  } = props;
+  const unreadNotificationCount = useSelector((state) => state.notifications.unreadCount);
+  const { numOfNewClientRequests } = useSelector((state) => state.prof);
+  const { _id, visibility } = useSelector((state) => state.prof?.prof || {});
 
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,10 +90,12 @@ const Homepage = ({ navigation, route, ...props }) => {
     }
 
     const { notificationCount, appointmentCount } = response.data;
-    numOfNewNotificationsAction(parseFloat(notificationCount), parseFloat(appointmentCount));
+
+    dispatch(numOfNewNotificationsAction(parseFloat(appointmentCount)));
+    dispatch(setUnreadNotificationCount(parseFloat(notificationCount)));
   }
 
-  const anyNewNotifications = !(!numOfNewNotifications || numOfNewNotifications <= 0);
+  const anyNewNotifications = !(!unreadNotificationCount || unreadNotificationCount <= 0);
 
   const onRefresh = React.useCallback(() => {
     (async () => {
@@ -114,6 +116,8 @@ const Homepage = ({ navigation, route, ...props }) => {
   };
 
   useEffect(() => {
+    if (!isFocused) return;
+
     (async () => {
       await getHomepageData();
 
@@ -125,7 +129,7 @@ const Homepage = ({ navigation, route, ...props }) => {
       }
       setIsLoading(false);
     })();
-  }, []);
+  }, [isFocused]);
 
   return (
     <ScrollView
@@ -144,9 +148,9 @@ const Homepage = ({ navigation, route, ...props }) => {
             <CardItem
               icon="notifications-active"
               title="New Notifications"
-              subtitle={`You have ${numOfNewNotifications} new notifications`}
+              subtitle={`You have ${unreadNotificationCount} new notifications`}
               color={colors.highlight}
-              onPress={() => navigation.navigate('ProNotification', { goToBack: SCREEN_NAME })}
+              onPress={() => navigation.navigate(constants.NOTIFICATIONS)}
             />
           )}
 
@@ -169,7 +173,9 @@ const Homepage = ({ navigation, route, ...props }) => {
             icon="group"
             title="My Clients"
             color={colors.primary}
-            onPress={() => navigation.navigate('ProMyClients', { goToBack: SCREEN_NAME })}
+            onPress={() =>
+              navigation.navigate(constants.PROFESSIONALS_CLIENT, { goToBack: SCREEN_NAME })
+            }
           />
 
           {!anyNewNotifications && (
@@ -177,7 +183,7 @@ const Homepage = ({ navigation, route, ...props }) => {
               icon="notifications"
               title="Notifications"
               color={colors.highlight}
-              onPress={() => navigation.navigate('ProNotification', { goToBack: SCREEN_NAME })}
+              onPress={() => navigation.navigate(constants.NOTIFICATIONS)}
             />
           )}
 
@@ -271,11 +277,5 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
 });
-const mapStateToProps = (state) => ({
-  _id: state.prof?.prof?._id,
-  numOfNewNotifications: state.prof.numOfNewNotifications,
-  numOfNewClientRequests: state.prof.numOfNewClientRequests,
-  visibility: state.prof?.prof?.visibility,
-});
 
-export default connect(mapStateToProps, { numOfNewNotificationsAction })(Homepage);
+export default Homepage;

@@ -82,6 +82,8 @@ exports.verifyToken = (role) => async (req, res, next) => {
     }
 
     req.user = user;
+    req.isUser = isUser;
+    req.isProfessional = isProfessional;
     next();
   } catch (error) {
     if (error.name === "TokenExpiredError") {

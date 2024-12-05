@@ -1,72 +1,67 @@
-import React, { useEffect } from 'react';
-import { BackHandler, ScrollView, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Text from '../components/Text';
+import Button from '../components/Button';
 import colors from '../config/colors';
 import data from '../data/profScales';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { useBackPress, useHelper } from '../hooks';
+import constants from '../navigation/constants';
+import { SubmitButton } from '../components/SubmitButton';
 
-const ProfScaleResult = ({ navigation, route, ...props }) => {
-  const { totalWeight, stage, maxWeight, questionId } = route.params;
-  const questionObject = data.find((d) => d.id === questionId);
+const SCREEN_NAME = constants.PROF_SUGGESTED_SCALE_RESULT;
 
-  let parcentage = 0;
-  if (maxWeight > 0) parcentage = Math.round((totalWeight / maxWeight) * 100);
-  function handleBackButtonClick() {
-    navigation.navigate('Homepage');
-    return true;
+const ProfScaleResult = () => {
+  const route = useRoute();
+  const navigation = useNavigation();
+
+  const { redirectToHomepage } = useHelper();
+
+  const { goToBack, totalWeight, stage, maxWeight, slug } = route.params || {};
+  useBackPress(SCREEN_NAME, goToBack);
+  const questionObject = data.find((d) => d.id === slug);
+
+  if (!questionObject) {
+    throw new Error('Question Object is missing!!');
   }
 
-  useEffect(() => {
-    BackHandler.addEventListener('hardwareBackPress', handleBackButtonClick);
-    return () => {
-      BackHandler.removeEventListener(
-        'hardwareBackPress',
-        handleBackButtonClick
-      );
-    };
-  }, []);
+  let percentage = 0;
+  if (maxWeight > 0) percentage = Math.round((totalWeight / maxWeight) * 100);
 
   return (
-    <>
-      <ScrollView>
-        <View style={styles.mainContainer}>
-          <Text style={styles.scoreHeading}>{questionObject.name}</Text>
-          <Text
-            style={{
-              fontSize: 20,
-              textAlign: 'center',
-              marginTop: 10,
-              fontWeight: 'bold',
-            }}
-          >
-            {'তীব্রতা'}
-          </Text>
-          <Text style={styles.scoreDesc}> {stage} </Text>
-          <View
-            style={
-              parcentage <= 50
-                ? styles.scoreTextContainerGreen
-                : styles.scoreTextContainerRed
-            }
-          >
-            <Text style={styles.scoreText}> {totalWeight}</Text>
-          </View>
-        </View>
-      </ScrollView>
-    </>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.mainContainer}>
+        <Text style={styles.scoreHeading}>{questionObject.name}</Text>
+        <Text style={styles.intensityLabel}>তীব্রতা: {stage}</Text>
+
+        <SubmitButton
+          title="হোমপেইজে যান"
+          style={{ backgroundColor: colors.secondary, width: '100%', marginTop: 15 }}
+          onPress={() => redirectToHomepage()}
+        />
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    paddingVertical: 20,
+  },
   mainContainer: {
-    padding: 10,
-    paddingTop: 18,
+    paddingHorizontal: 16,
   },
   scoreHeading: {
     textAlign: 'center',
     fontSize: 24,
     lineHeight: 30,
-    fontWeight: 'bold',
     marginTop: 5,
+  },
+  intensityLabel: {
+    fontSize: 20,
+    textAlign: 'center',
+    marginTop: 10,
   },
   scoreDesc: {
     textAlign: 'center',
@@ -75,7 +70,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     color: colors.primary,
   },
-  scoreTextContainer: {},
   scoreTextContainerGreen: {
     height: 150,
     width: 150,
@@ -105,6 +99,14 @@ const styles = StyleSheet.create({
     fontSize: 40,
     fontWeight: 'bold',
     color: 'white',
+  },
+  homeButton: {
+    backgroundColor: '#2d4059',
+    marginTop: 16,
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
   },
 });
 

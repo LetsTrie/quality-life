@@ -3,22 +3,26 @@ import { RefreshControl, ScrollView, View } from 'react-native';
 import Text from '../../components/Text';
 import colors from '../../config/colors';
 import constants from '../../navigation/constants';
-import { useNavigation } from '@react-navigation/native';
 import { useBackPress, useHelper } from '../../hooks';
 import { ApiDefinitions } from '../../services/api';
 import SeeMoreButton from '../../components/SeeMoreButton';
 import { Loader } from '../../components';
 import NotificationTab from './components/NotificationTab';
+import { useSelector } from 'react-redux';
+import { useIsFocused } from '@react-navigation/native';
 
 // SCALE_FILL_UP
 // modf.message = `"${modf.user.name}" filled up the suggested scale.`;
 // modf.icon = 'clipboard-check-outline';
 
-const SCREEN_NAME = constants.PROFESSIONALS_NOTIFICATIONS;
+const SCREEN_NAME = constants.NOTIFICATIONS;
 
 const Notification = () => {
-  const navigation = useNavigation();
-  const { ApiExecutor } = useHelper();
+  const isFocused = useIsFocused();
+
+  const { role } = useSelector((state) => state.auth);
+
+  const { ApiExecutor, refreshNotificationCount } = useHelper();
   useBackPress(SCREEN_NAME);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,15 +44,19 @@ const Notification = () => {
     }
 
     const response = await ApiExecutor(
-      ApiDefinitions.getProfessionalsUnreadNotifications({
+      ApiDefinitions.getNotifications({
+        role,
         page,
       })
     );
+
+    await refreshNotificationCount();
 
     if (page === 1) setIsLoading(false);
     else setSeeMoreLoading(false);
 
     if (!response.success) {
+      // TODO: handle error and show it in ERROR_BUTTON
       console.error(response);
       return;
     }
@@ -76,10 +84,12 @@ const Notification = () => {
   }, []);
 
   useEffect(() => {
+    if (!isFocused) return;
+
     (async () => {
       await getNotifications();
     })();
-  }, []);
+  }, [isFocused]);
 
   return (
     <ScrollView

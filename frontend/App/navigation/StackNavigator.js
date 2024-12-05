@@ -50,7 +50,6 @@ import Setting from '../screens/Setting/Setting.js';
 import Test from '../screens/Test.js';
 
 import AppointmentStatus from '../screens/UserIntProf/AppointmentStatus.js';
-import UserNotifications from '../screens/userNotifications.js';
 import UserRegisterConsent from '../screens/UserRegistrationConsent.js';
 
 import constants from './constants.js';
@@ -64,6 +63,8 @@ import VideoExercise from '../screens/VideoExercise.js';
 import VideoExerciseList from '../screens/VideoExerciseList.js';
 import VideoScreen from '../screens/VideoScreen.js';
 import UpdatePassword from '../screens/Setting/UpdatePassword.js';
+import { useSelector } from 'react-redux';
+import { selectHomepageByRole } from '../utils/roles.js';
 
 const Stack = createStackNavigator();
 
@@ -94,7 +95,80 @@ const screenOptions = ({ navigation }) => ({
   },
 });
 
+const replaceNavigation = (navigation, screen, role) => {
+  if (!navigation || !screen) {
+    console.error(
+      '[replaceNavigation] Missing required arguments: navigation or screen is undefined.'
+    );
+    return;
+  }
+
+  if (screen === constants.GO_TO_BACK) {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      console.warn('[Navigation] Cannot go back: No previous screen in navigation stack.');
+    }
+    return;
+  }
+
+  try {
+    navigation.replace(selectHomepageByRole(screen, role));
+  } catch (error) {
+    console.error(`[replaceNavigation] navigation.replace failed: ${error.message}`);
+
+    try {
+      navigation.navigate(selectHomepageByRole(screen, role));
+    } catch (fallbackError) {
+      console.error(
+        `[replaceNavigation] Fallback navigation.navigate also failed: ${fallbackError.message}`
+      );
+      throw new Error(`Navigation to screen "${screen}" failed using both replace and navigate.`);
+    }
+  }
+};
+
+const safeTransit = ({ navigation, route, role }) => {
+  if (!navigation || !route) {
+    console.error('[safeTransit] Missing required arguments: navigation or route is undefined.');
+    return;
+  }
+
+  if (!('params' in route)) {
+    console.error('[safeTransit] Invalid route object: "params" is not defined.');
+    return;
+  }
+
+  const screen = route.name;
+  const { goToBack } = route.params || {};
+
+  if (goToBack) {
+    replaceNavigation(navigation, goToBack, role);
+    return;
+  }
+
+  if (!screen) {
+    console.error('[safeTransit] Missing required argument: "screen" is undefined.');
+    return;
+  }
+
+  if (!(screen in backScreenMap)) {
+    console.error(`[safeTransit] Invalid screen: "${screen}" is not in backScreenMap.`);
+    throw new Error(`Screen "${screen}" is not mapped in backScreenMap.`);
+  }
+
+  const targetScreen = backScreenMap[screen];
+  replaceNavigation(navigation, targetScreen, role);
+};
+
+// --------------------------------------------------------
+// ************************ Index *************************
+// --------------------------------------------------------
+// * Professional Assessment Tools
+
 const StackNavigator = () => {
+  const { role } = useSelector((state) => state.auth);
+
   return (
     <Stack.Navigator initialRouteName="Welcome" screenOptions={screenOptions}>
       <Stack.Screen name="Welcome" component={Welcome} options={dontShowHeader} />
@@ -131,7 +205,7 @@ const StackNavigator = () => {
         name={constants.PROF_CLIENT_REQUEST}
         component={ClientRequestPro}
         options={({ navigation }) => ({
-          title: 'ক্লায়েন্ট রিকোয়েস্ট',
+          title: 'Client Requests',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
@@ -163,7 +237,7 @@ const StackNavigator = () => {
         name={constants.PROF_RESPONSE_CLIENT_REQUEST}
         component={ResponseRequest}
         options={({ navigation, route, ...props }) => ({
-          title: 'ক্লায়েন্ট রিকোয়েস্ট',
+          title: 'Client Request',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
@@ -174,8 +248,25 @@ const StackNavigator = () => {
           ),
         })}
       />
+
       <Stack.Screen
-        name="ClientProfile"
+        name={constants.PROFESSIONALS_CLIENT}
+        component={ProMyClients}
+        options={({ navigation, route }) => ({
+          title: 'My Clients',
+          headerLeft: (props) => (
+            <HeaderBackButton
+              {...props}
+              onPress={() => {
+                safeTransit({ navigation, route, role });
+              }}
+            />
+          ),
+        })}
+      />
+
+      <Stack.Screen
+        name={constants.CLIENT_PROFILE}
         component={ClientProfile}
         options={({ navigation, route, ...props }) => ({
           title: 'Client Profile',
@@ -183,63 +274,89 @@ const StackNavigator = () => {
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(route.params.goToBack);
+                safeTransit({ navigation, route, role });
               }}
             />
           ),
         })}
       />
+
       <Stack.Screen
-        name="ClientTestResult"
+        name={constants.CLIENT_TEST_RESULT}
         component={ClientTestResult}
-        options={() => ({
-          title: 'Response',
+        options={({ navigation, route }) => ({
+          title: 'Scale Result',
+          headerLeft: (props) => (
+            <HeaderBackButton
+              {...props}
+              onPress={() => {
+                safeTransit({ navigation, route, role });
+              }}
+            />
+          ),
         })}
       />
+
       <Stack.Screen
-        name="ProfSuggestedScale"
+        name={constants.PROF_SUGGESTED_SCALE}
         component={ProfSuggestedScale}
-        options={() => ({
-          title: 'Response',
+        options={({ navigation, route }) => ({
+          title: 'স্কেলটি পূরণ করুন',
+          headerLeft: (props) => (
+            <HeaderBackButton
+              {...props}
+              onPress={() => {
+                if (route.params.goToBack) {
+                  navigation.replace(route.params.goToBack);
+                } else {
+                  navigation.navigate(backScreenMap[constants.PROF_SUGGESTED_SCALE]);
+                }
+              }}
+            />
+          ),
         })}
       />
+
       <Stack.Screen
-        name="ProfScaleResult"
+        name={constants.PROF_SUGGESTED_SCALE_RESULT}
         component={ProfScaleResult}
-        options={({ navigation }) => ({
+        options={({ navigation, route }) => ({
           title: 'Your Score',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(constants.HOMEPAGE);
+                if (route.params.goToBack) {
+                  navigation.replace(route.params.goToBack);
+                } else {
+                  navigation.navigate(backScreenMap[constants.PROF_SUGGESTED_SCALE_RESULT]);
+                }
               }}
             />
           ),
         })}
       />
+
       <Stack.Screen
-        name="AppointmentStatus"
+        name={constants.APPOINTMENT_STATUS}
         component={AppointmentStatus}
-        options={({ navigation }) => ({
+        options={({ navigation, route }) => ({
           title: 'Appointment',
-        })}
-      />
-      <Stack.Screen
-        name="ProMyClients"
-        component={ProMyClients}
-        options={({ navigation, route, ...props }) => ({
-          title: 'My Clients',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(route.params.goToBack);
+                if (route.params.goToBack) {
+                  navigation.replace(route.params.goToBack);
+                } else {
+                  navigation.navigate(backScreenMap[constants.APPOINTMENT_STATUS]);
+                }
               }}
             />
           ),
         })}
       />
+
       <Stack.Screen name="Register" component={Register} options={dontShowHeader} />
       <Stack.Screen name="LoginPro" component={LoginPro} options={dontShowHeader} />
       <Stack.Screen name="RecoverAccount" component={RecoverAccount} options={dontShowHeader} />
@@ -274,15 +391,15 @@ const StackNavigator = () => {
         })}
       />
       <Stack.Screen
-        name={constants.PROFESSIONALS_NOTIFICATIONS}
+        name={constants.NOTIFICATIONS}
         component={ProNotification}
-        options={({ navigation, route, ...props }) => ({
+        options={({ navigation, route }) => ({
           title: 'Notifications',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(backScreenMap[constants.PROFESSIONALS_NOTIFICATIONS]);
+                safeTransit({ navigation, route, role });
               }}
             />
           ),
@@ -323,36 +440,47 @@ const StackNavigator = () => {
           title: constants.HOMEPAGE,
         })}
       />
+
+      {/* 
+        *************************************************************
+        *************************************************************
+                        Professional Assessment Tools 
+        *************************************************************
+        *************************************************************
+      */}
+
       <Stack.Screen
         name={constants.PROF_ASSESSMENT_TOOLS}
         component={ProAssessments}
-        options={({ navigation }) => ({
+        options={({ navigation, route }) => ({
           title: 'Assessment tools',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(backScreenMap[constants.PROF_ASSESSMENT_TOOLS]);
+                safeTransit({ navigation, route, role });
               }}
             />
           ),
         })}
       />
+
       <Stack.Screen
         name={constants.PROF_ASSESSMENT_TOOL_DETAILS}
         component={ProAssessmentDetails}
-        options={({ navigation }) => ({
-          title: 'Assessment',
+        options={({ navigation, route }) => ({
+          title: 'Tool Overview',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(backScreenMap[constants.PROF_ASSESSMENT_TOOL_DETAILS]);
+                safeTransit({ navigation, route, role });
               }}
             />
           ),
         })}
       />
+
       <Stack.Screen
         name={constants.PROF_PROFILE}
         component={ProfileProf}
@@ -512,13 +640,6 @@ const StackNavigator = () => {
         })}
       />
       <Stack.Screen
-        name="UserNotifications"
-        component={UserNotifications}
-        options={({ navigation }) => ({
-          title: 'Notifications',
-        })}
-      />
-      <Stack.Screen
         name={constants.RATING}
         component={Rating}
         options={({ navigation }) => ({
@@ -627,13 +748,15 @@ const StackNavigator = () => {
         })}
       />
       <Stack.Screen name={constants.ASK_FOR_TEST} component={AskForTest} options={dontShowHeader} />
+
       <Stack.Screen
-        name="ResultHistory"
+        name={constants.RESULT_HISTORY}
         component={ResultHistory}
         options={() => ({
-          title: 'Result History',
+          title: 'পূর্ববর্তী রেজাল্টসমূহ',
         })}
       />
+
       <Stack.Screen
         name={constants.HELP_CENTER}
         component={HelpCenter}

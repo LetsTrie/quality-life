@@ -1,22 +1,11 @@
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Text from '../Text';
 import { ProgressBar } from 'react-native-paper';
 import colors from '../../config/colors';
 import OptionForm from './OptionForm';
 
-const Quizes = ({
-  questions,
-  answers,
-  setAnswers,
-  setSubmitted,
-  isLoading,
-}) => {
+const Quizes = ({ questions, answers, setAnswers, setSubmitted, isLoading }) => {
   let [currentQuestion, setCurrentQuestion] = useState(0);
   const handleQuestionChange = (next, prev) => {
     setTimeout(() => {
@@ -73,10 +62,7 @@ const Quizes = ({
         Questions {currentQuestion + 1} of {questions.length}
       </Text>
 
-      <ProgressBar
-        color={colors.primary}
-        progress={(currentQuestion + 1) / questions.length}
-      />
+      <ProgressBar color={colors.primary} progress={(currentQuestion + 1) / questions.length} />
       <View style={styles.quizes}>
         {questions.map((q, index) => {
           return index === currentQuestion ? (
@@ -102,7 +88,7 @@ const Quizes = ({
                 paddingTop: 5,
               }}
             >
-              <ActivityIndicator size='large' color={colors.primary} />
+              <ActivityIndicator size="large" color={colors.primary} />
             </View>
           ) : (
             <>
@@ -132,7 +118,7 @@ const styles = StyleSheet.create({
     paddingTop: 26,
   },
   questionText: {
-    fontSize: 22,
+    fontSize: 20,
     paddingVertical: 6,
     paddingBottom: 20,
     lineHeight: 30,

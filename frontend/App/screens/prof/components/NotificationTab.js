@@ -4,29 +4,73 @@ import Text from '../../../components/Text';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Example for icons
 import colors from '../../../config/colors';
 import { useNavigation } from '@react-navigation/native';
-import { TYPES } from '../../../utils/type';
+import { TYPES, typeLabelMap } from '../../../utils/type';
 import constants from '../../../navigation/constants';
 import { formatDistanceToNow } from 'date-fns';
 import { capitalizeFirstLetter } from '../../../utils/string';
 
 const NotificationTab = ({ notification }) => {
-  console.log(notification.prof);
   const navigation = useNavigation();
 
-  const username = notification.user?.name;
-  if (!username) return null;
+  const username = capitalizeFirstLetter(notification.user?.name);
+  const profname = capitalizeFirstLetter(notification.prof?.name);
+
+  if (!username || !profname) return null;
+
+  console.log('Received notification: ', notification);
 
   let message = '';
   let screen = '';
   let params = {};
+  let icon = 'calendar-check';
 
   if (notification.type === TYPES.APPOINTMENT_REQUESTED) {
-    message = `{${username}} requested for an appointment.`;
+    message = `{${username}} has requested an appointment.`;
     screen = constants.PROF_RESPONSE_CLIENT_REQUEST;
     params = {
-      appointmentId: notification.appointmentId,
-      goToBack: constants.PROFESSIONALS_NOTIFICATIONS,
+      appointmentId: notification.appointment._id,
+      goToBack: constants.NOTIFICATIONS,
     };
+    icon = 'account-clock';
+  } else if (notification.type === TYPES.APPOINTMENT_ACCEPTED) {
+    // TODO: When to delete this notification
+    const dateTime = notification.appointment.dateByProfessional;
+    const date = new Date(dateTime).toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    const time = new Date(dateTime).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true,
+    });
+    message = `{${profname}} has scheduled an appointment on ${date} at ${time}.`;
+    screen = constants.APPOINTMENT_STATUS;
+    params = {
+      appointmentId: notification.appointment._id,
+      professionalId: notification.prof._id,
+      goToBack: constants.NOTIFICATIONS,
+    };
+    icon = 'calendar-check';
+  } else if (notification.type === TYPES.SUGGEST_A_SCALE) {
+    const scaleName = typeLabelMap(notification.assessment.assessmentSlug);
+    message = `{${profname}} suggested scale - ${scaleName}.`;
+    screen = constants.PROF_SUGGESTED_SCALE;
+    params = {
+      assessmentId: notification.assessment._id,
+      goToBack: constants.NOTIFICATIONS,
+    };
+    icon = 'clipboard-text';
+  } else if (notification.type === TYPES.SCALE_FILLUP_BY_USER) {
+    const scaleName = typeLabelMap(notification.assessment.assessmentSlug);
+    message = `{${username}} has completed the {${scaleName}} assessment.`;
+    screen = constants.CLIENT_TEST_RESULT;
+    params = {
+      testId: notification.assessment._id,
+      isSpecialTest: true,
+    };
+    icon = 'check-circle';
   } else {
     return null;
   }
@@ -48,6 +92,10 @@ const NotificationTab = ({ notification }) => {
     );
   };
 
+  const onPress = async () => {
+    navigation.navigate(screen, params);
+  };
+
   return (
     <TouchableOpacity
       style={[
@@ -57,11 +105,11 @@ const NotificationTab = ({ notification }) => {
           borderColor: colors.highlight,
         },
       ]}
-      onPress={() => navigation.replace(screen, params)}
+      onPress={onPress}
     >
       <View style={styles.iconContainer}>
         <Icon
-          name="calendar-check"
+          name={icon}
           style={[
             styles.iconStyle,
             !notification.hasSeen && {

@@ -27,7 +27,9 @@ export const Welcome = () => {
   const route = useRoute();
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  const { isAuthenticated, role } = useSelector((state) => state.auth);
+  const { role } = useSelector((state) => state.auth);
+
+  const isAuthenticated = !!role;
 
   const { ApiExecutor } = useHelper();
 

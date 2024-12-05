@@ -24,8 +24,6 @@ const initialState = {
 export default function (state = initialState, action) {
   switch (action.type) {
     case SET_PROFESSIONAL_INFO:
-      console.log('SET_PROFESSIONAL_INFO', action.payload);
-
       return {
         ...state,
         prof: action.payload.prof,
@@ -48,7 +46,6 @@ export default function (state = initialState, action) {
     case NEW_NOTIFICATION_COUNT:
       return {
         ...state,
-        numOfNewNotifications: action.payload.numOfNewNotifications,
         numOfNewClientRequests: action.payload.numOfNewClientRequests,
       };
 

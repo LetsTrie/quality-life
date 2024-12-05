@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
-
 const assessments = [
   {
     id: '276b81b8-66c6-49b7-bb98-cfddc9080d59',

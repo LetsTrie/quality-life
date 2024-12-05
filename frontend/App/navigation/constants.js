@@ -36,6 +36,7 @@ export default {
   PROF_TYPE: 'PROF',
 
   SPECIAL_LOGOUT_ACTION: ':: logout ::',
+  GO_TO_BACK: ':: go back ::',
 
   APPOINTMENT_REQUESTED: 'APPOINTMENT_REQUESTED',
   REQUESTED: 'REQUESTED',
@@ -57,5 +58,12 @@ export default {
   RATING: 'Rating',
   MENTAL_HEALTH_ASSESSMENT: 'HomepageScale',
   MENTAL_HEALTH_ASSESSMENT_RESULT: 'CircularQuizResult',
-  PROFESSIONALS_NOTIFICATIONS: 'ProNotification',
+  NOTIFICATIONS: 'Notifications',
+
+  RESULT_HISTORY: 'ResultHistory',
+
+  PROF_SUGGESTED_SCALE: 'ProfSuggestedScale',
+  PROF_SUGGESTED_SCALE_RESULT: 'ProfScaleResult',
+
+  CLIENT_TEST_RESULT: 'ClientTestResult',
 };

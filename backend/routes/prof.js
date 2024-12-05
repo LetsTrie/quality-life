@@ -61,40 +61,20 @@ router.get(
   M.verifyToken(ROLE),
   professionalController.getHomepageInformationProf
 );
-router.get(
-  "/notifications/unread",
-  M.verifyToken(ROLE),
-  professionalController.getProfUnreadNotifications
-);
-router.post(
-  "/notifications/seen",
-  M.verifyToken(ROLE),
-  professionalController.seenNotification
-);
 
-router.post(
-  "/add-as-client",
-  M.verifyToken(ROLE),
-  professionalController.AddasClient
-);
 router.get(
   "/my-clients",
   M.verifyToken(ROLE),
   professionalController.myClients
 );
 
-router.post(
-  "/suggest-scale",
-  M.verifyToken(ROLE),
-  professionalController.suggestAscale
-);
 router.get(
   "/user-profile/:userId",
   professionalController.getUserCompleteProfile
 );
 router.get(
-  "/test-details/:testId",
-  professionalController.getCompleteTestResult
+  "/primary-test-details/:testId",
+  professionalController.getPrimaryResultDetails
 );
 
 router.post(
@@ -133,6 +113,18 @@ router.post(
   "/appointment-response/:appointmentId",
   M.verifyToken(ROLE),
   userProfCtrl.respondToAppointment
+);
+
+router.post("/suggest-scale", M.verifyToken(ROLE), userProfCtrl.suggestAscale);
+router.get(
+  "/scales/:clientId",
+  M.verifyToken(ROLE),
+  userProfCtrl.findSuggestedScalesByClient
+);
+router.get(
+  "/assessment/:assessmentId",
+  M.verifyToken(ROLE),
+  userProfCtrl.getAssessmentDetails
 );
 
 // ****************************************************************

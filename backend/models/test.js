@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const testSchema = new mongoose.Schema(
   {
-    type: String, // introTest, manoshikShasthoMullayon
+    type: String, // manoshikShasthoMullayon
     userId: String,
     questionAnswers: [
       {

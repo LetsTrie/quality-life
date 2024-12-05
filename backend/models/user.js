@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
     age: {
       type: Number,
       min: 5,
-      max: 100,
+      max: 150,
     },
     gender: String,
     isMarried: Boolean,

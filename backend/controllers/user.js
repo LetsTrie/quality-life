@@ -2,14 +2,14 @@ const asyncHandler = require("../middlewares/asyncHandler");
 const User = require("../models/user");
 const moment = require("moment");
 const Rating = require("../models/rating");
-const ProfNotification = require("../models/profNotification");
-const AssessmentResult = require("../models/profAssessmentResult");
 const Test = require("../models/test");
 const Error = require("../models/error");
 const ProfAssessment = require("../models/profAssessment");
-const UserNotification = require("../models/userNotification");
 const { MODEL_NAME } = require("../models/model_name");
-const { sendJSONresponse, sendErrorResponse } = require("../utils");
+const { sendJSONresponse, sendErrorResponse, constants } = require("../utils");
+
+const { Notification } = require("../models");
+const { NotificationService } = require("../services");
 
 // TODO:
 // 1) Move to utils/datetime.js
@@ -36,44 +36,6 @@ function modifyTime(msmdate) {
   msmdate = sp[0] + "/" + sp[1] + "/" + sp[2];
   return moment(new Date(msmdate)).format("ll");
 }
-
-// TODO: Move to test.js
-// TODO: Update the Response
-exports.introTestSubmit = asyncHandler(async (req, res, next) => {
-  const { answers, score, fromVideo } = req.body;
-  const postTest = !!req.body.postTest;
-
-  const questionAnswers = answers.map((answer, index) => ({
-    questionId: `it_${index + 1}`,
-    answer,
-  }));
-
-  let date = getDate();
-
-  const testObject = {
-    questionAnswers,
-    type: "introTest",
-    userId: req.user._id,
-    date,
-    score,
-    fromVideo: !!fromVideo,
-    postTest,
-  };
-
-  const test = new Test(testObject);
-  await test.save();
-
-  const user = req.user;
-  user.lastIntroTestDate = date;
-  await user.save();
-
-  return res.status(200).json({
-    success: true,
-    test,
-    user,
-    mDate: modifyTime(date),
-  });
-});
 
 exports.submitAdditionalInfo = asyncHandler(async (req, res, _next) => {
   console.log(req.body);
@@ -172,7 +134,7 @@ async function getLastResult(types, req, res, next, format) {
 
 async function getProgress(req, res, next, format = null) {
   let manoshikShasthoMullayon = await getLastResult(
-    [{ type: "manoshikShasthoMullayon" }, { type: "introTest" }],
+    [{ type: "manoshikShasthoMullayon" }],
     req,
     res,
     next,
@@ -374,12 +336,14 @@ exports.getNumberOfNotifications = asyncHandler(async (req, res, next) => {
     user: userId,
     hasSeen: false,
   }).countDocuments();
-  const userNotification = await UserNotification.find({
+
+  const notificationCount = await Notification.find({
     user: userId,
     hasSeen: false,
   }).countDocuments();
+
   return res.status(200).json({
-    totalNotificationCount: userNotification + profAssessment,
+    totalNotificationCount: notificationCount + profAssessment,
   });
 });
 
@@ -410,12 +374,12 @@ exports.unreadNotifications = asyncHandler(async (req, res, next) => {
     });
   });
 
-  const userNotification = await UserNotification.find({
+  const userNotification = await Notification.find({
     user: userId,
     hasSeen: false,
   }).populate([
     {
-      path: MODEL_NAME.USER,
+      path: "user",
       select: "name",
     },
     {
@@ -423,6 +387,7 @@ exports.unreadNotifications = asyncHandler(async (req, res, next) => {
       select: "name",
     },
   ]);
+
   userNotification.map((p) => {
     unreadNotifications.push({
       type: p.type,
@@ -440,29 +405,18 @@ exports.profSuggestedScales = asyncHandler(async (req, res, next) => {
   return res.json({ scales: req.user.suggestedScale });
 });
 
-exports.numberOfNotifications = asyncHandler(async (req, res, next) => {
-  const unreadNotifications = await UserNotification.countDocuments({
-    user: req.user._id,
-    hasSeen: false,
-  });
-
-  return res.json({
-    nNotifications: unreadNotifications,
-  });
-});
-
 exports.userNotifications = asyncHandler(async (req, res, next) => {
   const page = +req.query.page || 1;
 
   let numberOfNotifications;
 
   if (page === 1) {
-    numberOfNotifications = await UserNotification.countDocuments({
+    numberOfNotifications = await Notification.countDocuments({
       user: req.user._id,
     });
   }
 
-  const notifications = await UserNotification.find({
+  const notifications = await Notification.find({
     user: req.user._id,
   })
     .sort({ _id: -1 })
@@ -479,138 +433,82 @@ exports.userNotifications = asyncHandler(async (req, res, next) => {
 // Appointment Status
 // prof list theke ei page redirect korbe... 3 type er status
 
-let days = [
-  {
-    label: "Sunday",
-    id: 0,
-    genId: 3,
-    value: "রবিবার",
-  },
-  {
-    label: "Monday",
-    value: "সোমবার",
-    id: 1,
-    genId: 4,
-  },
-  {
-    label: "Tuesday",
-    value: "মঙ্গলবার",
-    id: 2,
-    genId: 5,
-  },
-  {
-    label: "Wednesday",
-    value: "বুধবার",
-    id: 3,
-    genId: 6,
-  },
-  {
-    label: "Thursday",
-    value: "বৃহস্পতিবার",
-    id: 4,
-    genId: 7,
-  },
-  {
-    label: "Friday",
-    value: "শুক্রবার",
-    id: 5,
-    genId: 1,
-  },
-  {
-    label: "Saturday",
-    value: "শনিবার",
-    id: 6,
-    genId: 2,
-  },
-];
+exports.checkSuggestedScale = asyncHandler(async (req, res, _next) => {
+  const { assessmentId } = req.params;
 
-exports.seenNotification = asyncHandler(async (req, res, next) => {
-  const { notification_id } = req.body;
-  const notification = await UserNotification.findById(notification_id);
-  if (!notification) return res.sendStatus(404);
-  notification.hasSeen = true;
-  await notification.save();
-  return res.sendStatus(200);
-});
-
-exports.checkSuggestedScale = asyncHandler(async (req, res, next) => {
-  const userId = req.user._id;
-  const { profId, questionId } = req.body;
-
-  const assessmentResult = await AssessmentResult.findOne({
-    user: userId,
-    prof: profId,
-    assessmentId: questionId,
-  });
-
-  if (assessmentResult) return res.json({ found: true });
-  return res.json({ found: false });
-});
-
-exports.submitProfScale = asyncHandler(async (req, res, next) => {
-  const userId = req.user._id;
-  const {
-    profId,
-    notificationId,
-    appointmentId,
-    questionId,
-    totalWeight,
-    stage,
-    maxWeight,
-    answers,
-  } = req.body;
-
-  // Seen user notification
-  if (notificationId) {
-    const notification = await UserNotification.findById(notificationId);
-    notification.hasSeen = true;
-    if (!notification) return res.sendStatus(404);
-    await notification.save();
-  } else if (appointmentId) {
-    const notification = await UserNotification.findOne({
-      "associateID.appointmentId": appointmentId,
+  const assessment = await ProfAssessment.findById(assessmentId);
+  if (!assessment) {
+    return sendErrorResponse(res, 404, "NotFound", {
+      message: "Assessment not found",
     });
-    notification.hasSeen = true;
-    await notification.save();
   }
 
-  // save assessment result
-  const assessmentResult = await AssessmentResult.create({
-    user: userId,
-    prof: profId,
-    assessmentId: questionId,
-    notificationId,
-    totalWeight,
-    stage,
-    maxWeight,
-    answers,
-  });
+  if (assessment.hasCompleted) {
+    return sendErrorResponse(res, 400, "BadRequest", {
+      message: "Assessment has been completed",
+    });
+  }
 
-  // Send prof notification
-  await ProfNotification.create({
-    user: userId,
-    prof: profId,
-    type: "SCALE_FILL_UP",
-    associateID: {
-      assessmentId: questionId,
-      assessmentResultId: assessmentResult._id,
-    },
-  });
+  await NotificationService.seenAssessmentNotification(assessmentId);
 
-  return res.json({ success: true });
+  return sendJSONresponse(res, 200, {
+    data: { assessment },
+  });
 });
 
-exports.resultHistoryTableData = asyncHandler(async (req, res, next) => {
-  const userId = req.user._id;
-  const { testType } = req.params;
+exports.submitProfScale = asyncHandler(async (req, res, _next) => {
+  const { assessmentId, totalWeight, stage, maxWeight, questionAnswers } =
+    req.body;
+
+  const assessment = await ProfAssessment.findByIdAndUpdate(
+    assessmentId,
+    {
+      hasCompleted: true,
+      completedAt: new Date(),
+      totalWeight,
+      stage,
+      maxWeight,
+      questionAnswers,
+    },
+    { new: true }
+  );
+
+  if (!assessment) {
+    return sendErrorResponse(res, 404, "NotFound", {
+      message: "Assessment not found",
+    });
+  }
+
+  await NotificationService.removeAssessmentSuggestionNotification(
+    assessmentId
+  );
+
+  await NotificationService.scaleSubmittedByUser(
+    req.user._id,
+    assessment.prof,
+    assessment._id
+  );
+
+  return sendJSONresponse(res, 200, {
+    data: {
+      assessment,
+    },
+  });
+});
+
+exports.resultHistoryTableData = asyncHandler(async (req, res, _next) => {
   const tests = await Test.find({
-    type: testType,
-    userId,
+    type: req.params.testType,
+    userId: req.user._id,
   })
     .sort({ _id: -1 })
     .limit(10);
 
-  return res.json({ tests });
+  return sendJSONresponse(res, 200, {
+    data: {
+      tests,
+    },
+  });
 });
 
 exports.allUsers = asyncHandler(async (req, res, next) => {

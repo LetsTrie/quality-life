@@ -6,14 +6,11 @@ const { sendErrorResponse, sendJSONresponse, constants } = require("../utils");
 const jwt = require("jsonwebtoken");
 
 const Appointment = require("../models/appointment");
-const AppointmentMeta = require("../models/appointmentMeta");
 const ProfsClient = require("../models/myClient");
 const ProfAssessment = require("../models/profAssessment");
-const ProfAssessmentResult = require("../models/profAssessmentResult");
-const ProfNotification = require("../models/profNotification");
 const Rating = require("../models/rating");
 const Test = require("../models/test");
-const UserNotification = require("../models/userNotification");
+const { Notification } = require("../models");
 
 // POST /user/sign-up
 exports.signUp = asyncHandler(async (req, res, _next) => {
@@ -151,16 +148,15 @@ exports.deleteUserAccount = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
 
   await Appointment.deleteMany({ user: userId });
-  await AppointmentMeta.deleteMany({ user: userId });
 
   await ProfsClient.deleteMany({ user: userId });
 
   await ProfAssessment.deleteMany({ user: userId });
-  await ProfAssessmentResult.deleteMany({ user: userId });
-  await ProfNotification.deleteMany({ user: userId });
   await Rating.deleteMany({ user: userId });
   await Test.deleteMany({ userId: userId });
-  await UserNotification.deleteMany({ user: userId });
+
+  await Notification.deleteMany({ user: userId });
+
   await User.findByIdAndDelete(userId);
 
   return sendJSONresponse(res, 200, {

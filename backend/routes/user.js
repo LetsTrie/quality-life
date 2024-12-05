@@ -33,7 +33,6 @@ router.post(
 
 router.post("/test", M.verifyToken(ROLE), C.anyTestSubmit);
 router.get("/homepage", M.verifyToken(ROLE), C.userHomepage);
-router.post("/intro-Test-Submit", M.verifyToken(ROLE), C.introTestSubmit);
 
 router.get("/profile/all", M.verifyToken(ROLE), C.getProfileDetails);
 router.get("/all-informations", M.verifyToken(ROLE), C.getAllInformations);
@@ -42,22 +41,15 @@ router.post("/seen-video/:videoUrl", M.verifyToken(ROLE), C.submitAVideo);
 router.post("/add-rating", M.verifyToken(ROLE), C.rating);
 router.post("/update/profile", M.verifyToken(ROLE), C.updateProfile);
 
-router.get("/notifications", M.verifyToken(ROLE), C.userNotifications);
-router.get(
-  "/notifications/unread/h/",
-  M.verifyToken(ROLE),
-  C.numberOfNotifications
-);
-
 router.get("/all", C.allUsers);
 router.post("/userInfo", C.userInfo);
 
 router.post("/error", C.error);
-router.post("/notification/seen/", C.seenNotification);
 
-router.post("/submit-prof-scale", M.verifyToken(ROLE), C.submitProfScale);
-router.post(
-  "/suggested-scale/check",
+router.post("/submit-suggested-scale", M.verifyToken(ROLE), C.submitProfScale);
+
+router.get(
+  "/suggested-scale-fillup-check/:assessmentId",
   M.verifyToken(ROLE),
   C.checkSuggestedScale
 );
@@ -88,6 +80,12 @@ router.get(
   "/appointment-details/:appointmentId",
   M.verifyToken(ROLE),
   userProfCtrl.getAppointmentDetailsForUser
+);
+
+router.get(
+  "/find-suggested-scales/:profId",
+  M.verifyToken(ROLE),
+  userProfCtrl.findSuggestedScales
 );
 
 // ****************************************************************

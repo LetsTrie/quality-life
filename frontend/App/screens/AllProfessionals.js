@@ -130,6 +130,7 @@ const AllProfessionals = () => {
         navigation.navigate(constants.APPOINTMENT_STATUS, {
           appointmentId: existingAp._id,
           professionalId: existingAp.prof,
+          goToBack: SCREEN_NAME,
         });
       } else if (!existingAp) {
         navigation.replace(constants.PROFESSIONAL_DETAILS, { prof });

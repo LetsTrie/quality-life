@@ -5,9 +5,8 @@ import { persistReducer } from 'redux-persist';
 import authReducer from './auth';
 import userReducer from './user';
 import profReducer from './prof';
-import profNotiReducer from './prof_noti';
+import notificationReducer from './notifications';
 import profReqReducer from './prof_req';
-import profClientReducer from './prof_client';
 
 const persistConfig = {
   key: 'root',
@@ -18,7 +17,6 @@ export default combineReducers({
   auth: persistReducer(persistConfig, authReducer),
   user: persistReducer(persistConfig, userReducer),
   prof: persistReducer(persistConfig, profReducer),
-  profNotifications: persistReducer(persistConfig, profNotiReducer),
+  notifications: persistReducer(persistConfig, notificationReducer),
   profRequests: persistReducer(persistConfig, profReqReducer),
-  profClient: persistReducer(persistConfig, profClientReducer),
 });

@@ -2,10 +2,10 @@ const {
   Professional,
   Appointment,
   ProfessionalsClient,
-  ProfessionalsNotification,
   ProfessionalsAssessment,
-  UsersNotification,
 } = require("../models");
+
+const { NotificationService } = require("../services");
 
 const {
   asyncHandler,
@@ -105,15 +105,11 @@ exports.requestForAppointment = asyncHandler(async (req, res, _next) => {
     dateByClient,
   });
 
-  await ProfessionalsNotification.create({
-    user: userId,
-    prof: profId,
-    type: constants.APPOINTMENT_REQUESTED,
-    appointmentId: newAppointment._id,
-  });
-
-  // TODO: Send Mail Notification to Professional
-  // TODO: FCM Push Notification to Professional
+  await NotificationService.sendAppointmentRequestToProfessional(
+    userId,
+    profId,
+    newAppointment._id
+  );
 
   return sendJSONresponse(res, 201, {
     data: {
@@ -137,7 +133,7 @@ exports.showAllClientRequests = asyncHandler(async (req, res, _next) => {
     response.requestsCount = await Appointment.countDocuments(query);
   }
 
-  const LIMIT = 5;
+  const LIMIT = 10;
   response.requests = await Appointment.find(query)
     .sort({ _id: -1 })
     .populate({
@@ -180,18 +176,37 @@ exports.appointmentSeen = asyncHandler(async (req, res, _next) => {
     await appointment.save();
   }
 
-  const notification = await ProfessionalsNotification.findOne({
-    appointmentId: appointment._id,
-  });
-
-  if (notification && !notification.hasSeen) {
-    notification.hasSeen = true;
-    await notification.save();
-  }
+  await NotificationService.seenAppointmentRequestedByProfessional(
+    appointment._id
+  );
 
   return sendJSONresponse(res, 200, {
     data: {
       appointment,
+    },
+  });
+});
+
+exports.suggestAscale = asyncHandler(async (req, res, _next) => {
+  const profId = req.user._id;
+  const { userId, clientId, assessmentSlug } = req.body;
+
+  const assessment = await ProfessionalsAssessment.create({
+    user: userId,
+    client: clientId,
+    prof: profId,
+    assessmentSlug,
+  });
+
+  await NotificationService.scaleSuggestedByProfessional(
+    userId,
+    profId,
+    assessment._id
+  );
+
+  return sendJSONresponse(res, 201, {
+    data: {
+      assessmentId: assessment._id,
     },
   });
 });
@@ -215,44 +230,7 @@ exports.respondToAppointment = asyncHandler(async (req, res, _next) => {
     });
   }
 
-  appointment.hasProfRespondedToClient = true;
-  appointment.profRespondedAt = new Date();
-
-  if (dateByProfessional) appointment.dateByProfessional = dateByProfessional;
-  if (message) appointment.messageFromProf = message;
-  if (initAssessmentSlug) {
-    appointment.initAssessmentSlug = initAssessmentSlug;
-    const assessment = await ProfessionalsAssessment.create({
-      user: userId,
-      prof: profId,
-      assessmentSlug: initAssessmentSlug,
-    });
-    appointment.initAssessmentId = assessment._id;
-  }
-
-  await appointment.save();
-
-  await UsersNotification.create({
-    user: userId,
-    prof: profId,
-    type: constants.APPOINTMENT_ACCEPTED,
-    appointmentId: appointment._id,
-  });
-
-  await UsersNotification.create({
-    user: userId,
-    prof: profId,
-    type: constants.SUGGEST_A_SCALE,
-    assessmentId: appointment.initAssessmentId,
-  });
-
-  await ProfessionalsNotification.deleteMany({
-    user: userId,
-    prof: profId,
-    type: constants.APPOINTMENT_REQUESTED,
-  });
-
-  const client = await ProfessionalsClient.findOne({
+  let client = await ProfessionalsClient.findOne({
     user: userId,
     prof: profId,
   });
@@ -263,11 +241,46 @@ exports.respondToAppointment = asyncHandler(async (req, res, _next) => {
       await client.save();
     }
   } else {
-    await ProfessionalsClient.create({
+    client = await ProfessionalsClient.create({
       user: userId,
       prof: profId,
     });
   }
+
+  appointment.hasProfRespondedToClient = true;
+  appointment.profRespondedAt = new Date();
+  appointment.status = constants.APPOINTMENT_ACCEPTED;
+
+  if (dateByProfessional) {
+    appointment.dateByProfessional = dateByProfessional;
+  }
+
+  if (message) {
+    appointment.messageFromProf = message;
+  }
+
+  if (initAssessmentSlug) {
+    const assessment = await ProfessionalsAssessment.create({
+      user: userId,
+      prof: profId,
+      assessmentSlug: initAssessmentSlug,
+      client: client._id,
+    });
+
+    await NotificationService.scaleSuggestedByProfessional(
+      userId,
+      profId,
+      assessment._id
+    );
+  }
+
+  await appointment.save();
+
+  await NotificationService.appointmentAcceptedByProfessional(
+    userId,
+    profId,
+    appointment._id
+  );
 
   return sendJSONresponse(res, 200, {
     data: {
@@ -295,15 +308,53 @@ exports.getAppointmentDetailsForUser = asyncHandler(async (req, res, _next) => {
     });
   }
 
-  await UsersNotification.deleteMany({
-    user: req.user._id,
-    type: constants.APPOINTMENT_ACCEPTED,
-    appointmentId: appointmentId,
-  });
+  await NotificationService.seenAppointmentAcceptedNotificationByUser(
+    appointmentId
+  );
 
   return sendJSONresponse(res, 200, {
     data: {
       appointment,
     },
   });
+});
+
+exports.findSuggestedScales = asyncHandler(async (req, res, _next) => {
+  const { profId } = req.params;
+  const userId = req.user._id;
+
+  const scales = await ProfessionalsAssessment.find({
+    user: userId,
+    prof: profId,
+    hasCompleted: false,
+  });
+
+  return sendJSONresponse(res, 200, { data: { scales } });
+});
+
+exports.findSuggestedScalesByClient = asyncHandler(async (req, res, _next) => {
+  const { clientId } = req.params;
+
+  const scales = await ProfessionalsAssessment.find({
+    client: clientId,
+  })
+    .sort({ _id: -1 })
+    .lean();
+
+  return sendJSONresponse(res, 200, { data: { scales } });
+});
+
+exports.getAssessmentDetails = asyncHandler(async (req, res, _next) => {
+  const { assessmentId } = req.params;
+
+  const scale = await ProfessionalsAssessment.findById(assessmentId).lean();
+
+  const _debug =
+    await NotificationService.seenAssessmentSubmissionNotificationByProfessional(
+      assessmentId
+    );
+
+  console.log({ _debug });
+
+  return sendJSONresponse(res, 200, { data: { scale } });
 });

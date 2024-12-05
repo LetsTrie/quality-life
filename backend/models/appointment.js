@@ -52,9 +52,6 @@ const appointmentSchema = Schema(
       type: Date,
     },
     messageFromProf: String,
-    initAssessmentSlug: String,
-    initAssessmentId: String,
-
     isActive: {
       type: Boolean,
       default: true,

@@ -4,21 +4,17 @@ const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const Appointment = require("../models/appointment");
 const ProfAssessment = require("../models/profAssessment");
-const AppointmentMeta = require("../models/appointmentMeta");
 
 const MyClient = require("../models/myClient");
-const ProfNotification = require("../models/profNotification");
-const UserNotification = require("../models/userNotification");
 
-const AssessmentResult = require("../models/profAssessmentResult");
+const { Notification } = require("../models");
+
 const VerificationCode = require("../models/verificationCode");
 
 const nodemailer = require("nodemailer");
 const hbs = require("nodemailer-express-handlebars");
 
 const Test = require("../models/test");
-
-const LIMIT = 10;
 
 const { getProgress } = require("./helpers");
 const {
@@ -30,6 +26,7 @@ const {
 const httpStatus = require("http-status");
 
 const { constants } = require("../utils/constants");
+const { NotificationService } = require("../services");
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -226,10 +223,8 @@ exports.profLogin = asyncHandler(async (req, res, _next) => {
 exports.getHomepageInformationProf = asyncHandler(async (req, res, _next) => {
   const profId = req.user._id;
 
-  const notificationCount = await ProfNotification.countDocuments({
-    prof: profId,
-    hasSeen: false,
-  });
+  const notificationCount =
+    await NotificationService.getProfessionalsUnreadNotificationsCount(profId);
 
   const appointmentCount = await Appointment.countDocuments({
     prof: profId,
@@ -242,212 +237,18 @@ exports.getHomepageInformationProf = asyncHandler(async (req, res, _next) => {
   });
 });
 
-const countDocuments = async (model, query) => {
-  try {
-    return await model.countDocuments(query);
-  } catch (error) {
-    throw new Error(`Error counting documents: ${error.message}`);
-  }
-};
-
-exports.getProfUnreadNotifications = asyncHandler(async (req, res, _next) => {
-  const { _id: profId } = req.user;
-  const page = parseInt(req.query.page, 10) || 1;
-
-  const countPromise =
-    page === 1
-      ? countDocuments(ProfNotification, { prof: profId })
-      : Promise.resolve(undefined);
-
-  const notificationsPromise = ProfNotification.find({
-    prof: profId,
-  })
-    .sort({ _id: -1 })
-    .populate({
-      path: "user",
-      select: "name",
-    })
-    .limit(LIMIT)
-    .skip(LIMIT * page - LIMIT)
-    .lean();
-
-  const [numberOfNotifications, notifications] = await Promise.all([
-    countPromise,
-    notificationsPromise,
-  ]);
-
-  return sendJSONresponse(res, 200, {
-    data: { notifications, numberOfNotifications },
-  });
-});
-
-// OKAY
-exports.seenNotification = asyncHandler(async (req, res, next) => {
-  const prof = req.user._id;
-  const { notificationId, user } = req.body;
-  const notification = await ProfNotification.findById(notificationId);
-  if (!notification) return res.sendStatus(404);
-  if (!notification.hasSeen) {
-    notification.hasSeen = true;
-    await notification.save();
-  }
-
-  const app = (
-    await Appointment.find({ user, prof }).sort({ _id: -1 }).limit(1).populate({
-      path: "user",
-      select: "name age isMarried location email",
-    })
-  )[0];
-  if (!app) return res.sendStatus(404);
-  if (!app.hasProfViewed) {
-    app.hasProfViewed = true;
-    app.profViewedAt = new Date();
-    await app.save();
-  }
-  return res.json({ requestInformation: modifyAppointmentData(app) });
-});
-
-// OKAY
-function modifyAppointmentData(appointment) {
-  console.log(appointment);
-  return {
-    _id: appointment._id,
-    appointmentId: appointment._id,
-    userId: appointment.user._id,
-    profId: appointment.prof,
-    userName: appointment.user.name,
-    userStatus: `${
-      appointment.user.isMarried ? "বিবাহিত" : "অবিবাহিত"
-    }, বয়স - ${appointment.user.age}`,
-    userLocation: [
-      appointment.user.location.union,
-      appointment.user.location.upazila,
-      appointment.user.location.zila,
-    ]
-      .filter(Boolean)
-      .join(", "),
-    userEmail: appointment.user.email,
-    hasProfViewed: appointment.hasProfViewed,
-    hasProfRespondedToClient: appointment.hasProfRespondedToClient,
-    permissionToSeeProfile: appointment.permissionToSeeProfile,
-    proposedAppointmentDate: appointment.dateByClient,
-  };
-}
-
-const makeClientObject = (c) => ({
-  _id: c._id,
-  profId: c.prof,
-  clientIdByProf: c.clientId,
-  userId: c.user._id,
-  userName: c.user.name,
-  userLocation: [
-    c.user.location.union,
-    c.user.location.upazila,
-    c.user.location.zila,
-  ]
-    .filter(Boolean)
-    .join(", "),
-});
-
-exports.AddasClient = asyncHandler(async (req, res, next) => {
-  // user, prof, clientId, recContactedPersonId
-  const profId = req.user._id;
-  const idExists = await MyClient.findOne({ clientId: req.body.clientId });
-  if (idExists) {
-    return res.status(400).json({
-      message: "Client ID is already taken",
-    });
-  }
-  const clientExists = await MyClient.findOne({
-    user: req.body.user,
-    prof: profId,
-  });
-  if (clientExists) {
-    return res.status(400).json({
-      message: "Client already exists",
-    });
-  }
-
-  await UserNotification.deleteOne({
-    user: req.body.user,
-    prof: profId,
-    type: "APPOINTMENT_ACCEPTED",
-  });
-
-  const client = await MyClient.create({
-    user: req.body.user,
-    prof: profId,
-    clientId: req.body.clientId,
-  });
-
-  const meta = await AppointmentMeta.findOne({
-    user: req.body.user,
-    prof: profId,
-  });
-  meta.stage = "IS_A_CLIENT";
-  await meta.save();
-
-  await UserNotification.create({
-    user: req.body.user,
-    prof: profId,
-    type: "ADDED_AS_CLIENT",
-    someId: {
-      appointmentId: meta.appointmentId,
-    },
-  });
-  let clientDetails = await MyClient.findOne({
-    user: req.body.user,
-    prof: profId,
-    isActive: true,
-    clientId: req.body.clientId,
-  }).populate({
-    path: "user",
-    select: "name location",
-  });
-
-  return res.status(201).json({ client: makeClientObject(clientDetails) });
-});
-
 exports.myClients = asyncHandler(async (req, res, _next) => {
   const clients = await MyClient.find({
     prof: req.user._id,
     isActive: true,
   })
-    .populate({ path: "user", select: "name location" })
+    .populate({ path: "user", select: "name location age gender isMarried" })
     .lean();
 
   return sendJSONresponse(res, httpStatus.OK, {
     data: {
       clients,
     },
-  });
-});
-
-exports.suggestAscale = asyncHandler(async (req, res, _next) => {
-  const profId = req.user._id;
-  const { userId, assessmentSlug } = req.body;
-
-  if (!userId || !assessmentSlug) {
-    return sendErrorResponse(res, 400, "BAD_REQUEST", {
-      message: "Invalid request",
-    });
-  }
-
-  const assessment = await ProfAssessment.create({
-    user: userId,
-    prof: profId,
-    assessmentSlug,
-  });
-
-  await UserNotification.create({
-    user: userId,
-    prof: profId,
-    type: constants.SUGGEST_A_SCALE,
-    assessmentId: assessment._id,
-  });
-
-  return sendJSONresponse(res, httpStatus.OK, {
-    data: {},
   });
 });
 
@@ -504,25 +305,32 @@ exports.getUserCompleteProfile = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.getCompleteTestResult = asyncHandler(async (req, res, next) => {
+exports.getPrimaryResultDetails = asyncHandler(async (req, res, next) => {
   const { testId } = req.params;
   const test = await Test.findById(testId);
-  return res.json({ result: test.questionAnswers.map((t) => t.answer), test });
+  if (!test) {
+    return sendErrorResponse(res, 404, "NOT_FOUND", {
+      message: "Test not found",
+    });
+  }
+
+  return sendJSONresponse(res, httpStatus.OK, {
+    data: {
+      test,
+    },
+  });
 });
 
 exports.getScaleResult = asyncHandler(async (req, res, next) => {
   const { notificationId, assessmentDbId } = req.body;
-  const notification = await ProfNotification.findById(notificationId);
+  const notification = await Notification.findById(notificationId);
   if (!notification) return res.sendStatus(404);
   if (!notification.hasSeen) {
     notification.hasSeen = true;
     await notification.save();
   }
 
-  const assessmentResult = await AssessmentResult.findById(
-    assessmentDbId
-  ).populate("user", "_id name");
-  if (!assessmentResult) return res.sendStatus(404);
+  throw new Error("Not implemented");
 
   return res.json({ assessment: assessmentResult });
 });
@@ -547,15 +355,9 @@ exports.deleteProfessionalAccount = asyncHandler(async (req, res, _next) => {
   }
 
   await MyClient.deleteMany({ prof: profId });
-
   await Appointment.deleteMany({ prof: profId });
-  await AppointmentMeta.deleteMany({ prof: profId });
-
   await ProfAssessment.deleteMany({ prof: profId });
-  await AssessmentResult.deleteMany({ prof: profId });
-
-  await UserNotification.deleteMany({ prof: profId });
-  await ProfNotification.deleteMany({ prof: profId });
+  await Notification.deleteMany({ prof: profId });
 
   return sendJSONresponse(res, httpStatus.OK, { success: true });
 });

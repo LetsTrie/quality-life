@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     alignItems: 'center',
   },
-  header: { height: 45, backgroundColor: colors.tableHeader },
+  header: { height: 40, backgroundColor: colors.tableHeader },
   text: {
     textAlign: 'center',
     color: '#444',
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 1.5,
   },
   dataWrapper: { marginTop: -1 },
-  row: { height: 47, backgroundColor: '#fff' },
+  row: { height: 40, backgroundColor: '#fff' },
 });
 
 export default AppTable;

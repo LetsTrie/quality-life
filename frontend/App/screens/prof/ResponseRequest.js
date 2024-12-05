@@ -20,6 +20,8 @@ import { formatDateTime, isValidDate } from '../../utils/date';
 import AppDateTimePicker from '../../components/DateTimePicker';
 import { ErrorButton, Loader, SubmitButton } from '../../components';
 import backScreenMap from '../../navigation/backScreenMap';
+import { lightenColor } from '../../utils/ui';
+import defaultStyles from '../../config/styles';
 
 function calculateTime(from, fromAmPm) {
   if (from > 24) {
@@ -54,7 +56,7 @@ const SCREEN_NAME = constants.PROF_RESPONSE_CLIENT_REQUEST;
 const ResponseClientRequest = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { ApiExecutor } = useHelper();
+  const { ApiExecutor, refreshNotificationCount } = useHelper();
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -77,11 +79,9 @@ const ResponseClientRequest = () => {
     }
 
     (async () => {
-      setIsLoading(true);
       const seenResponse = await ApiExecutor(
         ApiDefinitions.seenAppointmentRequest({ appointmentId })
       );
-      setIsLoading(false);
 
       if (!seenResponse.success) {
         setError(seenResponse.error?.message);
@@ -93,8 +93,11 @@ const ResponseClientRequest = () => {
         return;
       }
 
+      await refreshNotificationCount();
+
       setError(null);
       setAppointmentInfo(seenResponse.data.appointment);
+      setIsLoading(false);
     })();
   }, [appointmentId]);
 
@@ -118,7 +121,7 @@ const ResponseClientRequest = () => {
     const payload = {
       dateByProfessional: appointmentDateTime,
       message,
-      initAssessmentSlug: assessment?._id,
+      initAssessmentSlug: assessment?.id,
       userId,
     };
 
@@ -129,16 +132,24 @@ const ResponseClientRequest = () => {
         payload,
       })
     );
-    setIsSubmitLoading(false);
-
     if (!response.success) {
       setError(response.error?.message);
       return;
     }
 
+    await refreshNotificationCount();
+    setIsSubmitLoading(false);
+
     ToastAndroid.show('ক্লায়েন্টের অনুরোধটি গ্রহণ করা হয়েছে', ToastAndroid.SHORT);
-    navigation.replace(goToBack);
+    navigation.replace(previousPage);
   };
+
+  useEffect(() => {
+    if (!!error) {
+      setIsLoading(false);
+      setIsSubmitLoading(false);
+    }
+  }, [error]);
 
   if (!appointmentInfo) return null;
 
@@ -149,156 +160,152 @@ const ResponseClientRequest = () => {
   const { permissionToSeeProfile } = appointmentInfo;
 
   return (
-    <ScrollView style={{ backgroundColor: 'white' }}>
+    <ScrollView style={{ backgroundColor: lightenColor(colors.background, 60) }}>
       {isLoading ? (
         <Loader visible={isLoading} style={{ marginVertical: 10 }} />
+      ) : error ? (
+        <ErrorButton visible={error} title={error} style={{ marginVertical: 10 }} />
       ) : (
-        <>
-          {error ? (
-            <ErrorButton visible={error} title={error} style={{ marginVertical: 10 }} />
+        <View style={{ marginHorizontal: 10 }}>
+          <View style={styles.nameContainer}>
+            <Text style={styles.nameTextStyle}> {username} </Text>
+          </View>
+          {permissionToSeeProfile === true ? (
+            <TouchableOpacity style={styles.seeProfileContainerStyle}>
+              <TouchableOpacity
+                style={styles.seeProfileStyle}
+                onPress={() =>
+                  navigation.navigate(constants.CLIENT_PROFILE, {
+                    userId,
+                    goToBack: SCREEN_NAME,
+                  })
+                }
+              >
+                <Text style={styles.seeProfileTextStyle}> See Profile </Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
           ) : (
-            <View style={{ marginHorizontal: 10 }}>
-              <View style={styles.nameContainer}>
-                <Text style={styles.nameTextStyle}> {username} </Text>
-              </View>
-              {permissionToSeeProfile === true ? (
-                <TouchableOpacity style={styles.seeProfileContainerStyle}>
-                  <TouchableOpacity
-                    style={styles.seeProfileStyle}
-                    onPress={() =>
-                      navigation.navigate('ClientProfile', {
-                        userId,
-                        goToBack: SCREEN_NAME,
-                      })
-                    }
-                  >
-                    <Text style={styles.seeProfileTextStyle}> See Profile </Text>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ) : (
-                <Text style={{ color: colors.primary, fontSize: 14 }}>
-                  ইউজার তার প্রফাইলের তথ্য দেখার অনুমতি প্রদান করেনি
-                </Text>
-              )}
+            <Text style={{ color: colors.primary, fontSize: 14 }}>
+              ইউজার তার প্রফাইলের তথ্য দেখার অনুমতি প্রদান করেনি
+            </Text>
+          )}
 
-              <View>
-                <View style={{ paddingTop: 10 }}>
-                  <Text style={styles.blockHeadingStyle}>Proposed time:</Text>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      paddingTop: 2,
-                      color: '#333',
-                      paddingBottom: 7,
-                    }}
-                  >
-                    {proposedAppointmentDate}
-                  </Text>
-                </View>
-                <View>
-                  <Text style={styles.blockHeadingStyle}>
-                    Select a flexible time:{' '}
-                    <Text
-                      style={{
-                        fontWeight: 'normal',
-                        fontSize: 14.5,
-                        color: '#555',
-                      }}
-                    >
-                      (optional)
-                    </Text>
-                  </Text>
-                  <View style={styles.pickerContainer}>
-                    <View style={{ width: '50%' }}>
-                      <AppDateTimePicker
-                        width="98%"
-                        placeholder="Select Date"
-                        mode="date" // or "time"
-                        onSelectDateTime={(date) => setDay(date)}
-                        selectedDateTime={day}
-                      />
-                    </View>
-                    <View style={{ width: '50%' }}>
-                      <AppDateTimePicker
-                        placeholder="Select Time"
-                        mode="time"
-                        onSelectDateTime={(date) => setTime(date)}
-                        selectedDateTime={time}
-                      />
-                    </View>
-                  </View>
-                </View>
-                <View>
-                  <Text style={styles.blockHeadingStyle}>
-                    Select an Assessment Tool:{' '}
-                    <Text
-                      style={{
-                        fontWeight: 'normal',
-                        fontSize: 14.5,
-                        color: '#555',
-                      }}
-                    >
-                      (optional)
-                    </Text>
-                  </Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      width="100%"
-                      placeholder="Assessment Tools"
-                      selectedItem={assessment}
-                      onSelectItem={(g) => setAssessment(g)}
-                      items={assessmentList}
-                      style={{
-                        borderRadius: 5,
-                        borderWidth: 1,
-                        borderColor: '#ccc',
-                        marginRight: 5,
-                        padding: 10,
-                        backgroundColor: '#fff',
-                      }}
-                    />
-                  </View>
-                </View>
-                <View>
-                  <Text style={styles.blockHeadingStyle}>
-                    Send a message:{' '}
-                    <Text
-                      style={{
-                        fontWeight: 'normal',
-                        fontSize: 14.5,
-                        color: '#555',
-                      }}
-                    >
-                      (optional)
-                    </Text>
-                  </Text>
-                  <TextInput
-                    multiline={true}
-                    numberOfLines={5}
-                    onChangeText={(text) => setMessage(text)}
-                    style={styles.textAreaStyle}
-                    placeholder="Details about how to communicate with you. (i.e. please contact me from Sunday to Thursday within 9 AM to 3 PM at +8801*****)"
-                    placeholderTextColor="#6e6969"
-                  />
-                </View>
+          <View>
+            <View style={{ paddingTop: 10 }}>
+              <Text style={styles.blockHeadingStyle}>Proposed time:</Text>
+              <Text
+                style={{
+                  fontSize: 16,
+                  paddingTop: 2,
+                  color: '#333',
+                  paddingBottom: 7,
+                }}
+              >
+                {proposedAppointmentDate}
+              </Text>
+            </View>
+            <View>
+              <Text style={styles.blockHeadingStyle}>
+                Select a flexible time:{' '}
                 <Text
                   style={{
-                    color: 'gray',
-                    fontSize: 13,
-                    marginBottom: 6,
-                    lineHeight: 16,
-                    textAlign: 'center',
+                    fontWeight: 'normal',
+                    fontSize: 14.5,
+                    color: '#555',
                   }}
                 >
-                  After confirming the request, your phone number will be send to client.
+                  (optional)
                 </Text>
-
-                <Loader visible={isSubmitLoading} style={{ marginVertical: 10 }} />
-                <SubmitButton title={'Confirm Request'} onPress={onSubmitHandler} />
+              </Text>
+              <View style={styles.pickerContainer}>
+                <View style={{ width: '50%' }}>
+                  <AppDateTimePicker
+                    width="98%"
+                    placeholder="Select Date"
+                    mode="date" // or "time"
+                    onSelectDateTime={(date) => setDay(date)}
+                    selectedDateTime={day}
+                  />
+                </View>
+                <View style={{ width: '50%' }}>
+                  <AppDateTimePicker
+                    placeholder="Select Time"
+                    mode="time"
+                    onSelectDateTime={(date) => setTime(date)}
+                    selectedDateTime={time}
+                  />
+                </View>
               </View>
             </View>
-          )}
-        </>
+            <View>
+              <Text style={styles.blockHeadingStyle}>
+                Select an Assessment Tool:{' '}
+                <Text
+                  style={{
+                    fontWeight: 'normal',
+                    fontSize: 14.5,
+                    color: '#555',
+                  }}
+                >
+                  (optional)
+                </Text>
+              </Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  width="100%"
+                  placeholder="Assessment Tools"
+                  selectedItem={assessment}
+                  onSelectItem={(g) => setAssessment(g)}
+                  items={assessmentList}
+                  style={{
+                    borderRadius: 5,
+                    borderWidth: 1,
+                    borderColor: '#ccc',
+                    marginRight: 5,
+                    padding: 10,
+                    backgroundColor: '#fff',
+                  }}
+                />
+              </View>
+            </View>
+            <View>
+              <Text style={styles.blockHeadingStyle}>
+                Send a message:{' '}
+                <Text
+                  style={{
+                    fontWeight: 'normal',
+                    fontSize: 14.5,
+                    color: '#555',
+                  }}
+                >
+                  (optional)
+                </Text>
+              </Text>
+              <TextInput
+                multiline={true}
+                numberOfLines={5}
+                onChangeText={(text) => setMessage(text)}
+                style={styles.textAreaStyle}
+                placeholder="Details about how to communicate with you. (i.e. please contact me from Sunday to Thursday within 9 AM to 3 PM at +8801*****)"
+                placeholderTextColor={defaultStyles.colors.medium}
+              />
+            </View>
+            <Text
+              style={{
+                color: 'gray',
+                fontSize: 13,
+                marginBottom: 6,
+                lineHeight: 16,
+                textAlign: 'center',
+              }}
+            >
+              After confirming the request, your phone number will be send to client.
+            </Text>
+
+            <Loader visible={isSubmitLoading} style={{ marginVertical: 10 }} />
+            <SubmitButton title={'Confirm Request'} onPress={onSubmitHandler} />
+          </View>
+        </View>
       )}
     </ScrollView>
   );
@@ -336,7 +343,6 @@ const styles = StyleSheet.create({
     color: '#222',
   },
   textAreaStyle: {
-    borderColor: 'gray',
     marginTop: 5,
     paddingHorizontal: 10,
     marginBottom: 6,
@@ -344,6 +350,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 1,
     borderColor: '#ccc',
+    backgroundColor: colors.white,
   },
   pickerContainer: {
     flexDirection: 'row',

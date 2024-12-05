@@ -116,7 +116,7 @@ const Profile = () => {
 
       <View style={[styles.block, { paddingBottom: 23 }]}>
         <Text style={styles.blockHeader}>পূর্ববর্তী স্কোরসমূহ</Text>
-        <Table tableData={tableData} tableHead={tableHeaders} widthArr={tableColWidth} />
+        <Table tableData={tableData} widthArr={tableColWidth} />
       </View>
 
       <View style={[styles.block, { marginBottom: 20 }]}>

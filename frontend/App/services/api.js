@@ -1,71 +1,28 @@
 import axios from 'axios';
 import { endpoints } from './endpoints';
-import {
-  configHeaders,
-  sendErrorResponse,
-  sendErrorResponseV2,
-  sendSuccessResponse,
-} from './utils';
-import BaseUrl from '../config/BaseUrl';
+import { sendErrorResponse, sendSuccessResponse } from './utils';
+import { isProfessional, isUser } from '../utils/roles';
 
 export const updateProfProfile = async ({ _id, payload, jwtToken }) => {
-  try {
-    const apiUrl = `${BaseUrl}/prof/${_id}/update/profile`;
-    const response = await axios.post(apiUrl, payload, { headers: configHeaders({ jwtToken }) });
-    return sendSuccessResponse(response.data.data.professional);
-  } catch (error) {
-    return sendErrorResponse(error);
-  }
-};
+  throw new Error('Not Implemented');
 
-export const getProfessionalsClient = async ({ jwtToken }) => {
-  try {
-    const endpoint = endpoints.GET_PROFESSIONALS_CLIENT;
-    console.log('API: ', endpoint);
-    const response = await axios.get(endpoint, {
-      headers: configHeaders({ jwtToken }),
-    });
-    return sendSuccessResponse(response.data.data);
-  } catch (error) {
-    return sendErrorResponse(error);
-  }
-};
-
-export const getUserProfileFromProfessional = async ({ jwtToken, userId }) => {
-  try {
-    const endpoint = endpoints.GET_USER_PROFILE_FOR_PROFESSIONAL + '/' + userId;
-    console.log('API: ', endpoint);
-    const response = await axios.get(endpoint, {
-      headers: configHeaders({ jwtToken }),
-    });
-    return sendSuccessResponse(response.data.data);
-  } catch (error) {
-    return sendErrorResponseV2(error);
-  }
-};
-
-export const suggestScaleToClient = async ({ jwtToken, payload }) => {
-  try {
-    const endpoint = endpoints.SUGGEST_SCALE_TO_CLIENT;
-    console.log('API: ', endpoint);
-    console.log('Payload: ', payload);
-    const response = await axios.post(endpoint, payload, {
-      headers: configHeaders({ jwtToken }),
-    });
-    return sendSuccessResponse(response.data.data);
-  } catch (error) {
-    return sendErrorResponseV2(error);
-  }
+  // try {
+  //   const apiUrl = `${BaseUrl}/prof/${_id}/update/profile`;
+  //   const response = await axios.post(apiUrl, payload, { headers: configHeaders({ jwtToken }) });
+  //   return sendSuccessResponse(response.data.data.professional);
+  // } catch (error) {
+  //   return sendErrorResponse(error);
+  // }
 };
 
 export const refreshTokener = async ({ refreshToken }) => {
   try {
     const endpoint = endpoints.REFRESH_TOKEN;
-    console.log('API: ', endpoint);
+    // console.log('API: ', endpoint);
     const response = await axios.post(endpoint, { refreshToken });
     return sendSuccessResponse(response.data.data);
   } catch (error) {
-    return sendErrorResponseV2(error);
+    return sendErrorResponse(error);
   }
 };
 
@@ -102,6 +59,7 @@ export const ApiDefinitions = {
   getProfessionalHomepageNotificationCount: () => ({
     endpoint: endpoints.PROF_HOMEPAGE_NOTIFICATION_COUNT,
   }),
+
   getAppointments: ({ page = 1 }) => ({
     endpoint: endpoints.GET_APPOINTMENTS + `?page=${page}`,
   }),
@@ -160,13 +118,21 @@ export const ApiDefinitions = {
   findAppointmentById: ({ appointmentId }) => ({
     endpoint: endpoints.APPOINTMENT_DETAILS + '/' + appointmentId,
   }),
+  findSuggestedScales: ({ professionalId }) => ({
+    endpoint: endpoints.FIND_SUGGESTED_SCALES_FOR_USER + '/' + professionalId,
+  }),
+  checkIfAssessmentIsAlreadyTaken: ({ assessmentId }) => ({
+    endpoint: endpoints.CHECK_IF_ASSESSMENT_IS_ALREADY_TAKEN + '/' + assessmentId,
+  }),
+  submitSuggestedScale: ({ payload }) => ({
+    endpoint: endpoints.SUBMIT_SUGGESTED_SCALE,
+    method: 'POST',
+    payload,
+  }),
   requestForAppointment: ({ payload }) => ({
     endpoint: endpoints.TAKE_APPOINTMENT,
     method: 'POST',
     payload,
-  }),
-  getProfessionalsUnreadNotifications: ({ page = 1 }) => ({
-    endpoint: endpoints.PROF_UNREAD_NOTIFICATIONS + `?page=${page}`,
   }),
   seenAppointmentRequest: ({ appointmentId }) => ({
     endpoint: endpoints.SEEN_APPOINTMENT_REQUEST + '/' + appointmentId,
@@ -176,5 +142,67 @@ export const ApiDefinitions = {
     endpoint: endpoints.RESPOND_TO_CLIENT_REQUEST + '/' + appointmentId,
     method: 'POST',
     payload,
+  }),
+  recent10TestResultsHistory: ({ type }) => ({
+    endpoint: endpoints.RECENT_10_TEST_RESULTS_HISTORY + '/' + type,
+  }),
+  getProfessionalsClient: () => ({
+    endpoint: endpoints.GET_PROFESSIONALS_CLIENT,
+  }),
+  getUserProfileForProfessional: ({ userId }) => ({
+    endpoint: endpoints.GET_USER_PROFILE_FOR_PROFESSIONAL + '/' + userId,
+  }),
+  suggestScaleToClient: ({ payload }) => ({
+    endpoint: endpoints.SUGGEST_SCALE_TO_CLIENT,
+    method: 'POST',
+    payload,
+  }),
+  getPrimaryTestResult: ({ testId }) => ({
+    endpoint: endpoints.PRIMARY_TEST_DETAILS + '/' + testId,
+  }),
+  getSuggestedScalesByClient: ({ clientId }) => ({
+    endpoint: endpoints.GET_SUGGESTED_SCALES_BY_CLIENT + '/' + clientId,
+  }),
+  getAssessmentDetails: ({ assessmentId }) => ({
+    endpoint: endpoints.ASSESSMENT_DETAILS + '/' + assessmentId,
+  }),
+
+  // *******************************************************
+  // **************=> Notification Counter <=***************
+  // *******************************************************
+
+  getNotificationsCount: ({ role }) => {
+    if (isUser(role)) {
+      return ApiDefinitions.getUsersUnreadNotificationCount();
+    } else if (isProfessional(role)) {
+      return ApiDefinitions.getProfessionalsUnreadNotificationCount();
+    } else {
+      throw new Error('Invalid role provided for notifications count');
+    }
+  },
+  getUsersUnreadNotificationCount: () => ({
+    endpoint: endpoints.USER_UNREAD_NOTIFICATION_COUNT,
+  }),
+  getProfessionalsUnreadNotificationCount: () => ({
+    endpoint: endpoints.PROF_UNREAD_NOTIFICATION_COUNT,
+  }),
+
+  // *******************************************************
+  // ***************=> Notification Docs <=*****************
+  // *******************************************************
+  getNotifications: ({ role, page = 1 }) => {
+    if (isUser(role)) {
+      return ApiDefinitions.getUsersNotifications({ page });
+    } else if (isProfessional(role)) {
+      return ApiDefinitions.getProfessionalsNotifications({ page });
+    } else {
+      throw new Error('Invalid role provided for notifications count');
+    }
+  },
+  getUsersNotifications: ({ page = 1 }) => ({
+    endpoint: endpoints.USER_NOTIFICATIONS + `?page=${page}`,
+  }),
+  getProfessionalsNotifications: ({ page = 1 }) => ({
+    endpoint: endpoints.PROF_NOTIFICATIONS + `?page=${page}`,
   }),
 };

@@ -18,6 +18,8 @@ export const useBackPress = (screenName, previousPage = null) => {
   const handleBackPress = () => {
     if (backScreenMap[screenName] === constants.SPECIAL_LOGOUT_ACTION) {
       logout();
+    } else if (backScreenMap[screenName] === constants.GO_TO_BACK) {
+      navigation.goBack();
     } else if (previousPage) {
       navigation.replace(selectHomepageByRole(previousPage, role));
     } else {

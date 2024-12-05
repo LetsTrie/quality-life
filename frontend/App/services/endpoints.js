@@ -1,7 +1,6 @@
 import BaseUrl from '../config/BaseUrl';
 
 export const endpoints = {
-  INTRO_TEST: `${BaseUrl}/user/intro-Test-Submit`,
   LOGIN: `${BaseUrl}/user/sign-in`,
   REGISTER: `${BaseUrl}/user/sign-up`,
   REFRESH_TOKEN: `${BaseUrl}/auth/refresh-token`,
@@ -10,6 +9,7 @@ export const endpoints = {
   USER_PROFILE: `${BaseUrl}/user/all-informations`,
   PROF_PROFILE: `${BaseUrl}/prof/all-informations`,
   APPOINTMENT_DETAILS: `${BaseUrl}/user/appointment-details`,
+  FIND_SUGGESTED_SCALES_FOR_USER: `${BaseUrl}/user/find-suggested-scales`,
 
   PROF_LOGIN: `${BaseUrl}/prof/login`,
   PROF_REGISTER_STEP1: `${BaseUrl}/prof/register/step-1`,
@@ -41,4 +41,20 @@ export const endpoints = {
 
   PROF_UNREAD_NOTIFICATIONS: `${BaseUrl}/prof/notifications/unread`,
   APPOINTMENT_DETAILS_FOR_PROFESSIONAL: `${BaseUrl}/prof/appointment`,
+
+  RECENT_10_TEST_RESULTS_HISTORY: `${BaseUrl}/user/result-history-data`,
+
+  // NOTIFICATION SECTION
+  USER_UNREAD_NOTIFICATION_COUNT: `${BaseUrl}/notifications/unread-count/u`,
+  PROF_UNREAD_NOTIFICATION_COUNT: `${BaseUrl}/notifications/unread-count/p`,
+
+  USER_NOTIFICATIONS: `${BaseUrl}/notifications/all/u`,
+  PROF_NOTIFICATIONS: `${BaseUrl}/notifications/all/p`,
+
+  CHECK_IF_ASSESSMENT_IS_ALREADY_TAKEN: `${BaseUrl}/user/suggested-scale-fillup-check`,
+  SUBMIT_SUGGESTED_SCALE: `${BaseUrl}/user/submit-suggested-scale`,
+
+  PRIMARY_TEST_DETAILS: `${BaseUrl}/prof/primary-test-details`,
+  GET_SUGGESTED_SCALES_BY_CLIENT: `${BaseUrl}/prof/scales`,
+  ASSESSMENT_DETAILS: `${BaseUrl}/prof/assessment`,
 };

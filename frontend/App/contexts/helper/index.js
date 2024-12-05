@@ -3,22 +3,21 @@ import React, { createContext, useCallback, useContext } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import constants from '../../navigation/constants';
 import {
-  DELETE_ALL_CLIENT_REQUEST,
-  DELETE_ALL_PROF_NOTIFICATION,
+  RESET_NOTIFICATION_COUNT,
   DELETE_ALL_PROF_REQUEST,
   DELETE_PROFILE,
   PROF_SIGN_OUT,
   SIGN_OUT,
 } from '../../redux/actions/types';
 import { ToastAndroid } from 'react-native';
-import { refreshTokener } from '../../services/api';
+import { ApiDefinitions, refreshTokener } from '../../services/api';
 import { setAuthToken } from '../../redux/utils';
 import axios from 'axios';
-import { sendErrorResponseV2, sendSuccessResponse } from '../../services/utils';
-import { RoleEnum } from '../../utils/roles';
+import { sendErrorResponse, sendSuccessResponse } from '../../services/utils';
+import { RoleEnum, isUser } from '../../utils/roles';
+import { setUnreadNotificationCount } from '../../redux/actions';
 
 const HelperContext = createContext();
-
 const INCOMPLETE_PROFILE = 'INCOMPLETE_PROFILE:';
 
 export const HelperProvider = ({ children }) => {
@@ -32,8 +31,7 @@ export const HelperProvider = ({ children }) => {
     dispatch({ type: PROF_SIGN_OUT });
     dispatch({ type: DELETE_PROFILE });
     dispatch({ type: DELETE_ALL_PROF_REQUEST });
-    dispatch({ type: DELETE_ALL_PROF_NOTIFICATION });
-    dispatch({ type: DELETE_ALL_CLIENT_REQUEST });
+    dispatch({ type: RESET_NOTIFICATION_COUNT });
 
     const routes = [{ name: constants.WELCOME }];
     if (role === RoleEnum.PROFESSIONAL) routes.push({ name: constants.PROF_LOGIN });
@@ -46,9 +44,8 @@ export const HelperProvider = ({ children }) => {
   const ApiExecutor = useCallback(
     async ({ endpoint, method = 'GET', payload = {}, headers = {} }) => {
       try {
-        console.log(`Executing API: ${endpoint}, Method: ${method}`);
-
-        console.log('Access Token:', accessToken);
+        // console.log(`Executing API: ${endpoint}, Method: ${method}`);
+        // console.log('Access Token:', accessToken);
 
         headers = {
           'Content-Type': 'application/json',
@@ -78,8 +75,6 @@ export const HelperProvider = ({ children }) => {
             10
           );
 
-          console.log({ step });
-
           if (role === RoleEnum.PROFESSIONAL) {
             if (step === 1) {
               navigation.navigate(constants.PROF_REGISTER_STEP_2);
@@ -91,11 +86,10 @@ export const HelperProvider = ({ children }) => {
               navigation.navigate(constants.PROF_HOMEPAGE);
             }
           } else if (role === RoleEnum.USER) {
-            console.log(navigation);
             navigation.navigate(constants.REGISTER_WITH_EXTRA_INFORMATION);
           }
 
-          return sendErrorResponseV2(error);
+          return sendErrorResponse(error);
         }
 
         if (isTokenExpired) {
@@ -123,7 +117,7 @@ export const HelperProvider = ({ children }) => {
                 return await ApiExecutor({ endpoint, method, payload, headers });
               }
             } catch (tokenError) {
-              console.error(`Token refresh attempt ${attempts + 1} failed.`, tokenError);
+              // console.error(`Token refresh attempt ${attempts + 1} failed.`, tokenError);
             }
 
             attempts += 1;
@@ -133,20 +127,36 @@ export const HelperProvider = ({ children }) => {
           logout();
         } else {
           console.log(error);
-          return sendErrorResponseV2(error);
+          return sendErrorResponse(error);
         }
       }
     },
     [role, accessToken]
   );
 
-  const processApiError = async (response) => {
-    console.log('>>processApiError:', response);
-    // Placeholder for additional error handling logic
+  const refreshNotificationCount = async () => {
+    const response = await ApiExecutor(
+      ApiDefinitions.getNotificationsCount({
+        role,
+      })
+    );
+
+    if (!response.success) return;
+    dispatch(setUnreadNotificationCount(response.data.unreadNotificationCount));
+  };
+
+  const redirectToHomepage = () => {
+    if (isUser(role)) {
+      navigation.navigate(constants.HOMEPAGE);
+    } else {
+      navigation.navigate(constants.PROF_HOMEPAGE);
+    }
   };
 
   return (
-    <HelperContext.Provider value={{ logout, processApiError, ApiExecutor }}>
+    <HelperContext.Provider
+      value={{ logout, ApiExecutor, refreshNotificationCount, redirectToHomepage }}
+    >
       {children}
     </HelperContext.Provider>
   );

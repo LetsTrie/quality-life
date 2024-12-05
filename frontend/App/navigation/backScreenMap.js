@@ -51,5 +51,10 @@ export default {
   [constants.RATING]: constants.VIDEO_EXERCISE_LIST,
   [constants.MENTAL_HEALTH_ASSESSMENT]: constants.HOMEPAGE,
   [constants.MENTAL_HEALTH_ASSESSMENT_RESULT]: constants.HOMEPAGE,
-  [constants.PROFESSIONALS_NOTIFICATIONS]: constants.PROF_HOMEPAGE,
+  [constants.NOTIFICATIONS]: constants.HOMEPAGE,
+
+  [constants.PROF_SUGGESTED_SCALE]: constants.HOMEPAGE,
+  [constants.PROF_SUGGESTED_SCALE_RESULT]: constants.HOMEPAGE,
+
+  [constants.CLIENT_TEST_RESULT]: constants.GO_TO_BACK,
 };
