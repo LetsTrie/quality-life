@@ -35,7 +35,6 @@ import RegisterStep3 from '../screens/prof/RegisterStep3.js';
 import RegisterStep4 from '../screens/prof/RegisterStep4.js';
 
 import ResponseRequest from '../screens/prof/ResponseRequest.js';
-import ProfSideScaleResult from '../screens/prof/ScaleResult.js';
 import UpdateProfileProf from '../screens/prof/UpdateProfileProf.js';
 import professionalDetails from '../screens/professionalDetails.js';
 import ProfScaleResult from '../screens/profScaleResult.js';
@@ -506,21 +505,6 @@ const StackNavigator = () => {
               {...props}
               onPress={() => {
                 navigation.navigate(backScreenMap[constants.PROF_UPDATE_PROFILE]);
-              }}
-            />
-          ),
-        })}
-      />
-      <Stack.Screen
-        name="ProfSideScaleResult"
-        component={ProfSideScaleResult}
-        options={({ navigation, route, ...props }) => ({
-          title: 'Result',
-          headerLeft: (props) => (
-            <HeaderBackButton
-              {...props}
-              onPress={() => {
-                navigation.navigate(route.params.goToBack);
               }}
             />
           ),
