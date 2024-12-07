@@ -16,8 +16,8 @@ const ImageSlider = () => {
   return (
     <View style={styles.imageContainer}>
       <Swiper loop autoplay showsPagination={false}>
-        <Image style={styles.image} source={require('../../../assests/images/Slide1.jpg')} />
-        <Image style={styles.image} source={require('../../../assests/images/Slide3.jpg')} />
+        <Image style={styles.image} source={require('../../../assests/images/Slide1.png')} />
+        <Image style={styles.image} source={require('../../../assests/images/Slide3.png')} />
       </Swiper>
     </View>
   );

@@ -103,7 +103,7 @@ const RatingComponent = () => {
       )}
 
       <Box
-        source={require('../assests/images/mentalexcercise.jpeg')}
+        source={require('../assests/images/mentalexcercise.png')}
         name="মানসিক স্বাস্থ্য মূল্যায়ন করুন"
         lastScore={msm_score ? `${msm_score}/100` : undefined}
         lastDate={msm_date ? msm_date : undefined}

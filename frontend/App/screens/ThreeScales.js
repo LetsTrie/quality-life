@@ -53,7 +53,7 @@ const ThreeScales = () => {
           onPress={() => navigate(Type.GHQ, 'manoshikObosthaJachaikoron', 'মানসিক অবস্থা যাচাইকরণ')}
         />
         <Box
-          source={require('../assests/images/picture_2.jpg')}
+          source={require('../assests/images/picture_2.png')}
           name="মানসিক চাপ নির্ণয় (PSS-10)"
           lastScore={mcn_date ? lastMcnScore : undefined}
           lastDate={mcn_date ? mcn_date : undefined}

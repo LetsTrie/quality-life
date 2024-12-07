@@ -60,7 +60,7 @@ const AskForTest = ({ navigation, route }) => {
     <>
       <View style={{ flex: 1 }}>
         <ImageBackground
-          source={require('../assests/images/ReadyForTest.jpg')}
+          source={require('../assests/images/ReadyForTest.png')}
           style={styles.imageBackground}
         >
           <LinearGradient

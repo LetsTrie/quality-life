@@ -124,7 +124,7 @@ const Homepage = () => {
 
           <View style={styles.boxContainer}>
             <Box
-              source={require('../assests/images/mentalexcercise.jpeg')}
+              source={require('../assests/images/mentalexcercise.png')}
               name="মানসিক স্বাস্থ্য মূল্যায়ন"
               lastScore={msm_date ? lastMsmScore : undefined}
               lastDate={msm_date ? msm_date : undefined}
@@ -153,7 +153,7 @@ const Homepage = () => {
               }
             />
             <Box
-              source={require('../assests/images/picture_2.jpg')}
+              source={require('../assests/images/picture_2.png')}
               name="মানসিক চাপ নির্ণয় (PSS-10)"
               lastScore={mcn_date ? lastMcnScore : undefined}
               lastDate={mcn_date ? mcn_date : undefined}

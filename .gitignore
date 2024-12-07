@@ -107,3 +107,7 @@ package-lock.json
 yarn.lock
 
 .expo
+
+*.pem
+server-setup.txt
+.DS_Store
