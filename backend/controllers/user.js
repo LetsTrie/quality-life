@@ -3,10 +3,9 @@ const User = require("../models/user");
 const moment = require("moment");
 const Rating = require("../models/rating");
 const Test = require("../models/test");
-const Error = require("../models/error");
 const ProfAssessment = require("../models/profAssessment");
 const { MODEL_NAME } = require("../models/model_name");
-const { sendJSONresponse, sendErrorResponse, constants } = require("../utils");
+const { sendJSONresponse, sendErrorResponse } = require("../utils");
 
 const { Notification } = require("../models");
 const { NotificationService } = require("../services");
@@ -525,16 +524,6 @@ exports.userInfo = asyncHandler(async (req, res, next) => {
     const tests = await Test.find({ userId: req.body._id });
     const user = await User.findById(req.body._id);
     return res.status(200).json({ user, tests });
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-});
-
-exports.error = asyncHandler(async (req, res, next) => {
-  try {
-    const data = req.body.error;
-    const error = new Error({ data });
-    await error.save();
   } catch (err) {
     return res.status(400).json({ err });
   }

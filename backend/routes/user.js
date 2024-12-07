@@ -44,8 +44,6 @@ router.post("/update/profile", M.verifyToken(ROLE), C.updateProfile);
 router.get("/all", C.allUsers);
 router.post("/userInfo", C.userInfo);
 
-router.post("/error", C.error);
-
 router.post("/submit-suggested-scale", M.verifyToken(ROLE), C.submitProfScale);
 
 router.get(

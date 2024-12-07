@@ -111,3 +111,4 @@ yarn.lock
 *.pem
 server-setup.txt
 .DS_Store
+.env.production
