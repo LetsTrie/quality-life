@@ -1,8 +1,8 @@
-const jwt = require("jsonwebtoken");
+const jwt = require('jsonwebtoken');
 
-const mongoose = require("mongoose");
-const { MODEL_NAME } = require("./model_name");
-const { constants } = require("../utils");
+const mongoose = require('mongoose');
+const { MODEL_NAME } = require('./model_name');
+const { constants } = require('../utils');
 
 const userSchema = new mongoose.Schema(
   {
@@ -40,20 +40,27 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    otp: String,
+    otpExpiredAt: Date,
+    canResetPassword: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-userSchema.methods.generateTokens = async (id) => {
+userSchema.methods.generateTokens = async id => {
   const accessToken = await jwt.sign(
     { id, role: constants.ROLES.USER },
     process.env.JWT_ACCESS_TOKEN,
-    { expiresIn: process.env.JWT_EXPIRATION }
+    { expiresIn: process.env.JWT_EXPIRATION },
   );
   const refreshToken = await jwt.sign(
     { id, role: constants.ROLES.USER },
     process.env.JWT_REFRESH_TOKEN,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRATION }
+    { expiresIn: process.env.JWT_REFRESH_EXPIRATION },
   );
 
   return [accessToken, refreshToken];

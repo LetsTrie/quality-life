@@ -16,13 +16,13 @@ const AuthIcon = () => {
 
 const styles = StyleSheet.create({
   logoContainer: {
-    paddingTop: borderRadius * 1,
+    paddingTop: borderRadius,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
-    width: 190,
-    height: 140,
+    width: 170,
+    height: 130,
   },
 });
 

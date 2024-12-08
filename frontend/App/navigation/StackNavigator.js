@@ -26,7 +26,6 @@ import ProMyClients from '../screens/prof/MyClients.js';
 import ProNotification from '../screens/prof/Notification.js';
 import ProfileProf from '../screens/prof/ProfileProf.js';
 import ProHomepage from '../screens/prof/ProHomepage.js';
-import RecoverAccount from '../screens/prof/RecoverAccount.js';
 import RegisterConsentPro from '../screens/prof/RegisterConsentPro.js';
 
 import RegisterStep1 from '../screens/prof/RegisterStep1.js';
@@ -64,6 +63,7 @@ import VideoScreen from '../screens/VideoScreen.js';
 import UpdatePassword from '../screens/Setting/UpdatePassword.js';
 import { useSelector } from 'react-redux';
 import { selectHomepageByRole } from '../utils/roles.js';
+import ForgetPassword from '../screens/ForgetPassword.js';
 
 const Stack = createStackNavigator();
 
@@ -172,6 +172,21 @@ const StackNavigator = () => {
     <Stack.Navigator initialRouteName="Welcome" screenOptions={screenOptions}>
       <Stack.Screen name="Welcome" component={Welcome} options={dontShowHeader} />
       <Stack.Screen name="Login" component={UserLogin} options={dontShowHeader} />
+      <Stack.Screen
+        name={constants.FORGET_PASSWORD}
+        component={ForgetPassword}
+        options={({ navigation, route }) => ({
+          title: 'পাসওয়ার্ড পরিবর্তন করুন',
+          headerLeft: (props) => (
+            <HeaderBackButton
+              {...props}
+              onPress={() => {
+                safeTransit({ navigation, route, role });
+              }}
+            />
+          ),
+        })}
+      />
       <Stack.Screen
         name={constants.USER_REGISTER_CONSENT}
         component={UserRegisterConsent}
@@ -358,7 +373,7 @@ const StackNavigator = () => {
 
       <Stack.Screen name="Register" component={Register} options={dontShowHeader} />
       <Stack.Screen name="LoginPro" component={LoginPro} options={dontShowHeader} />
-      <Stack.Screen name="RecoverAccount" component={RecoverAccount} options={dontShowHeader} />
+
       <Stack.Screen
         name={constants.PROFESSIONAL_DETAILS}
         component={professionalDetails}

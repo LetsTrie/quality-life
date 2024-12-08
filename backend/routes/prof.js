@@ -1,130 +1,128 @@
-const router = require("express").Router();
-const professionalController = require("../controllers/prof");
-const userProfCtrl = require("../controllers/user-professional");
-const M = require("../middlewares/authentication");
-const validate = require("../middlewares/validate");
-const { profValidation } = require("../validations");
+const router = require('express').Router();
+const professionalController = require('../controllers/prof');
+const userProfCtrl = require('../controllers/user-professional');
+const M = require('../middlewares/authentication');
+const validate = require('../middlewares/validate');
+const { profValidation } = require('../validations');
 
-const ROLE = "prof";
+const ROLE = 'prof';
 
 router.post(
-  "/register/step-1",
+  '/register/step-1',
   validate(profValidation.registerProfessionalStep1),
-  professionalController.registerProfessionalStep1
+  professionalController.registerProfessionalStep1,
 );
 
-router.post("/login", professionalController.profLogin);
+router.post('/login', professionalController.profLogin);
 
 router.post(
-  "/register/step-2",
+  '/register/step-2',
   M.verifyToken(ROLE),
   validate(profValidation.registerProfessionalStep2),
-  professionalController.registerProfessionalStep2
+  professionalController.registerProfessionalStep2,
 );
 
 router.post(
-  "/register/step-3",
+  '/register/step-3',
   M.verifyToken(ROLE),
   validate(profValidation.registerProfessionalStep3),
-  professionalController.registerProfessionalStep3
+  professionalController.registerProfessionalStep3,
 );
 
 router.post(
-  "/register/step-4",
+  '/register/step-4',
   M.verifyToken(ROLE),
   validate(profValidation.registerProfessionalStep4),
-  professionalController.registerProfessionalStep4
+  professionalController.registerProfessionalStep4,
 );
 
 router.get(
-  "/all-informations",
+  '/all-informations',
   M.verifyToken(ROLE),
-  professionalController.getAllInformations
+  professionalController.getAllInformations,
 );
 
-router.get("/all", professionalController.getAllProfs);
-router.post("/action", professionalController.profAction);
+router.get('/all', professionalController.getAllProfs);
+router.post('/action', professionalController.profAction);
 
 router.post(
-  "/delete-account",
+  '/delete-account',
   M.verifyToken(ROLE),
-  professionalController.deleteProfessionalAccount
+  professionalController.deleteProfessionalAccount,
 );
 router.put(
-  "/:profId/visibility",
+  '/:profId/visibility',
   validate(profValidation.profVisibility),
-  professionalController.profVisibility
+  professionalController.profVisibility,
 );
 
 router.get(
-  "/homepage-notification-count",
+  '/homepage-notification-count',
   M.verifyToken(ROLE),
-  professionalController.getHomepageInformationProf
+  professionalController.getHomepageInformationProf,
 );
 
 router.get(
-  "/my-clients",
+  '/my-clients',
   M.verifyToken(ROLE),
-  professionalController.myClients
+  professionalController.myClients,
 );
 
 router.get(
-  "/user-profile/:userId",
-  professionalController.getUserCompleteProfile
+  '/user-profile/:userId',
+  professionalController.getUserCompleteProfile,
 );
 router.get(
-  "/primary-test-details/:testId",
-  professionalController.getPrimaryResultDetails
+  '/primary-test-details/:testId',
+  professionalController.getPrimaryResultDetails,
 );
 
 router.post(
-  "/result-suggested-scale",
+  '/result-suggested-scale',
   M.verifyToken(ROLE),
-  professionalController.getScaleResult
+  professionalController.getScaleResult,
 );
 
-router.get("/allProf", professionalController.allProf);
+router.get('/allProf', professionalController.allProf);
 
 router.post(
-  "/:profId/update/profile",
+  '/:profId/update/profile',
   M.verifyToken(ROLE),
-  professionalController.updateProfile
+  professionalController.updateProfile,
 );
-router.post("/getCode", professionalController.getVerificationCode);
-router.post("/changePassword", professionalController.changePassword);
 
 // ****************************************************************
 // ****************************************************************
 // ****************************************************************
 
 router.post(
-  "/appointment-seen/:appointmentId",
+  '/appointment-seen/:appointmentId',
   M.verifyToken(ROLE),
-  userProfCtrl.appointmentSeen
+  userProfCtrl.appointmentSeen,
 );
 
 router.get(
-  "/client-requests",
+  '/client-requests',
   M.verifyToken(ROLE),
-  userProfCtrl.showAllClientRequests
+  userProfCtrl.showAllClientRequests,
 );
 
 router.post(
-  "/appointment-response/:appointmentId",
+  '/appointment-response/:appointmentId',
   M.verifyToken(ROLE),
-  userProfCtrl.respondToAppointment
+  userProfCtrl.respondToAppointment,
 );
 
-router.post("/suggest-scale", M.verifyToken(ROLE), userProfCtrl.suggestAscale);
+router.post('/suggest-scale', M.verifyToken(ROLE), userProfCtrl.suggestAscale);
 router.get(
-  "/scales/:clientId",
+  '/scales/:clientId',
   M.verifyToken(ROLE),
-  userProfCtrl.findSuggestedScalesByClient
+  userProfCtrl.findSuggestedScalesByClient,
 );
 router.get(
-  "/assessment/:assessmentId",
+  '/assessment/:assessmentId',
   M.verifyToken(ROLE),
-  userProfCtrl.getAssessmentDetails
+  userProfCtrl.getAssessmentDetails,
 );
 
 // ****************************************************************

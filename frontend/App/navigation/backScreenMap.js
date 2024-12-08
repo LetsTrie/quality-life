@@ -57,4 +57,5 @@ export default {
   [constants.PROF_SUGGESTED_SCALE_RESULT]: constants.HOMEPAGE,
 
   [constants.CLIENT_TEST_RESULT]: constants.GO_TO_BACK,
+  [constants.FORGET_PASSWORD]: constants.GO_TO_BACK,
 };

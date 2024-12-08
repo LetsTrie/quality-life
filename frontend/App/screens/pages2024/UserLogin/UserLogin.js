@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import validator from 'validator';
 import AuthIcon from '../../../components/Auth/AuthIcon';
@@ -16,8 +16,10 @@ import { ApiDefinitions } from '../../../services/api';
 import styles from './UserLogin.style';
 import { setAuthToken } from '../../../redux/utils';
 import { RoleEnum } from '../../../utils/roles';
-import { ErrorButton, Loader } from '../../../components';
+import { AppText, ErrorButton, Loader } from '../../../components';
 import { SubmitButton } from '../../../components/SubmitButton';
+import colors from '../../../config/colors';
+import { lightenColor } from '../../../utils/ui';
 
 const SCREEN_SIZE = constants.LOGIN;
 
@@ -28,7 +30,7 @@ export const UserLogin = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
 
-  const { accessToken } = useSelector((state) => state.auth);
+  const { accessToken } = useSelector(state => state.auth);
 
   const initialState = { email: '', password: '' };
   const { formFields, createChangeHandler } = useFormFields(initialState);
@@ -41,7 +43,12 @@ export const UserLogin = () => {
   const submitLoginForm = async () => {
     const payload = { ...formFields };
 
-    if (!payload.email || payload.email === '' || !payload.password || payload.password === '') {
+    if (
+      !payload.email ||
+      payload.email === '' ||
+      !payload.password ||
+      payload.password === ''
+    ) {
       setError('ফর্মটি সঠিকভাবে পূরণ করুন');
       return;
     } else if (!validator.isEmail(payload.email)) {
@@ -62,7 +69,13 @@ export const UserLogin = () => {
       return;
     }
 
-    dispatch(setAuthToken(RoleEnum.USER, lResponse.data.accessToken, lResponse.data.refreshToken));
+    dispatch(
+      setAuthToken(
+        RoleEnum.USER,
+        lResponse.data.accessToken,
+        lResponse.data.refreshToken,
+      ),
+    );
     setTimeout(() => {
       setUserLoginDone(true);
       setLoginResponse(lResponse.data);
@@ -98,42 +111,70 @@ export const UserLogin = () => {
 
   return (
     <Container>
-      <TopHeading heading="অ্যাপে প্রবেশ করুন" />
+      <TopHeading heading='অ্যাপে প্রবেশ করুন' />
       <View style={styles.loginContainer}>
         <AuthIcon />
         <View style={styles.loginButtons}>
           <TextInput
-            autoCapitalize="none"
+            autoCapitalize='none'
             autoCorrect={false}
-            icon="email"
-            name="email"
-            placeholder="ইমেইল"
-            onChangeText={(text) => createChangeHandler(text, 'email')}
-            keyboardType="email-address"
-            textContentType="emailAddress"
+            icon='email'
+            name='email'
+            placeholder='ইমেইল'
+            onChangeText={text => createChangeHandler(text, 'email')}
+            keyboardType='email-address'
+            textContentType='emailAddress'
           />
 
           <TextInput
-            autoCapitalize="none"
+            autoCapitalize='none'
             autoCorrect={false}
-            icon="lock"
-            name="password"
-            placeholder="পাসওয়ার্ড"
-            // secureTextEntry
-            textContentType="password"
-            keyboardType="default"
-            onChangeText={(text) => createChangeHandler(text, 'password')}
+            icon='lock'
+            name='password'
+            placeholder='পাসওয়ার্ড'
+            textContentType='password'
+            keyboardType='default'
+            onChangeText={text => createChangeHandler(text, 'password')}
           />
+
+          <TouchableOpacity
+            style={{
+              alignSelf: 'flex-end',
+              marginRight: 20,
+              paddingTop: 8,
+            }}
+            onPress={() =>
+              navigation.navigate(constants.FORGET_PASSWORD, {
+                accountType: RoleEnum.USER,
+              })
+            }
+          >
+            <AppText
+              style={{
+                fontSize: 14,
+                fontWeight: 'bold',
+                color: lightenColor(colors.primary, 15),
+              }}
+            >
+              পাসওয়ার্ড ভুলে গিয়েছেন?
+            </AppText>
+          </TouchableOpacity>
 
           <Loader visible={isLoading} style={{ marginTop: 10 }} />
           <ErrorButton visible={!!error && !isLoading} title={error} />
-          <SubmitButton title={'লগইন করুন'} onPress={submitLoginForm} visible={!isLoading} />
+          <SubmitButton
+            title={'লগইন করুন'}
+            onPress={submitLoginForm}
+            visible={!isLoading}
+          />
 
           <EndOptions
             title1={'আপনার কি অ্যাকাউন্ট নেই?'}
             title2={'রেজিস্ট্রেশন করুন'}
             title3={'প্রফেশনাল হিসেবে লগইন করুন'}
-            onPress1={() => navigation.navigate(constants.USER_REGISTER_CONSENT)}
+            onPress1={() =>
+              navigation.navigate(constants.USER_REGISTER_CONSENT)
+            }
             onPress2={() => navigation.navigate(constants.PROF_LOGIN)}
           />
         </View>

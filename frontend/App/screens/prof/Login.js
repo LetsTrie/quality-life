@@ -15,8 +15,9 @@ import { useBackPress, useHelper } from '../../hooks';
 import { ApiDefinitions } from '../../services/api';
 import { RoleEnum } from '../../utils/roles';
 import { setAuthToken } from '../../redux/utils';
-import { ErrorButton, Loader } from '../../components';
+import { AppText, ErrorButton, Loader } from '../../components';
 import { SubmitButton } from '../../components/SubmitButton';
+import { lightenColor } from '../../utils/ui';
 
 const SCREEN_NAME = constants.PROF_LOGIN;
 const ProfLoginComponent = () => {
@@ -128,16 +129,32 @@ const ProfLoginComponent = () => {
             onChangeText={(text) => createChangeHandler(text, 'password')}
           />
 
+          <TouchableOpacity
+            style={{
+              alignSelf: 'flex-end',
+              marginRight: 20,
+              paddingTop: 8,
+            }}
+            onPress={() =>
+              navigation.navigate(constants.FORGET_PASSWORD, {
+                accountType: RoleEnum.PROFESSIONAL,
+              })
+            }
+          >
+            <AppText
+              style={{
+                fontSize: 14,
+                fontWeight: 'bold',
+                color: lightenColor(colors.primary, 15),
+              }}
+            >
+              পাসওয়ার্ড ভুলে গিয়েছেন?
+            </AppText>
+          </TouchableOpacity>
+
           <Loader style={{ paddingTop: 10 }} visible={isLoading} />
           <ErrorButton title={error} visible={!!error} />
           <SubmitButton title={'লগইন করুন'} onPress={HandleFormSubmit} style={{ marginTop: 8 }} />
-
-          {/* <TouchableOpacity
-            style={styles.forgetPassword}
-            onPress={() => navigation.navigate('RecoverAccount')}
-          >
-            <Text style={styles.lowerTexts}>পাসওয়ার্ড ভুলে গেছেন?</Text>
-          </TouchableOpacity> */}
 
           <EndOptions
             title1={`আপনার কি অ্যাকাউন্ট নেই?`}

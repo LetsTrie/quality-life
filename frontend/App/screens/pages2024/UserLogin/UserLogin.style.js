@@ -14,6 +14,7 @@ export default StyleSheet.create({
     justifyContent: 'flex-start',
     alignItems: 'center',
     paddingBottom: 20,
+    paddingTop: 15,
   },
   lowerTexts: {
     fontWeight: 'bold',

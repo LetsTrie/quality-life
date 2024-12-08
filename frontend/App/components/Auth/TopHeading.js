@@ -2,6 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 const TopHeading = ({ heading, subHeading, height = 180 }) => {
+  if (!subHeading) {
+    height = 170;
+  }
   return (
     <View style={[styles.header, { height }]}>
       <Text style={styles.headerText}>{heading}</Text>

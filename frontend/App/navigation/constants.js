@@ -66,4 +66,5 @@ export default {
   PROF_SUGGESTED_SCALE_RESULT: 'ProfScaleResult',
 
   CLIENT_TEST_RESULT: 'ClientTestResult',
+  FORGET_PASSWORD: 'FORGET_PASSWORD'
 };

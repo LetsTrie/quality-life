@@ -122,7 +122,8 @@ export const ApiDefinitions = {
     endpoint: endpoints.FIND_SUGGESTED_SCALES_FOR_USER + '/' + professionalId,
   }),
   checkIfAssessmentIsAlreadyTaken: ({ assessmentId }) => ({
-    endpoint: endpoints.CHECK_IF_ASSESSMENT_IS_ALREADY_TAKEN + '/' + assessmentId,
+    endpoint:
+      endpoints.CHECK_IF_ASSESSMENT_IS_ALREADY_TAKEN + '/' + assessmentId,
   }),
   submitSuggestedScale: ({ payload }) => ({
     endpoint: endpoints.SUBMIT_SUGGESTED_SCALE,
@@ -166,7 +167,17 @@ export const ApiDefinitions = {
   getAssessmentDetails: ({ assessmentId }) => ({
     endpoint: endpoints.ASSESSMENT_DETAILS + '/' + assessmentId,
   }),
-
+  verifyEmailForgetPassword: ({ email, accountType }) => ({
+    endpoint: `${endpoints.VERIFY_EMAIL_FOR_RESET_PASSWORD}?email=${email}&accountType=${accountType}`,
+  }),
+  verifyOtpForgetPassword: ({ email, otp, accountType }) => ({
+    endpoint: `${endpoints.VERIFY_OTP_FOR_RESET_PASSWORD}?email=${email}&otp=${otp}&accountType=${accountType}`,
+  }),
+  resetPasswordAfterForgetPassword: ({ payload }) => ({
+    endpoint: endpoints.RESET_PASSWORD_AFTER_FORGET_PASSWORD,
+    method: 'POST',
+    payload,
+  }),
   // *******************************************************
   // **************=> Notification Counter <=***************
   // *******************************************************

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index | pino-pretty",
+    "start": "node index",
     "server": "nodemon index | pino-pretty",
     "create-module": "chmod +x create-module.sh && ./create-module.sh",
     "reset": "rm -rf node_modules/ && rm -rf package-lock.json && npm i"
@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.699.0",
     "bcrypt": "^5.1.1",
     "chalk": "^4.1.2",
     "cors": "^2.8.5",
@@ -27,7 +28,7 @@
     "moment": "^2.30.1",
     "mongoose": "^8.2.3",
     "morgan": "^1.10.0",
-    "nodemailer": "^6.9.13",
+    "nodemailer": "^6.9.16",
     "nodemailer-express-handlebars": "^6.1.2",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",

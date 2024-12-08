@@ -57,4 +57,8 @@ export const endpoints = {
   PRIMARY_TEST_DETAILS: `${BaseUrl}/prof/primary-test-details`,
   GET_SUGGESTED_SCALES_BY_CLIENT: `${BaseUrl}/prof/scales`,
   ASSESSMENT_DETAILS: `${BaseUrl}/prof/assessment`,
+
+  VERIFY_EMAIL_FOR_RESET_PASSWORD: `${BaseUrl}/auth/verify-email`,
+  VERIFY_OTP_FOR_RESET_PASSWORD: `${BaseUrl}/auth/verify-otp`,
+  RESET_PASSWORD_AFTER_FORGET_PASSWORD: `${BaseUrl}/auth/update-password-with-otp`,
 };

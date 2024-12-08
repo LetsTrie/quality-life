@@ -1,32 +1,29 @@
-const asyncHandler = require("../middlewares/asyncHandler");
-const Professional = require("../models/prof");
-const User = require("../models/user");
-const bcrypt = require("bcrypt");
-const Appointment = require("../models/appointment");
-const ProfAssessment = require("../models/profAssessment");
+const asyncHandler = require('../middlewares/asyncHandler');
+const Professional = require('../models/prof');
+const User = require('../models/user');
+const bcrypt = require('bcrypt');
+const Appointment = require('../models/appointment');
+const ProfAssessment = require('../models/profAssessment');
 
-const MyClient = require("../models/myClient");
+const MyClient = require('../models/myClient');
 
-const { Notification } = require("../models");
+const { Notification } = require('../models');
 
-const VerificationCode = require("../models/verificationCode");
+const nodemailer = require('nodemailer');
+const hbs = require('nodemailer-express-handlebars');
 
-const nodemailer = require("nodemailer");
-const hbs = require("nodemailer-express-handlebars");
+const Test = require('../models/test');
 
-const Test = require("../models/test");
-
-const { getProgress } = require("./helpers");
+const { getProgress } = require('./helpers');
 const {
   sendErrorResponse,
   sendJSONresponse,
   logInfo,
   logError,
-} = require("../utils");
-const httpStatus = require("http-status");
+} = require('../utils');
+const httpStatus = require('http-status');
 
-const { constants } = require("../utils/constants");
-const { NotificationService } = require("../services");
+const { NotificationService } = require('../services');
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -40,22 +37,22 @@ const transporter = nodemailer.createTransport({
 
 const options = {
   viewEngine: {
-    extName: ".handlebars",
-    partialsDir: "templates",
-    layoutsDir: "templates",
+    extName: '.handlebars',
+    partialsDir: 'templates',
+    layoutsDir: 'templates',
     defaultLayout: false,
   },
-  viewPath: "templates",
+  viewPath: 'templates',
 };
 
-transporter.use("compile", hbs(options));
+transporter.use('compile', hbs(options));
 
 const sendEmailOnBoarding = async (name, emailID) => {
   const mailOptions = {
     from: '"Qlife" <motiullahsajt@gmail.com>',
     to: emailID,
-    subject: "Account Activation Confirmation",
-    template: "on-boarding",
+    subject: 'Account Activation Confirmation',
+    template: 'on-boarding',
     context: {
       fullName: name,
     },
@@ -63,25 +60,7 @@ const sendEmailOnBoarding = async (name, emailID) => {
 
   return transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.log("error", error.message);
-    }
-  });
-};
-
-const sendVerificationCode = async (code, emailID) => {
-  const mailOptions = {
-    from: '"Qlife" <motiullahsajt@gmail.com>',
-    to: emailID,
-    subject: "Account Verification Code",
-    template: "verification-code",
-    context: {
-      code: code,
-    },
-  };
-
-  return transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log("error", error.message);
+      console.log('error', error.message);
     }
   });
 };
@@ -98,7 +77,7 @@ exports.getAllProfs = asyncHandler(async (req, res, next) => {
 exports.profAction = asyncHandler(async (req, res, next) => {
   // id, action
   const prof = await Professional.findById(req.body.id);
-  if (req.body.action === "pos") {
+  if (req.body.action === 'pos') {
     prof.isVerified = true;
     prof.hasRejected = false;
     await sendEmailOnBoarding(prof.name, prof.email);
@@ -118,24 +97,24 @@ exports.registerProfessionalStep1 = asyncHandler(async (req, res, _next) => {
   });
   if (existingProfessional) {
     if (!existingProfessional.isVerified) {
-      logError("Attempt to register with an unverified email", {
+      logError('Attempt to register with an unverified email', {
         email: req.body.email,
       });
     } else if (existingProfessional.hasRejected) {
-      logError("Attempt to register with a previously rejected email", {
+      logError('Attempt to register with a previously rejected email', {
         email: req.body.email,
       });
     }
 
-    return sendErrorResponse(res, 400, "BAD_REQUEST", {
-      message: "এই ইমেলটি ইতোমধ্যেই ব্যবহার করা হয়েছে",
+    return sendErrorResponse(res, 400, 'BAD_REQUEST', {
+      message: 'এই ইমেলটি ইতোমধ্যেই ব্যবহার করা হয়েছে',
     });
   }
 
   req.body.password = await bcrypt.hash(req.body.password, 10);
   const professional = await Professional.create(req.body);
 
-  logInfo("Professional registration successful", { email: req.body.email });
+  logInfo('Professional registration successful', { email: req.body.email });
 
   return sendJSONresponse(res, 201, {
     data: { id: professional._id, email: professional.email },
@@ -189,27 +168,27 @@ exports.getAllInformations = asyncHandler(async (req, res, _next) => {
 exports.profLogin = asyncHandler(async (req, res, _next) => {
   const prof = await Professional.findOne({ email: req.body.email });
   if (!prof) {
-    return sendErrorResponse(res, 401, "UNAUTHORIZED", {
-      message: "ব্যবহারকারী পাওয়া যায়নি",
+    return sendErrorResponse(res, 401, 'UNAUTHORIZED', {
+      message: 'ব্যবহারকারী পাওয়া যায়নি',
     });
   }
 
   const isMatch = await bcrypt.compare(req.body.password, prof.password);
   if (!isMatch) {
-    return sendErrorResponse(res, 401, "UNAUTHORIZED", {
-      message: "পাসওয়ার্ড মেলেনি",
+    return sendErrorResponse(res, 401, 'UNAUTHORIZED', {
+      message: 'পাসওয়ার্ড মেলেনি',
     });
   }
 
   if (!prof.isVerified) {
-    return sendErrorResponse(res, 401, "UNAUTHORIZED", {
-      message: "অ্যাকাউন্ট এখনও যাচাই করা হয়নি",
+    return sendErrorResponse(res, 401, 'UNAUTHORIZED', {
+      message: 'অ্যাকাউন্ট এখনও যাচাই করা হয়নি',
     });
   }
 
   if (prof.hasRejected) {
-    return sendErrorResponse(res, 401, "UNAUTHORIZED", {
-      message: "আপনার অ্যাকাউন্ট বাতিল করা হয়েছে",
+    return sendErrorResponse(res, 401, 'UNAUTHORIZED', {
+      message: 'আপনার অ্যাকাউন্ট বাতিল করা হয়েছে',
     });
   }
 
@@ -242,7 +221,7 @@ exports.myClients = asyncHandler(async (req, res, _next) => {
     prof: req.user._id,
     isActive: true,
   })
-    .populate({ path: "user", select: "name location age gender isMarried" })
+    .populate({ path: 'user', select: 'name location age gender isMarried' })
     .lean();
 
   return sendJSONresponse(res, httpStatus.OK, {
@@ -257,22 +236,22 @@ exports.getUserCompleteProfile = asyncHandler(async (req, res, next) => {
 
   const user = await User.findById(userId);
   if (!user) {
-    return sendErrorResponse(res, 404, "NOT_FOUND", {
-      message: "User not found",
+    return sendErrorResponse(res, 404, 'NOT_FOUND', {
+      message: 'User not found',
     });
   }
 
   const { name, age, email, gender, isMarried, location } = user;
   const { union, zila, upazila } = location;
-  let address = [union, upazila, zila].filter(Boolean).join(", ");
-  if (address === "") address = null;
+  let address = [union, upazila, zila].filter(Boolean).join(', ');
+  if (address === '') address = null;
 
   const response = {
     user: {
       name: name,
       age: age,
       gender: gender,
-      isMarried: isMarried ? "Married" : "Unmarried",
+      isMarried: isMarried ? 'Married' : 'Unmarried',
       address,
       email,
     },
@@ -287,7 +266,7 @@ exports.getUserCompleteProfile = asyncHandler(async (req, res, next) => {
     domesticViolence,
     psychoticProfile,
     suicideIdeation,
-  ] = await getProgress(userId, req, res, next, "format-date");
+  ] = await getProgress(userId, req, res, next, 'format-date');
 
   response.progress = {
     manoshikObosthaJachaikoron,
@@ -309,8 +288,8 @@ exports.getPrimaryResultDetails = asyncHandler(async (req, res, next) => {
   const { testId } = req.params;
   const test = await Test.findById(testId);
   if (!test) {
-    return sendErrorResponse(res, 404, "NOT_FOUND", {
-      message: "Test not found",
+    return sendErrorResponse(res, 404, 'NOT_FOUND', {
+      message: 'Test not found',
     });
   }
 
@@ -330,7 +309,7 @@ exports.getScaleResult = asyncHandler(async (req, res, next) => {
     await notification.save();
   }
 
-  throw new Error("Not implemented");
+  throw new Error('Not implemented');
 
   return res.json({ assessment: assessmentResult });
 });
@@ -349,8 +328,8 @@ exports.deleteProfessionalAccount = asyncHandler(async (req, res, _next) => {
 
   const prof = await Professional.findByIdAndDelete(profId);
   if (!prof) {
-    return sendErrorResponse(res, "NOT_FOUND", {
-      message: "Professional not found",
+    return sendErrorResponse(res, 'NOT_FOUND', {
+      message: 'Professional not found',
     });
   }
 
@@ -365,8 +344,8 @@ exports.deleteProfessionalAccount = asyncHandler(async (req, res, _next) => {
 exports.profVisibility = asyncHandler(async (req, res, _next) => {
   const prof = await Professional.findById(req.params.profId);
   if (!prof) {
-    return sendErrorResponse(res, "NOT_FOUND", {
-      message: "Professional not found",
+    return sendErrorResponse(res, 'NOT_FOUND', {
+      message: 'Professional not found',
     });
   }
 
@@ -389,50 +368,3 @@ exports.updateProfile = asyncHandler(async (req, res) => {
     data: { professional },
   });
 });
-
-exports.getVerificationCode = async (req, res) => {
-  const prof = await Professional.findOne({ email: req.body.email });
-  try {
-    if (prof) {
-      const code = Math.round(Math.random() * 100000 + 1);
-      const verificationCode = new VerificationCode({
-        email: req.body.email,
-        code: code,
-      });
-      await verificationCode.save();
-      await sendVerificationCode(verificationCode.code, verificationCode.email);
-      return res.status(200).json({ success: true });
-    } else {
-      return res.status(404).json({ message: "Accout not found" });
-    }
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};
-
-exports.changePassword = async (req, res) => {
-  try {
-    const verificationCode = await VerificationCode.findOne({
-      code: req.body.verificationCode,
-      email: req.body.email,
-    });
-    if (verificationCode && verificationCode.isVerified === true) {
-      verificationCode.isVerified = false;
-      await verificationCode.save();
-      const prof = await Professional.findOne({ email: req.body.email });
-      prof.password = await bcrypt.hash(req.body.newPassword, 10);
-      await prof.save();
-      const [accessToken, refreshToken] = await prof.generateTokens(prof._id);
-      return res
-        .status(200)
-        .json({ success: true, data: { prof, accessToken, refreshToken } });
-    }
-    if (verificationCode.isVerified === false) {
-      return res
-        .status(401)
-        .json({ message: "Verification Code already used." });
-    }
-  } catch (err) {
-    return res.status(400).json({ err });
-  }
-};

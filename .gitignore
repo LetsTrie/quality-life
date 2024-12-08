@@ -112,3 +112,4 @@ yarn.lock
 server-setup.txt
 .DS_Store
 .env.production
+nginx.txt
