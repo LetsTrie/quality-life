@@ -240,6 +240,7 @@ exports.verifyOtp = asyncHandler(async (req, res, _next) => {
     });
   }
 
+  entity.isEmailVerified = true;
   entity.otp = null;
   entity.otpExpiredAt = null;
   entity.canResetPassword = true;

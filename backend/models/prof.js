@@ -21,10 +21,6 @@ const profSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    hasRejected: {
-      type: Boolean,
-      default: false,
-    },
     step: {
       type: Number,
       min: 1,

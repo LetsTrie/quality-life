@@ -42,9 +42,6 @@ router.get(
   professionalController.getAllInformations,
 );
 
-router.get('/all', professionalController.getAllProfs);
-router.post('/action', professionalController.profAction);
-
 router.post(
   '/delete-account',
   M.verifyToken(ROLE),
@@ -89,6 +86,11 @@ router.post(
   '/:profId/update/profile',
   M.verifyToken(ROLE),
   professionalController.updateProfile,
+);
+
+router.post(
+  '/approve',
+  professionalController.approveProfessionalFromAdminPanel,
 );
 
 // ****************************************************************

@@ -5,11 +5,15 @@ const cors = require('cors');
 const expressWinston = require('express-winston');
 const { logger } = require('./config');
 const madge = require('madge');
+const path = require('path');
+
 // const pino = require("pino-http")();
 
 const app = express();
 
 // app.use(pino);
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(cors());
 require('dotenv').config();
@@ -51,6 +55,8 @@ mongoose
   .connect(process.env.MONGO_URL)
   .then(() => console.log('Database is running'))
   .catch(e => console.log(`MongoDB Connection Error: ${e.message}`));
+
+app.set('view engine', 'ejs');
 
 app.use(helmet());
 app.use(helmet.xssFilter());

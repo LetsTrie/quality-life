@@ -1,9 +1,10 @@
-const router = require("express").Router();
+const router = require('express').Router();
 
-router.use("/auth", require("./routes/auth"));
-router.use("/user", require("./routes/user"));
-router.use("/prof", require("./routes/prof"));
+router.use('/auth', require('./routes/auth'));
+router.use('/user', require('./routes/user'));
+router.use('/prof', require('./routes/prof'));
+router.use('/admin', require('./routes/admin'));
 
-router.use("/notifications", require("./routes/notifications"));
+router.use('/notifications', require('./routes/notifications'));
 
 module.exports = router;

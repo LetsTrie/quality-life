@@ -3,16 +3,16 @@ const {
   Appointment,
   ProfessionalsClient,
   ProfessionalsAssessment,
-} = require("../models");
+} = require('../models');
 
-const { NotificationService } = require("../services");
+const { NotificationService } = require('../services');
 
 const {
   asyncHandler,
   sendJSONresponse,
   sendErrorResponse,
   constants,
-} = require("../utils");
+} = require('../utils');
 
 // GET /user/professionals
 exports.findProfessionals = asyncHandler(async (req, res, _next) => {
@@ -25,7 +25,6 @@ exports.findProfessionals = asyncHandler(async (req, res, _next) => {
   if (page === 1) {
     response.professionalsCount = await Professional.countDocuments({
       isVerified: true,
-      hasRejected: false,
       visibility: true,
       step: 4,
     }).lean();
@@ -42,10 +41,10 @@ exports.findProfessionals = asyncHandler(async (req, res, _next) => {
 
     myProfIds = [
       ...new Set([
-        ...response.appointmentsTaken.map((appointment) =>
-          appointment.prof.toString()
+        ...response.appointmentsTaken.map(appointment =>
+          appointment.prof.toString(),
         ),
-        ...response.isClient.map((client) => client.prof.toString()),
+        ...response.isClient.map(client => client.prof.toString()),
       ]),
     ];
 
@@ -61,7 +60,6 @@ exports.findProfessionals = asyncHandler(async (req, res, _next) => {
   const LIMIT = 10;
   response.professionals = await Professional.find({
     isVerified: true,
-    hasRejected: false,
     visibility: true,
     step: 4,
     _id: { $nin: myProfIds },
@@ -80,8 +78,8 @@ exports.requestForAppointment = asyncHandler(async (req, res, _next) => {
 
   const isExists = await Professional.findById(profId).lean();
   if (!isExists) {
-    return sendErrorResponse(res, 404, "NOT_FOUND", {
-      message: "এই নামে কোন প্রোফেসনাল খুঁজে পাওয়া যাইনি!",
+    return sendErrorResponse(res, 404, 'NOT_FOUND', {
+      message: 'এই নামে কোন প্রোফেসনাল খুঁজে পাওয়া যাইনি!',
     });
   }
 
@@ -92,9 +90,9 @@ exports.requestForAppointment = asyncHandler(async (req, res, _next) => {
   });
 
   if (existingAppointment) {
-    return sendErrorResponse(res, 400, "BAD_REQUEST", {
+    return sendErrorResponse(res, 400, 'BAD_REQUEST', {
       message:
-        "আপনি ইতোমধ্যে এই প্রোফেসনালের সাথে একটি অ্যাপয়েন্টমেন্ট করেছেন!",
+        'আপনি ইতোমধ্যে এই প্রোফেসনালের সাথে একটি অ্যাপয়েন্টমেন্ট করেছেন!',
     });
   }
 
@@ -108,7 +106,7 @@ exports.requestForAppointment = asyncHandler(async (req, res, _next) => {
   await NotificationService.sendAppointmentRequestToProfessional(
     userId,
     profId,
-    newAppointment._id
+    newAppointment._id,
   );
 
   return sendJSONresponse(res, 201, {
@@ -137,8 +135,8 @@ exports.showAllClientRequests = asyncHandler(async (req, res, _next) => {
   response.requests = await Appointment.find(query)
     .sort({ _id: -1 })
     .populate({
-      path: "user",
-      select: "name age isMarried location email",
+      path: 'user',
+      select: 'name age isMarried location email',
     })
     .limit(LIMIT)
     .skip(LIMIT * page - LIMIT)
@@ -151,20 +149,20 @@ exports.showAllClientRequests = asyncHandler(async (req, res, _next) => {
 exports.appointmentSeen = asyncHandler(async (req, res, _next) => {
   const { appointmentId } = req.params;
   const appointment = await Appointment.findById(appointmentId).populate({
-    path: "user",
-    select: "name age isMarried location email",
+    path: 'user',
+    select: 'name age isMarried location email',
   });
 
   if (!appointment) {
-    return sendErrorResponse(res, 404, "NOT_FOUND", {
-      message: "অ্যাপয়েন্টমেন্ট পাওয়া যায়নি",
+    return sendErrorResponse(res, 404, 'NOT_FOUND', {
+      message: 'অ্যাপয়েন্টমেন্ট পাওয়া যায়নি',
     });
   }
 
   if (appointment.hasProfRespondedToClient) {
     return sendJSONresponse(res, 200, {
       data: {
-        message: "Appointment is already responded to client",
+        message: 'Appointment is already responded to client',
         appointment,
       },
     });
@@ -177,7 +175,7 @@ exports.appointmentSeen = asyncHandler(async (req, res, _next) => {
   }
 
   await NotificationService.seenAppointmentRequestedByProfessional(
-    appointment._id
+    appointment._id,
   );
 
   return sendJSONresponse(res, 200, {
@@ -201,7 +199,7 @@ exports.suggestAscale = asyncHandler(async (req, res, _next) => {
   await NotificationService.scaleSuggestedByProfessional(
     userId,
     profId,
-    assessment._id
+    assessment._id,
   );
 
   return sendJSONresponse(res, 201, {
@@ -219,14 +217,14 @@ exports.respondToAppointment = asyncHandler(async (req, res, _next) => {
 
   const appointment = await Appointment.findById(appointmentId);
   if (!appointment) {
-    return sendErrorResponse(res, 404, "NOT_FOUND", {
-      message: "অ্যাপয়েন্টমেন্ট পাওয়া যায়নি",
+    return sendErrorResponse(res, 404, 'NOT_FOUND', {
+      message: 'অ্যাপয়েন্টমেন্ট পাওয়া যায়নি',
     });
   }
 
   if (appointment.hasProfRespondedToClient) {
-    return sendErrorResponse(res, 400, "BAD_REQUEST", {
-      message: "Professional already responded to client",
+    return sendErrorResponse(res, 400, 'BAD_REQUEST', {
+      message: 'Professional already responded to client',
     });
   }
 
@@ -270,7 +268,7 @@ exports.respondToAppointment = asyncHandler(async (req, res, _next) => {
     await NotificationService.scaleSuggestedByProfessional(
       userId,
       profId,
-      assessment._id
+      assessment._id,
     );
   }
 
@@ -279,7 +277,7 @@ exports.respondToAppointment = asyncHandler(async (req, res, _next) => {
   await NotificationService.appointmentAcceptedByProfessional(
     userId,
     profId,
-    appointment._id
+    appointment._id,
   );
 
   return sendJSONresponse(res, 200, {
@@ -294,22 +292,22 @@ exports.getAppointmentDetailsForUser = asyncHandler(async (req, res, _next) => {
   const { appointmentId } = req.params;
   const appointment = await Appointment.findById(appointmentId).populate([
     {
-      path: "user",
-      select: "name",
+      path: 'user',
+      select: 'name',
     },
     {
-      path: "prof",
-      select: "name email telephone",
+      path: 'prof',
+      select: 'name email telephone',
     },
   ]);
   if (!appointment) {
-    return sendErrorResponse(res, 404, "NOT_FOUND", {
-      message: "অ্যাপয়েন্টমেন্ট পাওয়া যায়নি",
+    return sendErrorResponse(res, 404, 'NOT_FOUND', {
+      message: 'অ্যাপয়েন্টমেন্ট পাওয়া যায়নি',
     });
   }
 
   await NotificationService.seenAppointmentAcceptedNotificationByUser(
-    appointmentId
+    appointmentId,
   );
 
   return sendJSONresponse(res, 200, {
@@ -351,7 +349,7 @@ exports.getAssessmentDetails = asyncHandler(async (req, res, _next) => {
 
   const _debug =
     await NotificationService.seenAssessmentSubmissionNotificationByProfessional(
-      assessmentId
+      assessmentId,
     );
 
   console.log({ _debug });

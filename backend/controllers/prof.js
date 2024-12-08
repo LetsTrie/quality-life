@@ -24,70 +24,10 @@ const {
 const httpStatus = require('http-status');
 
 const { NotificationService } = require('../services');
-
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_ADDRESS,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
-
-const options = {
-  viewEngine: {
-    extName: '.handlebars',
-    partialsDir: 'templates',
-    layoutsDir: 'templates',
-    defaultLayout: false,
-  },
-  viewPath: 'templates',
-};
-
-transporter.use('compile', hbs(options));
-
-const sendEmailOnBoarding = async (name, emailID) => {
-  const mailOptions = {
-    from: '"Qlife" <motiullahsajt@gmail.com>',
-    to: emailID,
-    subject: 'Account Activation Confirmation',
-    template: 'on-boarding',
-    context: {
-      fullName: name,
-    },
-  };
-
-  return transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log('error', error.message);
-    }
-  });
-};
-
-// PATH = /prof/all
-exports.getAllProfs = asyncHandler(async (req, res, next) => {
-  const profs = await Professional.find({
-    isVerified: false,
-    hasRejected: false,
-  });
-  return res.status(200).json({ success: true, profs });
-});
-
-exports.profAction = asyncHandler(async (req, res, next) => {
-  // id, action
-  const prof = await Professional.findById(req.body.id);
-  if (req.body.action === 'pos') {
-    prof.isVerified = true;
-    prof.hasRejected = false;
-    await sendEmailOnBoarding(prof.name, prof.email);
-  } else {
-    prof.isVerified = false;
-    prof.hasRejected = true;
-  }
-  await prof.save();
-  return res.json({ success: true });
-});
+const { sendEmail } = require('../services/email');
+const {
+  accountApprovedEmailTemplate,
+} = require('../services/email-templates/account-approved');
 
 // TODO: Need scope to update everything..
 // TODO::(ADMIN_PANEL) - Handle approval of unverified or rejected users in the admin panel..
@@ -98,10 +38,6 @@ exports.registerProfessionalStep1 = asyncHandler(async (req, res, _next) => {
   if (existingProfessional) {
     if (!existingProfessional.isVerified) {
       logError('Attempt to register with an unverified email', {
-        email: req.body.email,
-      });
-    } else if (existingProfessional.hasRejected) {
-      logError('Attempt to register with a previously rejected email', {
         email: req.body.email,
       });
     }
@@ -183,12 +119,6 @@ exports.profLogin = asyncHandler(async (req, res, _next) => {
   if (!prof.isVerified) {
     return sendErrorResponse(res, 401, 'UNAUTHORIZED', {
       message: 'অ্যাকাউন্ট এখনও যাচাই করা হয়নি',
-    });
-  }
-
-  if (prof.hasRejected) {
-    return sendErrorResponse(res, 401, 'UNAUTHORIZED', {
-      message: 'আপনার অ্যাকাউন্ট বাতিল করা হয়েছে',
     });
   }
 
@@ -368,3 +298,34 @@ exports.updateProfile = asyncHandler(async (req, res) => {
     data: { professional },
   });
 });
+
+exports.readProfessionalsByAdmin = asyncHandler(async (req, res, _next) => {
+  const profs = await Professional.find();
+
+  return res.render('professionals', {
+    profs,
+  });
+});
+
+exports.approveProfessionalFromAdminPanel = asyncHandler(
+  async (req, res, _next) => {
+    const { profId } = req.body;
+    const professional = await Professional.findById(profId);
+    if (!professional) {
+      return sendErrorResponse(res, 'NOT_FOUND', {
+        message: 'Professional not found',
+      });
+    }
+
+    professional.isVerified = true;
+    await professional.save();
+
+    await sendEmail(
+      professional.email,
+      'Your Account is Activated!',
+      accountApprovedEmailTemplate(professional.name),
+    );
+
+    return sendJSONresponse(res, httpStatus.OK, { success: true });
+  },
+);
