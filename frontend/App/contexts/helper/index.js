@@ -60,6 +60,10 @@ export const HelperProvider = ({ children }) => {
 
         return sendSuccessResponse(response?.data?.data);
       } catch (error) {
+        ToastAndroid.show(
+          JSON.stringify({ endpoint, data: error?.response?.data }),
+          ToastAndroid.SHORT
+        );
         const isTokenExpired =
           error?.response?.status === 401 && error?.response?.data?.type === 'InvalidToken';
 

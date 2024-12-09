@@ -17,7 +17,6 @@ import { RoleEnum } from '../../utils/roles';
 import { setAuthToken } from '../../redux/utils';
 import { AppText, ErrorButton, Loader } from '../../components';
 import { SubmitButton } from '../../components/SubmitButton';
-import { lightenColor } from '../../utils/ui';
 
 const SCREEN_NAME = constants.PROF_LOGIN;
 const ProfLoginComponent = () => {
@@ -121,7 +120,6 @@ const ProfLoginComponent = () => {
             icon="lock"
             name="password"
             placeholder="পাসওয়ার্ড"
-            // secureTextEntry
             textContentType="password"
             keyboardType="default"
             onChangeText={(text) => createChangeHandler(text, 'password')}
