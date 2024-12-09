@@ -9,7 +9,10 @@ systemctl status nginx
 
 sudo nano /etc/nginx/sites-available/default
 >>> After updating the nginx file <<<
+sudo systemctl daemon-reload
 sudo systemctl reload nginx
+
+npm install
 
 npm i pm2 -g 
 pm2 start index.js --name "api_prod" -i 1

@@ -8,3 +8,7 @@ at FSEvent.FSWatcher._handle.onchange (node:internal/fs/watchers:207:21)
 
 in client-side, use npm version 18.18.0
 nvm use v18.18.0
+
+Expo 50
+
+eas build -p android --profile preview
