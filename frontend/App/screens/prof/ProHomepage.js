@@ -21,6 +21,7 @@ import colors from '../../config/colors';
 import { useNavigation } from '@react-navigation/native';
 import { setUnreadNotificationCount } from '../../redux/actions';
 import { useIsFocused } from '@react-navigation/native';
+import { ErrorButton } from '../../components';
 
 const SCREEN_NAME = constants.PROF_HOMEPAGE;
 
@@ -118,6 +119,8 @@ const Homepage = () => {
   useEffect(() => {
     if (!isFocused) return;
 
+    setError(null);
+
     (async () => {
       await getHomepageData();
 
@@ -142,7 +145,7 @@ const Homepage = () => {
         </View>
       ) : (
         <View style={styles.content}>
-          {error && <Text style={styles.errorText}>{error}</Text>}
+          {error && <ErrorButton title={error} visible={!!error} />}
 
           {anyNewNotifications && (
             <CardItem
@@ -166,7 +169,7 @@ const Homepage = () => {
             icon="assessment"
             title="Assessment Tools"
             color={colors.secondary}
-            onPress={() => navigation.navigate('ProAssessments', { goToBack: SCREEN_NAME })}
+            onPress={() => navigation.navigate(constants.PROF_ASSESSMENT_TOOLS)}
           />
 
           <CardItem
@@ -177,7 +180,7 @@ const Homepage = () => {
               navigation.navigate(constants.PROFESSIONALS_CLIENT, { goToBack: SCREEN_NAME })
             }
           />
-
+          {/* 
           {!anyNewNotifications && (
             <CardItem
               icon="notifications"
@@ -185,21 +188,23 @@ const Homepage = () => {
               color={colors.highlight}
               onPress={() => navigation.navigate(constants.NOTIFICATIONS)}
             />
-          )}
+          )} */}
+          {/* 
+          <>
+            <CardItem
+              icon="visibility"
+              title="Account Visibility"
+              subtitle={!activeText ? 'Activate Account' : 'Deactivate Account'}
+              color={colors.secondary}
+              onPress={() => setModalVisibleAct(true)}
+            />
 
-          <CardItem
-            icon="visibility"
-            title="Account Visibility"
-            subtitle={!activeText ? 'Activate Account' : 'Deactivate Account'}
-            color={colors.secondary}
-            onPress={() => setModalVisibleAct(true)}
-          />
-
-          <ProfileActModal
-            modalVisibleAct={modalVisibleAct}
-            setModalVisibleAct={setModalVisibleAct}
-            activation={activation}
-          />
+            <ProfileActModal
+              modalVisibleAct={modalVisibleAct}
+              setModalVisibleAct={setModalVisibleAct}
+              activation={activation}
+            />
+          </> */}
         </View>
       )}
     </ScrollView>

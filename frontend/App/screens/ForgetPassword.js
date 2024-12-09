@@ -47,7 +47,11 @@ export default function ForgetPassword() {
     setEmailVerificationError(null);
     setEmailVerificationLoading(true);
     const response = await ApiExecutor(
-      ApiDefinitions.verifyEmailForgetPassword({ email, accountType })
+      ApiDefinitions.sendEmailForOtpVerification({
+        email,
+        accountType,
+        useCase: 'forget-password',
+      })
     );
     setEmailVerificationLoading(false);
 
@@ -68,7 +72,12 @@ export default function ForgetPassword() {
     setOtpError(null);
     setOTPLoading(true);
     const response = await ApiExecutor(
-      ApiDefinitions.verifyOtpForgetPassword({ email, otp, accountType })
+      ApiDefinitions.verificationByOtp({
+        email,
+        otp,
+        accountType,
+        useCase: 'forget-password',
+      })
     );
     setOTPLoading(false);
 

@@ -107,7 +107,7 @@ const Homepage = () => {
               ]}
               onPress={() => navigation.navigate(constants.NOTIFICATIONS)}
             >
-              <Text style={[styles.buttonText, { fontSize: 16 }]}>{notificationMessage}</Text>
+              <Text style={[styles.buttonText, { fontSize: 14 }]}>{notificationMessage}</Text>
             </TouchableOpacity>
           )}
           {!isProfileCompleted && (

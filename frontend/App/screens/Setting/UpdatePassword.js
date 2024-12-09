@@ -7,6 +7,7 @@ import { ApiDefinitions } from '../../services/api';
 import { useBackPress, useHelper } from '../../hooks';
 import { useNavigation } from '@react-navigation/native';
 import constants from '../../navigation/constants';
+import { useSelector } from 'react-redux';
 
 const SCREEN_NAME = constants.UPDATE_PASSWORD;
 const UpdatePassword = () => {
@@ -18,7 +19,7 @@ const UpdatePassword = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
 
   const { ApiExecutor } = useHelper();
 
@@ -33,7 +34,7 @@ const UpdatePassword = () => {
       return;
     }
 
-    setError('');
+    setError(null);
 
     const payload = { oldPassword, newPassword };
 
@@ -47,7 +48,7 @@ const UpdatePassword = () => {
     }
 
     ToastAndroid.show('পাসওয়ার্ড সফলভাবে পরিবর্তিত হয়েছে', ToastAndroid.SHORT);
-    navigation.replace(constants.SETTINGS);
+    navigation.goBack();
   };
 
   return (

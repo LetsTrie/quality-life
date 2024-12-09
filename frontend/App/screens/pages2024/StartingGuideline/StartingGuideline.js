@@ -27,8 +27,6 @@ export const StartingGuideline = () => {
     const response = await ApiExecutor(ApiDefinitions.userProfile());
     setIsLoading(false);
 
-    console.log(response);
-
     if (!response.success) {
       setError(response?.error?.message);
       return;
@@ -60,20 +58,19 @@ export const StartingGuideline = () => {
       </View>
 
       <Loader visible={isLoading} style={{ marginTop: 10 }} />
-      <ErrorButton visible={!!error} title={error} />
-      <SubmitButton title={'হোমপেইজে প্রবেশ করুন'} onPress={handleClick} />
+      <ErrorButton visible={!!error && !isLoading} title={error} />
+      <SubmitButton title={'হোমপেইজে প্রবেশ করুন'} onPress={handleClick} visible={!isLoading} />
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   scrollView: {
-    backgroundColor: '#f9f9f9',
+    backgroundColor: colors.background,
     flex: 1,
   },
   header: {
     marginTop: 25,
-    marginBottom: 20,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
     alignItems: 'center',
@@ -86,16 +83,9 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   card: {
-    backgroundColor: '#ffffff',
-    marginHorizontal: 20,
+    marginHorizontal: 10,
     padding: 15,
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    marginBottom: 10,
   },
   descText: {
     fontSize: 16,

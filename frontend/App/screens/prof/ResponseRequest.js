@@ -69,7 +69,7 @@ const ResponseClientRequest = () => {
   const [assessment, setAssessment] = useState(null);
   const [message, setMessage] = useState(null);
 
-  const { goToBack: previousPage = backScreenMap[SCREEN_NAME], appointmentId } = route.params;
+  const { goToBack: previousPage = backScreenMap[SCREEN_NAME], appointmentId } = route.params || {};
   useBackPress(SCREEN_NAME, previousPage);
 
   useEffect(() => {
@@ -153,7 +153,6 @@ const ResponseClientRequest = () => {
 
   if (!appointmentInfo) return null;
 
-  console.log(appointmentInfo);
   const userId = appointmentInfo?.user?._id;
   const username = appointmentInfo?.user?.name;
   const proposedAppointmentDate = formatDateTime(appointmentInfo?.dateByClient);
@@ -166,7 +165,7 @@ const ResponseClientRequest = () => {
       ) : error ? (
         <ErrorButton visible={error} title={error} style={{ marginVertical: 10 }} />
       ) : (
-        <View style={{ marginHorizontal: 10 }}>
+        <View style={{ marginHorizontal: 15 }}>
           <View style={styles.nameContainer}>
             <Text style={styles.nameTextStyle}> {username} </Text>
           </View>
@@ -175,9 +174,8 @@ const ResponseClientRequest = () => {
               <TouchableOpacity
                 style={styles.seeProfileStyle}
                 onPress={() =>
-                  navigation.navigate(constants.CLIENT_PROFILE, {
+                  navigation.push(constants.CLIENT_PROFILE, {
                     userId,
-                    goToBack: SCREEN_NAME,
                   })
                 }
               >
@@ -303,7 +301,11 @@ const ResponseClientRequest = () => {
             </Text>
 
             <Loader visible={isSubmitLoading} style={{ marginVertical: 10 }} />
-            <SubmitButton title={'Confirm Request'} onPress={onSubmitHandler} />
+            <SubmitButton
+              title={'Confirm Request'}
+              onPress={onSubmitHandler}
+              style={{ width: '100%' }}
+            />
           </View>
         </View>
       )}

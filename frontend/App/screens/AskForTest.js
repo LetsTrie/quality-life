@@ -12,8 +12,6 @@ const SCREEN_NAME = constants.ASK_FOR_TEST;
 const AskForTest = ({ navigation, route }) => {
   let { scaleId, goToBack } = route.params;
 
-  console.log(route.params);
-
   useBackPress(SCREEN_NAME, goToBack);
 
   const [modalVisible, setModalVisible] = useState(false);

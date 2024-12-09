@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 const TopHeading = ({ heading, subHeading, height = 180 }) => {
-  if (!subHeading) {
+  if (height === 180 && !subHeading) {
     height = 170;
   }
   return (

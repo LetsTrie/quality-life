@@ -8,6 +8,9 @@ const verifyEmail = {
     accountType: Joi.string()
       .valid(...[constants.ROLES.USER, constants.ROLES.PROFESSIONAL])
       .required(),
+    useCase: Joi.string()
+      .valid(...[constants.FORGET_PASSWORD, constants.VERIFY_EMAIL])
+      .required(),
   }),
 };
 
@@ -17,6 +20,9 @@ const verifyOtp = {
     otp: Joi.number().required(),
     accountType: Joi.string()
       .valid(...[constants.ROLES.USER, constants.ROLES.PROFESSIONAL])
+      .required(),
+    useCase: Joi.string()
+      .valid(...[constants.FORGET_PASSWORD, constants.VERIFY_EMAIL])
       .required(),
   }),
 };

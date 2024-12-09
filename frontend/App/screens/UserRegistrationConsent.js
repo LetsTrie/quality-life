@@ -1,8 +1,11 @@
 import React from 'react';
 import RegConsent from '../components/Consent';
 import constants from '../navigation/constants';
+import { useBackPress } from '../hooks';
 
 const Consent = () => {
+  useBackPress(constants.USER_REGISTER_CONSENT);
+
   return (
     <>
       <RegConsent

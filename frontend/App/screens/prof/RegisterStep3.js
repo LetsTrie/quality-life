@@ -1,8 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import Button from '../../components/Button';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Picker from '../../components/Picker';
 import Text from '../../components/Text';
 import colors from '../../config/colors';
@@ -175,9 +174,6 @@ const RegisterProStep3 = () => {
   };
 
   const onSubmitHandler = async () => {
-    setIsLoading(true);
-    setError(null);
-
     const availableTime = days
       .map((ed) => ed.label)
       .map((day) => {
@@ -191,8 +187,24 @@ const RegisterProStep3 = () => {
 
     const payload = { availableTime };
 
-    const response = await ApiExecutor(ApiDefinitions.registerProfessionalStep3({ payload }));
+    console.log(availableTime);
 
+    let mustScheduleAtleastOneTime = false;
+    availableTime.forEach(({ timeRange }) => {
+      if (timeRange.length > 0) {
+        mustScheduleAtleastOneTime = true;
+      }
+    });
+
+    if (!mustScheduleAtleastOneTime) {
+      setError('You must schedule at least one time');
+      return;
+    }
+
+    setError(null);
+
+    setIsLoading(true);
+    const response = await ApiExecutor(ApiDefinitions.registerProfessionalStep3({ payload }));
     setIsLoading(false);
 
     if (!response.success) {
@@ -284,14 +296,10 @@ const RegisterProStep3 = () => {
             ))}
           </View>
 
-          <View>
+          <View style={{ marginTop: -10, paddingBottom: 15 }}>
             <Loader visible={isLoading} style={{ paddingBottom: 10 }} />
-            <ErrorButton visible={!!error} title={error} />
-            <SubmitButton
-              title={'সাবমিট করুন'}
-              onPress={onSubmitHandler}
-              style={{ marginTop: 8 }}
-            />
+            <ErrorButton visible={!!error && !isLoading} title={error} />
+            <SubmitButton title={'সাবমিট করুন'} onPress={onSubmitHandler} visible={!isLoading} />
           </View>
         </View>
       </ScrollView>

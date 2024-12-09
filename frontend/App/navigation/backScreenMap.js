@@ -24,12 +24,12 @@ export default {
 
   [constants.PROF_PROFILE]: constants.PROF_HOMEPAGE,
   [constants.PROF_UPDATE_PROFILE]: constants.PROF_PROFILE,
-  [constants.PROF_ASSESSMENT_TOOLS]: constants.PROF_HOMEPAGE,
-  [constants.PROF_ASSESSMENT_TOOL_DETAILS]: constants.PROF_ASSESSMENT_TOOLS,
+  [constants.PROF_ASSESSMENT_TOOLS]: constants.GO_TO_BACK,
+  [constants.PROF_ASSESSMENT_TOOL_DETAILS]: constants.GO_TO_BACK,
   [constants.PROF_CLIENT_REQUEST]: constants.PROF_HOMEPAGE,
   [constants.PROF_RESPONSE_CLIENT_REQUEST]: constants.PROF_HOMEPAGE,
   [constants.PROFESSIONALS_CLIENT]: constants.PROF_HOMEPAGE,
-  [constants.CLIENT_PROFILE]: constants.PROFESSIONALS_CLIENT,
+  [constants.CLIENT_PROFILE]: constants.GO_TO_BACK,
 
   [constants.USER_APPOINTMENT_TAKEN]: constants.PROFESSIONALS_LIST,
   [constants.ASK_FOR_TEST]: constants.HOMEPAGE,
@@ -58,4 +58,7 @@ export default {
 
   [constants.CLIENT_TEST_RESULT]: constants.GO_TO_BACK,
   [constants.FORGET_PASSWORD]: constants.GO_TO_BACK,
+
+  [constants.EMAIL_VERIFICATION_PAGE]: constants.WELCOME,
+  [constants.USER_REGISTER_CONSENT]: constants.GO_TO_BACK,
 };

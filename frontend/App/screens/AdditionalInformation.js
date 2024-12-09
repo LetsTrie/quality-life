@@ -117,11 +117,8 @@ const AdditionalInformation = () => {
       },
     };
 
-    console.log(payload);
-
     setIsLoading(true);
     const response = await ApiExecutor(ApiDefinitions.additionalInfo({ payload }));
-    console.log(response);
     setIsLoading(false);
 
     if (!response.success) {
@@ -134,7 +131,7 @@ const AdditionalInformation = () => {
 
   return (
     <Container>
-      <TopHeading heading="প্রয়োজনীয় তথ্য" />
+      <TopHeading heading="প্রয়োজনীয় তথ্য" height={150} />
       <View style={[styles.loginContainer, { paddingTop: 10 }]}>
         <View style={styles.loginButtons}>
           <TextInput
@@ -216,8 +213,8 @@ const AdditionalInformation = () => {
           />
 
           <Loader visible={!!isLoading} style={{ marginTop: 10 }} />
-          <ErrorButton title={error} visible={!!error} />
-          <SubmitButton title={'সাবমিট করুন'} onPress={handleFormSubmit} />
+          <ErrorButton title={error} visible={!!error && !isLoading} />
+          <SubmitButton title={'সাবমিট করুন'} onPress={handleFormSubmit} visible={!isLoading} />
         </View>
       </View>
     </Container>

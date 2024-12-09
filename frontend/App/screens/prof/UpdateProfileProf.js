@@ -10,7 +10,6 @@ import TextInput from '../../components/TextInput';
 import { useBackPress } from '../../hooks';
 import constants from '../../navigation/constants';
 import { updateProfileActionProf } from '../../redux/actions/prof';
-import { updateProfProfile } from '../../services/api';
 
 const professionLists = [
   { label: 'Clinical psychologist', value: 10 },
@@ -90,7 +89,7 @@ const UpdateProfileProf = () => {
 
     throw new Error('Not implemented');
 
-    // const response = await updateProfProfile({ _id, jwtToken, payload });
+    // const response = await updateProfProfile({ _id, payload });
     // console.log(response);
     // setIsLoading(false);
 

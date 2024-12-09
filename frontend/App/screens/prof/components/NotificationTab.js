@@ -17,7 +17,7 @@ const NotificationTab = ({ notification }) => {
 
   if (!username || !profname) return null;
 
-  console.log('Received notification: ', notification);
+  // console.log('Received notification: ', notification);
 
   let message = '';
   let screen = '';

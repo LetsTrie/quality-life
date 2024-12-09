@@ -98,7 +98,12 @@ const RatingComponent = () => {
             onChangeText={(text) => setComment(text)}
           />
           <Loader visible={loading} style={styles.loader} />
-          <SubmitButton title={'সাবমিট করুন'} onPress={handleSubmit} style={styles.submitButton} />
+          <SubmitButton
+            title={'সাবমিট করুন'}
+            onPress={handleSubmit}
+            style={styles.submitButton}
+            visible={!loading}
+          />
         </View>
       )}
 

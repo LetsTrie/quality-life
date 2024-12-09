@@ -178,7 +178,7 @@ exports.deleteUserAccount = asyncHandler(async (req, res, _next) => {
 
 // verifyEmail, verifyOtp, updatePasswordWithOtp
 exports.verifyEmail = asyncHandler(async (req, res, _next) => {
-  const { email, accountType } = req.query;
+  const { email, accountType, useCase } = req.query;
   let Model = User;
   if (accountType === constants.ROLES.PROFESSIONAL) {
     Model = Professional;
@@ -199,7 +199,9 @@ exports.verifyEmail = asyncHandler(async (req, res, _next) => {
 
   const result = await sendEmail(
     entity.email,
-    'OTP for reset password',
+    useCase === constants.FORGET_PASSWORD
+      ? 'OTP for reset password'
+      : 'OTP for verification',
     otpVerificationEmailTemplate(entity.name, otp),
   );
 
@@ -218,7 +220,7 @@ exports.verifyEmail = asyncHandler(async (req, res, _next) => {
 });
 
 exports.verifyOtp = asyncHandler(async (req, res, _next) => {
-  const { email, otp, accountType } = req.query;
+  const { email, otp, accountType, useCase } = req.query;
   let Model = User;
   if (accountType === constants.ROLES.PROFESSIONAL) {
     Model = Professional;
@@ -243,7 +245,10 @@ exports.verifyOtp = asyncHandler(async (req, res, _next) => {
   entity.isEmailVerified = true;
   entity.otp = null;
   entity.otpExpiredAt = null;
-  entity.canResetPassword = true;
+
+  if (useCase === constants.FORGET_PASSWORD) {
+    entity.canResetPassword = true;
+  }
 
   await entity.save();
 

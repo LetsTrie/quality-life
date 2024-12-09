@@ -36,7 +36,6 @@ const ResultHistory = () => {
         return;
       }
       const { tests } = response.data;
-      console.log(tests);
 
       let testArray = [];
       const dataArray = [];

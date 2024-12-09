@@ -19,13 +19,15 @@ import {
   seenRequestAction,
 } from '../../redux/actions/prof_req';
 import { ApiDefinitions } from '../../services/api';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import SeeMoreButton from '../../components/SeeMoreButton';
 import { formatDateTime } from '../../utils/date';
 
 const SCREEN_NAME = constants.PROF_CLIENT_REQUEST;
 
 const ClientRequest = () => {
+  const isFocused = useIsFocused();
+
   useBackPress(SCREEN_NAME);
   const { ApiExecutor } = useHelper();
 
@@ -86,9 +88,11 @@ const ClientRequest = () => {
     if (refreshing) {
       getClientRequests().finally(() => setRefreshing(false));
     } else {
+      if (!isFocused) return;
+
       getClientRequests();
     }
-  }, [refreshing]);
+  }, [refreshing, isFocused]);
 
   return (
     <ScrollView

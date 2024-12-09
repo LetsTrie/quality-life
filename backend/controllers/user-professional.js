@@ -347,12 +347,9 @@ exports.getAssessmentDetails = asyncHandler(async (req, res, _next) => {
 
   const scale = await ProfessionalsAssessment.findById(assessmentId).lean();
 
-  const _debug =
-    await NotificationService.seenAssessmentSubmissionNotificationByProfessional(
-      assessmentId,
-    );
-
-  console.log({ _debug });
+  await NotificationService.seenAssessmentSubmissionNotificationByProfessional(
+    assessmentId,
+  );
 
   return sendJSONresponse(res, 200, { data: { scale } });
 });

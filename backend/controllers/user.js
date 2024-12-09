@@ -1,43 +1,42 @@
-const asyncHandler = require("../middlewares/asyncHandler");
-const User = require("../models/user");
-const moment = require("moment");
-const Rating = require("../models/rating");
-const Test = require("../models/test");
-const ProfAssessment = require("../models/profAssessment");
-const { MODEL_NAME } = require("../models/model_name");
-const { sendJSONresponse, sendErrorResponse } = require("../utils");
+const asyncHandler = require('../middlewares/asyncHandler');
+const User = require('../models/user');
+const moment = require('moment');
+const Rating = require('../models/rating');
+const Test = require('../models/test');
+const ProfAssessment = require('../models/profAssessment');
+const { MODEL_NAME } = require('../models/model_name');
+const { sendJSONresponse, sendErrorResponse } = require('../utils');
 
-const { Notification } = require("../models");
-const { NotificationService } = require("../services");
+const { Notification } = require('../models');
+const { NotificationService } = require('../services');
 
 // TODO:
 // 1) Move to utils/datetime.js
 // 2) Add format(mm-dd-yyyy, dd-mm-yyyy) parameter
 function getDate() {
   let today = new Date();
-  let dd = String(today.getDate()).padStart(2, "0");
-  let mm = String(today.getMonth() + 1).padStart(2, "0"); //January is 0!
+  let dd = String(today.getDate()).padStart(2, '0');
+  let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
   let yyyy = today.getFullYear();
-  return mm + "/" + dd + "/" + yyyy;
+  return mm + '/' + dd + '/' + yyyy;
 }
 
 // TODO: Move to utils/datetime.js
 function modifyTime(msmdate) {
   let sp = [];
-  let str = "";
+  let str = '';
   for (let x of msmdate) {
-    if (x === "/") {
+    if (x === '/') {
       sp.push(str);
-      str = "";
+      str = '';
     } else str += x;
   }
   sp.push(str);
-  msmdate = sp[0] + "/" + sp[1] + "/" + sp[2];
-  return moment(new Date(msmdate)).format("ll");
+  msmdate = sp[0] + '/' + sp[1] + '/' + sp[2];
+  return moment(new Date(msmdate)).format('ll');
 }
 
 exports.submitAdditionalInfo = asyncHandler(async (req, res, _next) => {
-  console.log(req.body);
   for (const field in req.body) req.user[field] = req.body[field];
   await req.user.save();
 
@@ -59,19 +58,19 @@ exports.anyTestSubmit = asyncHandler(async (req, res, _next) => {
   if (!postTest) postTest = false;
 
   const allowedTypes = [
-    "manoshikShasthoMullayon",
-    "manoshikObosthaJachaikoron",
-    "manoshikChapNirnoy",
-    "duschintaNirnoy",
-    "childCare",
-    "coronaProfile",
-    "domesticViolence",
-    "psychoticProfile",
-    "suicideIdeation",
+    'manoshikShasthoMullayon',
+    'manoshikObosthaJachaikoron',
+    'manoshikChapNirnoy',
+    'duschintaNirnoy',
+    'childCare',
+    'coronaProfile',
+    'domesticViolence',
+    'psychoticProfile',
+    'suicideIdeation',
   ];
 
   if (!allowedTypes.includes(type)) {
-    return sendErrorResponse(res, 400, "BadRequest", {
+    return sendErrorResponse(res, 400, 'BadRequest', {
       message: `Type: ${type} is not allowed!`,
     });
   }
@@ -118,14 +117,14 @@ async function getLastResult(types, req, res, next, format) {
       date: modifyTime(msm.date),
     };
     if (format) {
-      let t = moment(msm.date, "DD-MM-YYYY").format("L").toString().split("/");
+      let t = moment(msm.date, 'DD-MM-YYYY').format('L').toString().split('/');
 
       let temp = t[0];
       t[0] = t[1];
       t[1] = temp;
       t[2] = t[2][2] + t[2][3];
 
-      result.date = t.join("/");
+      result.date = t.join('/');
     }
   }
   return result;
@@ -133,33 +132,33 @@ async function getLastResult(types, req, res, next, format) {
 
 async function getProgress(req, res, next, format = null) {
   let manoshikShasthoMullayon = await getLastResult(
-    [{ type: "manoshikShasthoMullayon" }],
+    [{ type: 'manoshikShasthoMullayon' }],
     req,
     res,
     next,
-    format
+    format,
   );
 
   let manoshikObosthaJachaikoron = await getLastResult(
-    [{ type: "manoshikObosthaJachaikoron" }],
+    [{ type: 'manoshikObosthaJachaikoron' }],
     req,
     res,
     next,
-    format
+    format,
   );
   let manoshikChapNirnoy = await getLastResult(
-    [{ type: "manoshikChapNirnoy" }],
+    [{ type: 'manoshikChapNirnoy' }],
     req,
     res,
     next,
-    format
+    format,
   );
   let duschintaNirnoy = await getLastResult(
-    [{ type: "duschintaNirnoy" }],
+    [{ type: 'duschintaNirnoy' }],
     req,
     res,
     next,
-    format
+    format,
   );
   return [
     manoshikShasthoMullayon,
@@ -192,13 +191,13 @@ exports.userHomepage = asyncHandler(async (req, res, next) => {
 exports.getProfileDetails = asyncHandler(async (req, res, next) => {
   const { name, age, gender, isMarried, location, email } = req.user;
   const { union, zila, upazila } = location;
-  let address = [union, upazila, zila].filter(Boolean).join(", ");
-  if (address === "") address = null;
+  let address = [union, upazila, zila].filter(Boolean).join(', ');
+  if (address === '') address = null;
   const user = {
     name: name,
     age: age,
     gender: gender,
-    isMarried: isMarried ? "Married" : "Unmarried",
+    isMarried: isMarried ? 'Married' : 'Unmarried',
     address,
     email,
   };
@@ -208,7 +207,7 @@ exports.getProfileDetails = asyncHandler(async (req, res, next) => {
     manoshikObosthaJachaikoron,
     manoshikChapNirnoy,
     duschintaNirnoy,
-  ] = await getProgress(req, res, next, "format-date");
+  ] = await getProgress(req, res, next, 'format-date');
 
   return res.json({
     user,
@@ -224,13 +223,13 @@ exports.getProfileDetails = asyncHandler(async (req, res, next) => {
 exports.getAllInformations = asyncHandler(async (req, res, next) => {
   const { name, age, gender, isMarried, location, email } = req.user;
   const { union, zila, upazila } = location;
-  let address = [union, upazila, zila].filter(Boolean).join(", ");
-  if (address === "") address = null;
+  let address = [union, upazila, zila].filter(Boolean).join(', ');
+  if (address === '') address = null;
   const user = {
     name,
     age,
     gender,
-    isMarried: isMarried ? "Married" : "Unmarried",
+    isMarried: isMarried ? 'Married' : 'Unmarried',
     address,
     email,
   };
@@ -268,8 +267,8 @@ exports.submitAVideo = asyncHandler(async (req, res) => {
   const { videoUrl } = req.params;
 
   if (!videoUrl) {
-    return sendErrorResponse(res, 400, "BadRequest", {
-      message: "Video URL is required.",
+    return sendErrorResponse(res, 400, 'BadRequest', {
+      message: 'Video URL is required.',
     });
   }
 
@@ -309,14 +308,14 @@ exports.updateProfile = asyncHandler(async (req, res, _next) => {
   const { name, age, gender, isMarried, location } = req.user;
   const { union, zila, upazila } = location;
 
-  let address = [union, upazila, zila].filter(Boolean).join(", ");
-  if (address === "") address = null;
+  let address = [union, upazila, zila].filter(Boolean).join(', ');
+  if (address === '') address = null;
 
   const cUser = {
     name,
     age,
     gender,
-    isMarried: isMarried ? "Married" : "Unmarried",
+    isMarried: isMarried ? 'Married' : 'Unmarried',
     address,
   };
 
@@ -355,16 +354,16 @@ exports.unreadNotifications = asyncHandler(async (req, res, next) => {
   }).populate([
     {
       path: MODEL_NAME.USER,
-      select: "name",
+      select: 'name',
     },
     {
-      path: "prof",
-      select: "name",
+      path: 'prof',
+      select: 'name',
     },
   ]);
-  profAssessments.map((p) => {
+  profAssessments.map(p => {
     unreadNotifications.push({
-      type: "ASSESSMENT",
+      type: 'ASSESSMENT',
       userId: p.user._id,
       username: p.user.name,
       profId: p.prof._id,
@@ -378,16 +377,16 @@ exports.unreadNotifications = asyncHandler(async (req, res, next) => {
     hasSeen: false,
   }).populate([
     {
-      path: "user",
-      select: "name",
+      path: 'user',
+      select: 'name',
     },
     {
-      path: "prof",
-      select: "name",
+      path: 'prof',
+      select: 'name',
     },
   ]);
 
-  userNotification.map((p) => {
+  userNotification.map(p => {
     unreadNotifications.push({
       type: p.type,
       userId: p.user._id,
@@ -420,8 +419,8 @@ exports.userNotifications = asyncHandler(async (req, res, next) => {
   })
     .sort({ _id: -1 })
     .populate({
-      path: "prof",
-      select: "name",
+      path: 'prof',
+      select: 'name',
     })
     .limit(LIMIT)
     .skip(LIMIT * page - LIMIT);
@@ -437,14 +436,14 @@ exports.checkSuggestedScale = asyncHandler(async (req, res, _next) => {
 
   const assessment = await ProfAssessment.findById(assessmentId);
   if (!assessment) {
-    return sendErrorResponse(res, 404, "NotFound", {
-      message: "Assessment not found",
+    return sendErrorResponse(res, 404, 'NotFound', {
+      message: 'Assessment not found',
     });
   }
 
   if (assessment.hasCompleted) {
-    return sendErrorResponse(res, 400, "BadRequest", {
-      message: "Assessment has been completed",
+    return sendErrorResponse(res, 400, 'BadRequest', {
+      message: 'Assessment has been completed',
     });
   }
 
@@ -469,23 +468,23 @@ exports.submitProfScale = asyncHandler(async (req, res, _next) => {
       maxWeight,
       questionAnswers,
     },
-    { new: true }
+    { new: true },
   );
 
   if (!assessment) {
-    return sendErrorResponse(res, 404, "NotFound", {
-      message: "Assessment not found",
+    return sendErrorResponse(res, 404, 'NotFound', {
+      message: 'Assessment not found',
     });
   }
 
   await NotificationService.removeAssessmentSuggestionNotification(
-    assessmentId
+    assessmentId,
   );
 
   await NotificationService.scaleSubmittedByUser(
     req.user._id,
     assessment.prof,
-    assessment._id
+    assessment._id,
   );
 
   return sendJSONresponse(res, 200, {

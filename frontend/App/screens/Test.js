@@ -132,7 +132,6 @@ const Test = () => {
 
         let range = [];
 
-        console.log('type: ', type, route.params.type);
         if (type === 'manoshikChapNirnoy') range = [13, 26];
         else if (type === 'duschintaNirnoy') range = [54, 66];
         if (type === 'manoshikObosthaJachaikoron') range = [4, 9];
@@ -151,13 +150,8 @@ const Test = () => {
           postTest,
         };
 
-        console.log('route.params: ', route.params);
-        console.log('payload: ', payload);
-
         const response = await ApiExecutor(ApiDefinitions.submitTest({ payload }));
         setIsLoading(false);
-
-        console.log('response:', response);
 
         if (!response.success) {
           console.error(`Failed to submit test: ${response.error.message}`);

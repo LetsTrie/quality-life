@@ -35,7 +35,7 @@ const genderMap = (gender) => {
 };
 
 const tableHeaders = ['তারিখ', 'Test', 'মাত্রা'];
-const tableColWidth = [75, 165, 70];
+const tableColWidth = [68, 155, 68];
 
 const SCREEN_NAME = constants.PROFILE;
 

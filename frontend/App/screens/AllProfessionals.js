@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: 'black',
     textAlign: 'center',
-    marginVertical: 20,
+    marginTop: 10,
     fontWeight: 'bold',
   },
   headerText: {

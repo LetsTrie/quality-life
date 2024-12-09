@@ -64,6 +64,7 @@ import UpdatePassword from '../screens/Setting/UpdatePassword.js';
 import { useSelector } from 'react-redux';
 import { selectHomepageByRole } from '../utils/roles.js';
 import ForgetPassword from '../screens/ForgetPassword.js';
+import EmailVerification from '../screens/EmailVerification.js';
 
 const Stack = createStackNavigator();
 
@@ -94,7 +95,8 @@ const screenOptions = ({ navigation }) => ({
   },
 });
 
-const replaceNavigation = (navigation, screen, role) => {
+const replaceNavigation = (navigation, route, screen, role) => {
+  console.log('StackNavigator.js: replaceNavigation: ', screen);
   if (!navigation || !screen) {
     console.error(
       '[replaceNavigation] Missing required arguments: navigation or screen is undefined.'
@@ -141,8 +143,10 @@ const safeTransit = ({ navigation, route, role }) => {
   const screen = route.name;
   const { goToBack } = route.params || {};
 
+  console.log('route.params: ', JSON.stringify(route.params));
+
   if (goToBack) {
-    replaceNavigation(navigation, goToBack, role);
+    replaceNavigation(navigation, route, goToBack, role);
     return;
   }
 
@@ -157,7 +161,7 @@ const safeTransit = ({ navigation, route, role }) => {
   }
 
   const targetScreen = backScreenMap[screen];
-  replaceNavigation(navigation, targetScreen, role);
+  replaceNavigation(navigation, route, targetScreen, role);
 };
 
 // --------------------------------------------------------
@@ -185,6 +189,14 @@ const StackNavigator = () => {
               }}
             />
           ),
+        })}
+      />
+      <Stack.Screen
+        name={constants.EMAIL_VERIFICATION_PAGE}
+        component={EmailVerification}
+        options={() => ({
+          title: 'অ্যাকাউন্ট ভেরিফাই করুন',
+          headerLeft: () => undefined,
         })}
       />
       <Stack.Screen
@@ -218,13 +230,13 @@ const StackNavigator = () => {
       <Stack.Screen
         name={constants.PROF_CLIENT_REQUEST}
         component={ClientRequestPro}
-        options={({ navigation }) => ({
+        options={({ navigation, route }) => ({
           title: 'Client Requests',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(backScreenMap[constants.PROF_CLIENT_REQUEST]);
+                safeTransit({ navigation, route, role });
               }}
             />
           ),
@@ -250,13 +262,13 @@ const StackNavigator = () => {
       <Stack.Screen
         name={constants.PROF_RESPONSE_CLIENT_REQUEST}
         component={ResponseRequest}
-        options={({ navigation, route, ...props }) => ({
+        options={({ navigation, route }) => ({
           title: 'Client Request',
           headerLeft: (props) => (
             <HeaderBackButton
               {...props}
               onPress={() => {
-                navigation.navigate(route.params.goToBack);
+                safeTransit({ navigation, route, role });
               }}
             />
           ),

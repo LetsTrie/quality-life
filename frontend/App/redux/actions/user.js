@@ -10,7 +10,6 @@ import {
 } from './types';
 
 export const storeUserProfile = (user) => (dispatch) => {
-  console.log({ message: 'Storing user profile...', user });
   dispatch({
     type: GET_PROFILE,
     payload: { ...user },
@@ -18,7 +17,6 @@ export const storeUserProfile = (user) => (dispatch) => {
 };
 
 export const updateProfileAction = (data) => (dispatch) => {
-  console.log({ message: 'Updating profile...', data });
   dispatch({
     type: UPDATE_PROFILE,
     payload: { ...data },

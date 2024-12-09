@@ -16,14 +16,30 @@ export const useBackPress = (screenName, previousPage = null) => {
   const { role } = useSelector((state) => state.auth);
 
   const handleBackPress = () => {
-    if (backScreenMap[screenName] === constants.SPECIAL_LOGOUT_ACTION) {
+    const backScreen = backScreenMap[screenName] || null;
+
+    if ([backScreen, previousPage].includes(constants.SPECIAL_LOGOUT_ACTION)) {
+      console.log('Logging out...');
       logout();
-    } else if (backScreenMap[screenName] === constants.GO_TO_BACK) {
+    } else if ([backScreen, previousPage].includes(constants.GO_TO_BACK)) {
+      console.log('Going back...');
       navigation.goBack();
-    } else if (previousPage) {
-      navigation.replace(selectHomepageByRole(previousPage, role));
     } else {
-      navigation.navigate(selectHomepageByRole(backScreenMap[screenName], role));
+      const targetScreen = previousPage || backScreen;
+      console.log('Target screen:', targetScreen);
+      const destination = selectHomepageByRole(targetScreen, role);
+
+      if (!destination) {
+        console.error('No valid navigation target found');
+        return true;
+      }
+
+      try {
+        navigation.replace(destination);
+      } catch (error) {
+        console.warn('Navigation replace failed, using navigate as fallback:', error);
+        navigation.navigate(destination);
+      }
     }
 
     return true;

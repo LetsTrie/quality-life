@@ -67,7 +67,7 @@ const Register = () => {
     setError(null);
 
     payload.email = payload.email.toString().trim().toLowerCase();
-    payload.password = payload.password.toString().trim().toLowerCase();
+    payload.password = payload.password.toString().trim();
 
     delete payload['confirmPassword'];
 
@@ -127,8 +127,12 @@ const Register = () => {
           />
 
           <Loader visible={isLoading} style={{ paddingTop: 10 }} />
-          <ErrorButton visible={!!error} title={error} />
-          <SubmitButton title="অ্যাকাউন্ট তৈরি করুন" onPress={submitLoginForm} />
+          <ErrorButton visible={!!error && !isLoading} title={error} />
+          <SubmitButton
+            title="অ্যাকাউন্ট তৈরি করুন"
+            onPress={submitLoginForm}
+            visible={!isLoading}
+          />
 
           <EndOptions
             title1={`ইতোমধ্যে একটি অ্যাকাউন্ট আছে?`}

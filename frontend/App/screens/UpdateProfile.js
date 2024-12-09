@@ -327,6 +327,7 @@ const UpdateProfile = () => {
                 fontSize: 14.5,
                 color: colors.primary,
               }}
+              visible={!!error && !isLoading}
             />
           )}
           <Button
@@ -339,6 +340,7 @@ const UpdateProfile = () => {
               fontSize: 18,
             }}
             onPress={handleFormSubmit}
+            visible={!isLoading}
           />
         </View>
       </ScrollView>

@@ -59,7 +59,7 @@ const ProfLoginComponent = () => {
     setError(null);
 
     fields.email = fields.email.toString().trim().toLowerCase();
-    fields.password = fields.password.toString().trim().toLowerCase();
+    fields.password = fields.password.toString().trim();
 
     const response = await ApiExecutor(
       ApiDefinitions.loginProfessional({
@@ -75,8 +75,6 @@ const ProfLoginComponent = () => {
     }
 
     const { prof, accessToken, refreshToken } = response.data;
-
-    console.log(response);
 
     if (!('step' in prof)) {
       setError('Step count not found');
@@ -145,7 +143,7 @@ const ProfLoginComponent = () => {
               style={{
                 fontSize: 14,
                 fontWeight: 'bold',
-                color: lightenColor(colors.primary, 15),
+                color: colors.primary,
               }}
             >
               পাসওয়ার্ড ভুলে গিয়েছেন?
@@ -153,15 +151,20 @@ const ProfLoginComponent = () => {
           </TouchableOpacity>
 
           <Loader style={{ paddingTop: 10 }} visible={isLoading} />
-          <ErrorButton title={error} visible={!!error} />
-          <SubmitButton title={'লগইন করুন'} onPress={HandleFormSubmit} style={{ marginTop: 8 }} />
+          <ErrorButton title={error} visible={!!error && !isLoading} />
+          <SubmitButton
+            title={'লগইন করুন'}
+            onPress={HandleFormSubmit}
+            style={{ marginTop: 8 }}
+            visible={!isLoading}
+          />
 
           <EndOptions
-            title1={`আপনার কি অ্যাকাউন্ট নেই?`}
-            title2={`রেজিস্ট্রেশন করুন`}
-            title3={`ইউজার হিসেবে লগইন করুন`}
+            title1={'আপনার কি অ্যাকাউন্ট নেই?'}
+            title2={'রেজিস্ট্রেশন করুন'}
+            title3={'ইউজার হিসেবে লগইন করুন'}
             onPress1={() => navigation.navigate(constants.PROF_REGISTRATION_CONSENT)}
-            onPress2={() => navigation.navigate('Login')}
+            onPress2={() => navigation.navigate(constants.LOGIN)}
           />
         </View>
       </View>

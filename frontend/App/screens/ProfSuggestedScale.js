@@ -40,7 +40,6 @@ const ProfSuggestedScale = () => {
         ApiDefinitions.checkIfAssessmentIsAlreadyTaken({ assessmentId })
       );
 
-      console.log('CheckIfAssessmentIsAlreadyTaken: ', response);
       if (!response.success) {
         setError(response.error.message);
         return;
@@ -108,15 +107,11 @@ const ProfSuggestedScale = () => {
         maxWeight,
       };
 
-      console.log('>>> payload: ', payload);
-
-      const response = await ApiExecutor(
+      await ApiExecutor(
         ApiDefinitions.submitSuggestedScale({
           payload,
         })
       );
-
-      console.log(response);
 
       setIsLoading(false);
 

@@ -65,6 +65,8 @@ const MyClients = () => {
         <Loader visible={isLoading} style={{ marginVertical: 20 }} />
       ) : error ? (
         <ErrorButton visible={error} title={error} style={{ marginVertical: 10 }} />
+      ) : !clients || clients.length === 0 ? (
+        <Text style={styles.noRequestsText}>এই মুহূর্তে কোন ক্লায়েন্ট নেই</Text>
       ) : (
         <View>
           {clients.map((client) => (
@@ -173,6 +175,13 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  noRequestsText: {
+    textAlign: 'center',
+    paddingTop: 15,
+    fontWeight: 'bold',
+    fontSize: 20,
+    color: '#333',
   },
 });
 

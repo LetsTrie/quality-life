@@ -62,14 +62,16 @@ const DrawerContent = () => {
                   style={{ paddingHorizontal: 5, marginBottom: 3 }}
                 />
 
-                <DrawerItem
-                  icon={({ color, size }) => (
-                    <MaterialCommunityIcons name={'account'} size={size} color={colors.success} />
-                  )}
-                  label={({ color }) => <Text style={{ color }}>আমার প্রোফাইল</Text>}
-                  onPress={onProfileClick}
-                  style={{ paddingHorizontal: 5, marginBottom: 3 }}
-                />
+                {isUserRole && (
+                  <DrawerItem
+                    icon={({ color, size }) => (
+                      <MaterialCommunityIcons name={'account'} size={size} color={colors.success} />
+                    )}
+                    label={({ color }) => <Text style={{ color }}>আমার প্রোফাইল</Text>}
+                    onPress={onProfileClick}
+                    style={{ paddingHorizontal: 5, marginBottom: 3 }}
+                  />
+                )}
 
                 {isUserRole && (
                   <DrawerItem
@@ -124,14 +126,16 @@ const DrawerContent = () => {
                   style={{ paddingHorizontal: 5, marginBottom: 3 }}
                 />
 
-                <DrawerItem
-                  icon={({ color, size }) => (
-                    <MaterialCommunityIcons name={'cog'} size={size} color={colors.accent} />
-                  )}
-                  label="সেটিংস"
-                  onPress={() => navigation.navigate(constants.SETTINGS)}
-                  style={{ paddingHorizontal: 5, marginBottom: 3 }}
-                />
+                {isUserRole && (
+                  <DrawerItem
+                    icon={({ color, size }) => (
+                      <MaterialCommunityIcons name={'cog'} size={size} color={colors.accent} />
+                    )}
+                    label="সেটিংস"
+                    onPress={() => navigation.navigate(constants.SETTINGS)}
+                    style={{ paddingHorizontal: 5, marginBottom: 3 }}
+                  />
+                )}
               </View>
             </DrawerContentScrollView>
             <View style={{ paddingBottom: 2, backgroundColor: colors.danger }}>

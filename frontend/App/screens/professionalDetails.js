@@ -69,7 +69,6 @@ const ProfessionalDetails = () => {
     appointmentDateTime.setMilliseconds(0);
 
     payload.dateByClient = appointmentDateTime;
-    console.log(payload);
 
     setIsLoading(true);
     const response = await ApiExecutor(

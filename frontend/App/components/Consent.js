@@ -19,11 +19,9 @@ const Consent = ({ header, description, buttonTitle, redirectTo }) => {
   return (
     <ScrollView style={styles.container}>
       {header && (
-        <View style={styles.header}>
-          <Text style={styles.headerText} accessibilityLabel={header}>
-            {header}
-          </Text>
-        </View>
+        <Text style={styles.headerText} accessibilityLabel={header}>
+          {header}
+        </Text>
       )}
 
       <View style={styles.descriptionContainer}>
@@ -61,9 +59,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: colors.textPrimary,
     textAlign: 'center',
+    paddingBottom: 15,
   },
   descriptionContainer: {
-    marginBottom: 5,
+    marginBottom: 16,
   },
   descriptionText: {
     fontSize: 16,

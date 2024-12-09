@@ -45,7 +45,6 @@ const ClientTestResult = () => {
       }
 
       const { scale } = response.data;
-      console.log(scale);
 
       setType(scale.assessmentSlug);
       setSeverity(scale.stage);

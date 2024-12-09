@@ -18,7 +18,7 @@ const Assessments = () => {
   }));
 
   const onScalePress = (assessmentId) => {
-    navigation.navigate('ProAssessmentDetails', {
+    navigation.navigate(constants.PROF_ASSESSMENT_TOOL_DETAILS, {
       assessmentId,
     });
   };

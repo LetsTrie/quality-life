@@ -29,7 +29,7 @@ const ClientProfile = () => {
   const { ApiExecutor } = useHelper();
   const isFocused = useIsFocused();
 
-  const { goToBack, userId, clientId } = route.params;
+  const { goToBack, userId, clientId } = route.params || {};
 
   useBackPress(SCREEN_NAME, goToBack);
 
@@ -68,7 +68,7 @@ const ClientProfile = () => {
 
   const getSuggestedScalesByClient = async () => {
     if (!clientId) {
-      throw new Error('clientId is not defined');
+      return;
     }
 
     setPrevSuggestedScalesLoading(true);

@@ -37,8 +37,6 @@ const AppointmentStatus = () => {
     const { appointment } = response.data;
     setCurAppointment(appointment);
 
-    console.log(appointment.prof._id);
-
     setIsLoading(true);
     const scaleResponse = await ApiExecutor(
       ApiDefinitions.findSuggestedScales({
@@ -61,7 +59,6 @@ const AppointmentStatus = () => {
   }, []);
 
   if (!curAppointment) return null;
-  console.log('AppointmentStatus: ', curAppointment);
 
   return (
     <ScrollView style={styles.container}>

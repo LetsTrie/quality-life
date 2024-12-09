@@ -44,9 +44,6 @@ export const HelperProvider = ({ children }) => {
   const ApiExecutor = useCallback(
     async ({ endpoint, method = 'GET', payload = {}, headers = {} }) => {
       try {
-        // console.log(`Executing API: ${endpoint}, Method: ${method}`);
-        // console.log('Access Token:', accessToken);
-
         headers = {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
@@ -68,6 +65,25 @@ export const HelperProvider = ({ children }) => {
         const isIncompleteProfile =
           error?.response?.status === 401 &&
           error?.response?.data?.type?.startsWith?.(INCOMPLETE_PROFILE);
+
+        const isEmailNotVerified =
+          error?.response?.status === 401 && error?.response?.data?.type === 'EmailNotVerified';
+
+        if (isEmailNotVerified) {
+          ToastAndroid.show('Please verify your email', ToastAndroid.SHORT);
+
+          try {
+            const { accountType, email } = error?.response?.data?.errors[0]?.data;
+            navigation.navigate(constants.EMAIL_VERIFICATION_PAGE, {
+              accountType,
+              email,
+            });
+          } catch (error) {
+            console.error(error);
+          }
+
+          return sendErrorResponse(error);
+        }
 
         if (isIncompleteProfile) {
           const step = parseInt(

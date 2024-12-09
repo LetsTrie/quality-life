@@ -7,7 +7,6 @@ function PickerItem({ item, onPress, onChange }) {
   const handlePress = () => {
     onPress();
     if (onChange) {
-      console.log(item);
       onChange(item.value);
     }
   };

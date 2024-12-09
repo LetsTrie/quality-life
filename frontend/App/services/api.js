@@ -3,22 +3,9 @@ import { endpoints } from './endpoints';
 import { sendErrorResponse, sendSuccessResponse } from './utils';
 import { isProfessional, isUser } from '../utils/roles';
 
-export const updateProfProfile = async ({ _id, payload, jwtToken }) => {
-  throw new Error('Not Implemented');
-
-  // try {
-  //   const apiUrl = `${BaseUrl}/prof/${_id}/update/profile`;
-  //   const response = await axios.post(apiUrl, payload, { headers: configHeaders({ jwtToken }) });
-  //   return sendSuccessResponse(response.data.data.professional);
-  // } catch (error) {
-  //   return sendErrorResponse(error);
-  // }
-};
-
 export const refreshTokener = async ({ refreshToken }) => {
   try {
     const endpoint = endpoints.REFRESH_TOKEN;
-    // console.log('API: ', endpoint);
     const response = await axios.post(endpoint, { refreshToken });
     return sendSuccessResponse(response.data.data);
   } catch (error) {
@@ -122,8 +109,7 @@ export const ApiDefinitions = {
     endpoint: endpoints.FIND_SUGGESTED_SCALES_FOR_USER + '/' + professionalId,
   }),
   checkIfAssessmentIsAlreadyTaken: ({ assessmentId }) => ({
-    endpoint:
-      endpoints.CHECK_IF_ASSESSMENT_IS_ALREADY_TAKEN + '/' + assessmentId,
+    endpoint: endpoints.CHECK_IF_ASSESSMENT_IS_ALREADY_TAKEN + '/' + assessmentId,
   }),
   submitSuggestedScale: ({ payload }) => ({
     endpoint: endpoints.SUBMIT_SUGGESTED_SCALE,
@@ -167,11 +153,11 @@ export const ApiDefinitions = {
   getAssessmentDetails: ({ assessmentId }) => ({
     endpoint: endpoints.ASSESSMENT_DETAILS + '/' + assessmentId,
   }),
-  verifyEmailForgetPassword: ({ email, accountType }) => ({
-    endpoint: `${endpoints.VERIFY_EMAIL_FOR_RESET_PASSWORD}?email=${email}&accountType=${accountType}`,
+  sendEmailForOtpVerification: ({ email, accountType, useCase }) => ({
+    endpoint: `${endpoints.VERIFY_EMAIL_FOR_RESET_PASSWORD}?email=${email}&accountType=${accountType}&useCase=${useCase}`,
   }),
-  verifyOtpForgetPassword: ({ email, otp, accountType }) => ({
-    endpoint: `${endpoints.VERIFY_OTP_FOR_RESET_PASSWORD}?email=${email}&otp=${otp}&accountType=${accountType}`,
+  verificationByOtp: ({ email, otp, accountType, useCase }) => ({
+    endpoint: `${endpoints.VERIFY_OTP_FOR_RESET_PASSWORD}?email=${email}&otp=${otp}&accountType=${accountType}&useCase=${useCase}`,
   }),
   resetPasswordAfterForgetPassword: ({ payload }) => ({
     endpoint: endpoints.RESET_PASSWORD_AFTER_FORGET_PASSWORD,

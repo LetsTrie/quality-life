@@ -1,5 +1,4 @@
 document.addEventListener('click', async event => {
-  console.log('clicked', event);
   if (event.target.classList.contains('approve-btn')) {
     const button = event.target;
     const profId = button.dataset.id;
@@ -12,7 +11,6 @@ document.addEventListener('click', async event => {
       });
 
       if (response.ok) {
-        // Update the UI after a successful response
         button.parentElement.innerHTML =
           '<span class="approved-text">Approved</span>';
       } else {

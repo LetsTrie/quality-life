@@ -121,8 +121,6 @@ const RegisterStep1 = () => {
       }
     }
 
-    console.log(fields);
-
     if (fieldAbsent) {
       setError('ফর্মটি সঠিকভাবে পূরণ করুন');
       return;
@@ -138,7 +136,7 @@ const RegisterStep1 = () => {
     setError(null);
 
     fields.email = fields.email.toString().trim().toLowerCase();
-    fields.password = fields.password.toString().trim().toLowerCase();
+    fields.password = fields.password.toString().trim();
 
     const response = await ApiExecutor(
       ApiDefinitions.registerProfessionalStep1({
@@ -295,8 +293,8 @@ const RegisterStep1 = () => {
           />
 
           <Loader visible={isLoading} style={{ paddingTop: 10 }} />
-          <ErrorButton title={error} visible={!!error} style={{ borderRadius: 8 }} />
-          <SubmitButton title="রেজিস্ট্রেশন করুন" onPress={handleFormSubmit} />
+          <ErrorButton title={error} visible={!!error && !isLoading} style={{ borderRadius: 8 }} />
+          <SubmitButton title="রেজিস্ট্রেশন করুন" onPress={handleFormSubmit} visible={!isLoading} />
 
           <EndOptions
             title1={`ইতোমধ্যে একটি অ্যাকাউন্ট আছে?`}
