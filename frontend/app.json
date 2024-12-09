@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "qlife",
+    "name": "QLife",
     "slug": "qlife",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,6 +13,14 @@
           "android": {
             "enablePngCrunchInReleaseBuilds": false
           }
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "quality-life"
         }
       ]
     ],
