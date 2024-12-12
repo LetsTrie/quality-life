@@ -55,7 +55,7 @@ const DrawerContent = () => {
                   icon={({ color, size }) => (
                     <MaterialCommunityIcons name={'home'} size={size} color={colors.primary} />
                   )}
-                  label={({ color }) => <Text style={{ color }}>হোমপেইজ</Text>}
+                  label="হোমপেইজ"
                   onPress={() =>
                     navigation.navigate(isUserRole ? constants.HOMEPAGE : constants.PROF_HOMEPAGE)
                   }
@@ -67,7 +67,7 @@ const DrawerContent = () => {
                     icon={({ color, size }) => (
                       <MaterialCommunityIcons name={'account'} size={size} color={colors.success} />
                     )}
-                    label={({ color }) => <Text style={{ color }}>আমার প্রোফাইল</Text>}
+                    label="আমার প্রোফাইল"
                     onPress={onProfileClick}
                     style={{ paddingHorizontal: 5, marginBottom: 3 }}
                   />
@@ -126,16 +126,14 @@ const DrawerContent = () => {
                   style={{ paddingHorizontal: 5, marginBottom: 3 }}
                 />
 
-                {isUserRole && (
-                  <DrawerItem
-                    icon={({ color, size }) => (
-                      <MaterialCommunityIcons name={'cog'} size={size} color={colors.accent} />
-                    )}
-                    label="সেটিংস"
-                    onPress={() => navigation.navigate(constants.SETTINGS)}
-                    style={{ paddingHorizontal: 5, marginBottom: 3 }}
-                  />
-                )}
+                <DrawerItem
+                  icon={({ color, size }) => (
+                    <MaterialCommunityIcons name={'cog'} size={size} color={colors.accent} />
+                  )}
+                  label="সেটিংস"
+                  onPress={() => navigation.navigate(constants.SETTINGS)}
+                  style={{ paddingHorizontal: 5, marginBottom: 3 }}
+                />
               </View>
             </DrawerContentScrollView>
             <View style={{ paddingBottom: 2, backgroundColor: colors.danger }}>

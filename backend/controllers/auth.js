@@ -158,15 +158,11 @@ exports.deleteUserAccount = asyncHandler(async (req, res, _next) => {
   const userId = req.user._id;
 
   await Appointment.deleteMany({ user: userId });
-
   await ProfsClient.deleteMany({ user: userId });
-
   await ProfAssessment.deleteMany({ user: userId });
   await Rating.deleteMany({ user: userId });
   await Test.deleteMany({ userId: userId });
-
   await Notification.deleteMany({ user: userId });
-
   await User.findByIdAndDelete(userId);
 
   return sendJSONresponse(res, 200, {

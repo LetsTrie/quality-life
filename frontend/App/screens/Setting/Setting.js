@@ -10,8 +10,9 @@ import constants from '../../navigation/constants';
 import colors from '../../config/colors';
 import DeleteAccountModal from '../../components/DeleteAccountModal';
 import { ApiDefinitions } from '../../services/api';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { isProfessional, isUser } from '../../utils/roles';
+import { updateVisibilityInStore } from '../../redux/actions/prof';
 
 const SCREEN_NAME = constants.SETTINGS;
 const Setting = () => {
@@ -21,7 +22,12 @@ const Setting = () => {
   const navigation = useNavigation();
 
   const { role } = useSelector((state) => state.auth);
-  const [modalVisible, setModalVisible] = useState(false);
+  const dispatch = useDispatch();
+
+  const [modalVisibleForDeleteAcc, setModalVisibleForDeleteAcc] = useState(false);
+  const [modalViewForVisibility, setModalViewForVisibility] = useState(false);
+
+  const { visibility } = useSelector((state) => state.prof || {});
 
   const onDelete = async () => {
     if (isUser(role)) {
@@ -30,8 +36,21 @@ const Setting = () => {
       await ApiExecutor(ApiDefinitions.deleteProfessionalAccount());
     }
 
-    setModalVisible(false);
+    setModalVisibleForDeleteAcc(false);
     logout();
+  };
+
+  const onVisibilityChange = async () => {
+    if (!isProfessional(role)) {
+      throw new Error('Visibility can only be changed for Professionals');
+    }
+
+    const newVisibility = !visibility;
+    await ApiExecutor(ApiDefinitions.updateVisibility({ visibility: newVisibility }));
+
+    dispatch(updateVisibilityInStore(newVisibility));
+
+    setModalViewForVisibility(false);
   };
 
   return (
@@ -68,7 +87,29 @@ const Setting = () => {
           <Text style={styles.textStyle}>পাসওয়ার্ড পরিবর্তন করুন</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.card} onPress={() => setModalVisible(true)}>
+        {visibility ? (
+          <TouchableOpacity style={styles.card} onPress={() => setModalViewForVisibility(true)}>
+            <MaterialCommunityIcons
+              name="eye-off-outline"
+              style={styles.iconStyle}
+              size={24}
+              color={colors.danger}
+            />
+            <Text style={styles.textStyle}>অ্যাকাউন্ট গোপন করুন</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.card} onPress={() => setModalViewForVisibility(true)}>
+            <MaterialCommunityIcons
+              name="eye-outline"
+              style={styles.iconStyle}
+              size={24}
+              color={colors.success}
+            />
+            <Text style={styles.textStyle}>অ্যাকাউন্ট দৃশ্যমান করুন</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity style={styles.card} onPress={() => setModalVisibleForDeleteAcc(true)}>
           <MaterialCommunityIcons
             name="trash-can-outline"
             style={styles.iconStyle}
@@ -78,11 +119,21 @@ const Setting = () => {
           <Text style={styles.textStyle}>অ্যাকাউন্ট ডিলিট করুন</Text>
         </TouchableOpacity>
       </View>
-
       <DeleteAccountModal
-        modalVisible={modalVisible}
-        setModalVisible={setModalVisible}
-        onDelete={onDelete}
+        modalVisible={modalVisibleForDeleteAcc}
+        setModalVisible={setModalVisibleForDeleteAcc}
+        onPress={onDelete}
+        title={'আপনি কি নিশ্চিত? আপনার অ্যাকাউন্ট স্থায়ীভাবে মুছে ফেলা হবে।'}
+      />
+      <DeleteAccountModal
+        modalVisible={modalViewForVisibility}
+        setModalVisible={setModalViewForVisibility}
+        onPress={onVisibilityChange}
+        title={
+          visibility
+            ? 'আপনি কি আপনার অ্যাকাউন্ট গোপন করতে চান?'
+            : 'আপনি কি আপনার অ্যাকাউন্ট দৃশ্যমান করতে চান?'
+        }
       />
     </View>
   );

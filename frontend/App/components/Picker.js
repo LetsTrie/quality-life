@@ -59,26 +59,31 @@ function AppPicker({
         onRequestClose={() => setModalVisible(false)}
       >
         <Screen>
-          <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalButtonStyle}>
-            <Text style={styles.modalBtnText}>Close</Text>
-          </TouchableOpacity>
+          <View style={styles.modalViewContainer}>
+            <TouchableOpacity
+              onPress={() => setModalVisible(false)}
+              style={styles.modalButtonStyle}
+            >
+              <Text style={styles.modalBtnText}>Close</Text>
+            </TouchableOpacity>
 
-          <FlatList
-            data={items}
-            keyExtractor={(item) => item.value.toString()}
-            numColumns={numberOfColumns}
-            renderItem={({ item }) => (
-              <PickerItemComponent
-                item={item}
-                label={item.label}
-                onPress={() => {
-                  setModalVisible(false);
-                  onSelectItem(item);
-                }}
-                onChange={onChange}
-              />
-            )}
-          />
+            <FlatList
+              data={items}
+              keyExtractor={(item) => item.value.toString()}
+              numColumns={numberOfColumns}
+              renderItem={({ item }) => (
+                <PickerItemComponent
+                  item={item}
+                  label={item.label}
+                  onPress={() => {
+                    setModalVisible(false);
+                    onSelectItem(item);
+                  }}
+                  onChange={onChange}
+                />
+              )}
+            />
+          </View>
         </Screen>
       </Modal>
     </>
@@ -92,6 +97,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 15,
     marginTop: 10,
+  },
+  modalViewContainer: {
+    paddingTop: 15,
   },
   icon: {
     marginRight: 10,

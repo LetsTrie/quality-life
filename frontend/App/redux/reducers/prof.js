@@ -4,6 +4,7 @@ import {
   NEW_NOTIFICATION_COUNT,
   NEW_NOTIFICATION_COUNT_MINUS,
   UPDATE_PROFILE_PROF,
+  UPDATE_VISIBLITY,
 } from '../actions/types';
 
 const initialState = {
@@ -38,6 +39,7 @@ export default function (state = initialState, action) {
         fee: action.payload.prof.fee,
 
         step: action.payload.prof.step,
+        visibility: action.payload.prof.visibility,
       };
 
     case PROF_SIGN_OUT:
@@ -72,6 +74,12 @@ export default function (state = initialState, action) {
         eduQualification: action.payload.eduQualification,
         experience: action.payload.experience,
         fee: action.payload.fee,
+      };
+
+    case UPDATE_VISIBLITY:
+      return {
+        ...state,
+        visibility: action.payload.visibility,
       };
 
     default:

@@ -1,4 +1,9 @@
-import { SET_PROFESSIONAL_INFO, NEW_NOTIFICATION_COUNT, UPDATE_PROFILE_PROF } from './types';
+import {
+  SET_PROFESSIONAL_INFO,
+  NEW_NOTIFICATION_COUNT,
+  UPDATE_PROFILE_PROF,
+  UPDATE_VISIBLITY,
+} from './types';
 
 export const storeProfessionalsProfile = (prof) => (dispatch) => {
   dispatch({
@@ -19,4 +24,11 @@ export const updateProfileActionProf = (data) => (dispatch) => {
     type: UPDATE_PROFILE_PROF,
     payload: { ...data },
   });
+};
+
+export const updateVisibilityInStore = (visibility) => {
+  return {
+    type: UPDATE_VISIBLITY,
+    payload: { visibility },
+  };
 };

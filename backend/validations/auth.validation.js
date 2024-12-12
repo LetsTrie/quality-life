@@ -37,8 +37,16 @@ const updatePasswordWithOtp = {
   }),
 };
 
+const resetPassword = {
+  body: Joi.object().keys({
+    oldPassword: Joi.string().required(),
+    newPassword: Joi.string().required().custom(password),
+  }),
+};
+
 module.exports = {
   verifyEmail,
   verifyOtp,
   updatePasswordWithOtp,
+  resetPassword,
 };

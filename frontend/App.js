@@ -18,7 +18,6 @@ const Drawer = createDrawerNavigator();
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
   tracesSampleRate: 1.0,
-  debug: true,
 });
 
 function App() {

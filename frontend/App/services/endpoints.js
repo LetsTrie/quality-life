@@ -35,6 +35,7 @@ export const endpoints = {
 
   SEEN_VIDEO: `${BaseUrl}/user/seen-video/`,
   RESET_PASSWORD: `${BaseUrl}/user/reset-password`,
+  RESET_PROF_PASSWORD: `${BaseUrl}/prof/reset-password`,
 
   DELETE_ACCOUNT: `${BaseUrl}/user/delete-account`,
   ADD_USER_RATING: `${BaseUrl}/user/add-rating`,
@@ -61,4 +62,6 @@ export const endpoints = {
   VERIFY_EMAIL_FOR_RESET_PASSWORD: `${BaseUrl}/auth/verify-email`,
   VERIFY_OTP_FOR_RESET_PASSWORD: `${BaseUrl}/auth/verify-otp`,
   RESET_PASSWORD_AFTER_FORGET_PASSWORD: `${BaseUrl}/auth/update-password-with-otp`,
+
+  PROF_VISIBILITY: `${BaseUrl}/prof/update-visibility`,
 };

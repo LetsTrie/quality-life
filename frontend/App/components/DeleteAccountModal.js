@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, StyleSheet, Text, Pressable, View } from 'react-native';
 import colors from '../config/colors';
 
-const DeleteAccountModal = ({ modalVisible, setModalVisible, onDelete }) => {
+const DeleteAccountModal = ({ modalVisible, setModalVisible, onPress, title }) => {
   return (
     <Modal
       animationType="fade"
@@ -12,11 +12,9 @@ const DeleteAccountModal = ({ modalVisible, setModalVisible, onDelete }) => {
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
-          <Text style={styles.promptText}>
-            আপনি কি নিশ্চিত? আপনার অ্যাকাউন্ট স্থায়ীভাবে মুছে ফেলা হবে।
-          </Text>
+          <Text style={styles.promptText}>{title}</Text>
           <View style={styles.buttonContainer}>
-            <Pressable style={[styles.button, styles.buttonYes]} onPress={onDelete}>
+            <Pressable style={[styles.button, styles.buttonYes]} onPress={onPress}>
               <Text style={styles.buttonText}>হ্যাঁ</Text>
             </Pressable>
             <Pressable

@@ -8,12 +8,14 @@ import { useBackPress, useHelper } from '../../hooks';
 import { useNavigation } from '@react-navigation/native';
 import constants from '../../navigation/constants';
 import { useSelector } from 'react-redux';
+import { isProfessional } from '../../utils/roles';
 
 const SCREEN_NAME = constants.UPDATE_PASSWORD;
 const UpdatePassword = () => {
   useBackPress(SCREEN_NAME);
 
   const navigation = useNavigation();
+  const { role } = useSelector((state) => state.auth);
 
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -39,7 +41,9 @@ const UpdatePassword = () => {
     const payload = { oldPassword, newPassword };
 
     setLoading(true);
-    const response = await ApiExecutor(ApiDefinitions.resetUserPassword({ payload }));
+    let defn = ApiDefinitions.resetUserPassword({ payload });
+    if (isProfessional(role)) defn = ApiDefinitions.resetProfPassword({ payload });
+    const response = await ApiExecutor(defn);
     setLoading(false);
 
     if (!response.success) {
@@ -93,8 +97,13 @@ const UpdatePassword = () => {
       />
 
       <Loader visible={loading} style={{ marginTop: 10 }} />
-      <ErrorButton visible={error} title={error} style={{ width: '100%' }} />
-      <SubmitButton onPress={handleSubmit} title="পরিবর্তন করুন" style={{ width: '100%' }} />
+      <ErrorButton visible={!!error && !loading} title={error} style={{ width: '100%' }} />
+      <SubmitButton
+        onPress={handleSubmit}
+        title="পরিবর্তন করুন"
+        style={{ width: '100%' }}
+        visible={!loading}
+      />
     </View>
   );
 };

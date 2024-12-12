@@ -1,9 +1,10 @@
 const router = require('express').Router();
 const professionalController = require('../controllers/prof');
 const userProfCtrl = require('../controllers/user-professional');
+const AuthCtrl = require('../controllers/auth');
 const M = require('../middlewares/authentication');
 const validate = require('../middlewares/validate');
-const { profValidation } = require('../validations');
+const { profValidation, authValidation } = require('../validations');
 
 const ROLE = 'prof';
 
@@ -47,8 +48,17 @@ router.post(
   M.verifyToken(ROLE),
   professionalController.deleteProfessionalAccount,
 );
-router.put(
-  '/:profId/visibility',
+
+router.post(
+  '/reset-password',
+  M.verifyToken(ROLE),
+  validate(authValidation.resetPassword),
+  AuthCtrl.resetPassword,
+);
+
+router.post(
+  '/update-visibility',
+  M.verifyToken(ROLE),
   validate(profValidation.profVisibility),
   professionalController.profVisibility,
 );

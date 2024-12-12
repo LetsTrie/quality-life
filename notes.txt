@@ -11,4 +11,7 @@ nvm use v18.18.0
 
 Expo 50
 
+nvm use v18.18.0 
+npx expo install --check
 eas build -p android --profile preview
+ngrok http --url=liberal-typically-kingfish.ngrok-free.app 3000

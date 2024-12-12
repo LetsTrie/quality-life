@@ -1,61 +1,62 @@
-const router = require("express").Router();
-const C = require("../controllers/user");
-const userProfCtrl = require("../controllers/user-professional");
-const M = require("../middlewares/authentication");
-const validate = require("../middlewares/validate");
-const userValidation = require("../validations/user.validation");
-const AuthCtrl = require("../controllers/auth");
+const router = require('express').Router();
+const C = require('../controllers/user');
+const userProfCtrl = require('../controllers/user-professional');
+const M = require('../middlewares/authentication');
+const validate = require('../middlewares/validate');
+const userValidation = require('../validations/user.validation');
+const authValidation = require('../validations/auth.validation');
+const AuthCtrl = require('../controllers/auth');
 
-const ROLE = "user";
+const ROLE = 'user';
 
-router.post("/delete-account", M.verifyToken(ROLE), AuthCtrl.deleteUserAccount);
-router.post("/sign-in", validate(userValidation.loginAsUser), AuthCtrl.signIn);
+router.post('/delete-account', M.verifyToken(ROLE), AuthCtrl.deleteUserAccount);
+router.post('/sign-in', validate(userValidation.loginAsUser), AuthCtrl.signIn);
 
 router.post(
-  "/sign-up",
+  '/sign-up',
   validate(userValidation.registerUserStep1),
-  AuthCtrl.signUp
+  AuthCtrl.signUp,
 );
 
 router.post(
-  "/add-info",
+  '/add-info',
   M.verifyToken(ROLE),
   validate(userValidation.additionalInfoValidationSchema),
-  C.submitAdditionalInfo
+  C.submitAdditionalInfo,
 );
 
 router.post(
-  "/reset-password",
+  '/reset-password',
   M.verifyToken(ROLE),
-  validate(userValidation.resetPassword),
-  AuthCtrl.resetPassword
+  validate(authValidation.resetPassword),
+  AuthCtrl.resetPassword,
 );
 
-router.post("/test", M.verifyToken(ROLE), C.anyTestSubmit);
-router.get("/homepage", M.verifyToken(ROLE), C.userHomepage);
+router.post('/test', M.verifyToken(ROLE), C.anyTestSubmit);
+router.get('/homepage', M.verifyToken(ROLE), C.userHomepage);
 
-router.get("/profile/all", M.verifyToken(ROLE), C.getProfileDetails);
-router.get("/all-informations", M.verifyToken(ROLE), C.getAllInformations);
-router.post("/seen-video/:videoUrl", M.verifyToken(ROLE), C.submitAVideo);
+router.get('/profile/all', M.verifyToken(ROLE), C.getProfileDetails);
+router.get('/all-informations', M.verifyToken(ROLE), C.getAllInformations);
+router.post('/seen-video/:videoUrl', M.verifyToken(ROLE), C.submitAVideo);
 
-router.post("/add-rating", M.verifyToken(ROLE), C.rating);
-router.post("/update/profile", M.verifyToken(ROLE), C.updateProfile);
+router.post('/add-rating', M.verifyToken(ROLE), C.rating);
+router.post('/update/profile', M.verifyToken(ROLE), C.updateProfile);
 
-router.get("/all", C.allUsers);
-router.post("/userInfo", C.userInfo);
+router.get('/all', C.allUsers);
+router.post('/userInfo', C.userInfo);
 
-router.post("/submit-suggested-scale", M.verifyToken(ROLE), C.submitProfScale);
+router.post('/submit-suggested-scale', M.verifyToken(ROLE), C.submitProfScale);
 
 router.get(
-  "/suggested-scale-fillup-check/:assessmentId",
+  '/suggested-scale-fillup-check/:assessmentId',
   M.verifyToken(ROLE),
-  C.checkSuggestedScale
+  C.checkSuggestedScale,
 );
 
 router.get(
-  "/result-history-data/:testType",
+  '/result-history-data/:testType',
   M.verifyToken(ROLE),
-  C.resultHistoryTableData
+  C.resultHistoryTableData,
 );
 
 // ****************************************************************
@@ -63,27 +64,27 @@ router.get(
 // ****************************************************************
 
 router.get(
-  "/professionals",
+  '/professionals',
   M.verifyToken(ROLE),
-  userProfCtrl.findProfessionals
+  userProfCtrl.findProfessionals,
 );
 
 router.post(
-  "/take-appointment",
+  '/take-appointment',
   M.verifyToken(ROLE),
-  userProfCtrl.requestForAppointment
+  userProfCtrl.requestForAppointment,
 );
 
 router.get(
-  "/appointment-details/:appointmentId",
+  '/appointment-details/:appointmentId',
   M.verifyToken(ROLE),
-  userProfCtrl.getAppointmentDetailsForUser
+  userProfCtrl.getAppointmentDetailsForUser,
 );
 
 router.get(
-  "/find-suggested-scales/:profId",
+  '/find-suggested-scales/:profId',
   M.verifyToken(ROLE),
-  userProfCtrl.findSuggestedScales
+  userProfCtrl.findSuggestedScales,
 );
 
 // ****************************************************************

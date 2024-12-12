@@ -4,14 +4,8 @@ const User = require('../models/user');
 const bcrypt = require('bcrypt');
 const Appointment = require('../models/appointment');
 const ProfAssessment = require('../models/profAssessment');
-
 const MyClient = require('../models/myClient');
-
 const { Notification } = require('../models');
-
-const nodemailer = require('nodemailer');
-const hbs = require('nodemailer-express-handlebars');
-
 const Test = require('../models/test');
 
 const { getProgress } = require('./helpers');
@@ -256,31 +250,19 @@ exports.allProf = asyncHandler(async (req, res, next) => {
 exports.deleteProfessionalAccount = asyncHandler(async (req, res, _next) => {
   const profId = req.user._id;
 
-  const prof = await Professional.findByIdAndDelete(profId);
-  if (!prof) {
-    return sendErrorResponse(res, 'NOT_FOUND', {
-      message: 'Professional not found',
-    });
-  }
-
   await MyClient.deleteMany({ prof: profId });
   await Appointment.deleteMany({ prof: profId });
   await ProfAssessment.deleteMany({ prof: profId });
   await Notification.deleteMany({ prof: profId });
 
+  await Professional.findByIdAndDelete(profId);
+
   return sendJSONresponse(res, httpStatus.OK, { success: true });
 });
 
 exports.profVisibility = asyncHandler(async (req, res, _next) => {
-  const prof = await Professional.findById(req.params.profId);
-  if (!prof) {
-    return sendErrorResponse(res, 'NOT_FOUND', {
-      message: 'Professional not found',
-    });
-  }
-
-  prof.visibility = req.body.visibility;
-  await prof.save();
+  req.user.visibility = !!req.body.visibility;
+  await req.user.save();
   return sendJSONresponse(res, httpStatus.OK, { success: true });
 });
 

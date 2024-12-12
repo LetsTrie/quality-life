@@ -90,6 +90,11 @@ export const ApiDefinitions = {
     method: 'POST',
     payload,
   }),
+  resetProfPassword: ({ payload }) => ({
+    endpoint: endpoints.RESET_PROF_PASSWORD,
+    method: 'POST',
+    payload,
+  }),
   deleteUserAccount: () => ({
     endpoint: endpoints.DELETE_ACCOUNT,
     method: 'POST',
@@ -201,5 +206,13 @@ export const ApiDefinitions = {
   }),
   getProfessionalsNotifications: ({ page = 1 }) => ({
     endpoint: endpoints.PROF_NOTIFICATIONS + `?page=${page}`,
+  }),
+  // *******************************************************
+  // *******************************************************
+  // *******************************************************
+  updateVisibility: ({ visibility }) => ({
+    endpoint: endpoints.PROF_VISIBILITY,
+    method: 'POST',
+    payload: { visibility },
   }),
 };

@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -9,10 +8,8 @@ import {
   View,
 } from 'react-native';
 import Text from '../../components/Text';
-import BaseUrl from '../../config/BaseUrl';
 import { numOfNewNotificationsAction, storeProfessionalsProfile } from '../../redux/actions/prof';
 import { useDispatch, useSelector } from 'react-redux';
-import ProfileActModal from './ProfileActModal';
 import constants from '../../navigation/constants';
 import { useBackPress, useHelper } from '../../hooks';
 import { ApiDefinitions } from '../../services/api';
@@ -72,12 +69,9 @@ const Homepage = () => {
 
   const unreadNotificationCount = useSelector((state) => state.notifications.unreadCount);
   const { numOfNewClientRequests } = useSelector((state) => state.prof);
-  const { _id, visibility } = useSelector((state) => state.prof?.prof || {});
 
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [modalVisibleAct, setModalVisibleAct] = useState(false);
-  const [activeText, setActiveText] = useState(visibility);
   const [error, setError] = useState(null);
 
   async function getHomepageData() {
@@ -105,16 +99,6 @@ const Homepage = () => {
       setRefreshing(false);
     })();
   }, []);
-
-  const activation = async () => {
-    const variable = { _id: _id, visibility: activeText };
-    await axios.post(`${BaseUrl}/prof/activation`, variable).then((res) => {
-      if (res.data === 'success') {
-        setActiveText(!activeText);
-        setModalVisibleAct(!modalVisibleAct);
-      }
-    });
-  };
 
   useEffect(() => {
     if (!isFocused) return;
@@ -180,7 +164,7 @@ const Homepage = () => {
               navigation.navigate(constants.PROFESSIONALS_CLIENT, { goToBack: SCREEN_NAME })
             }
           />
-          {/* 
+
           {!anyNewNotifications && (
             <CardItem
               icon="notifications"
@@ -188,23 +172,7 @@ const Homepage = () => {
               color={colors.highlight}
               onPress={() => navigation.navigate(constants.NOTIFICATIONS)}
             />
-          )} */}
-          {/* 
-          <>
-            <CardItem
-              icon="visibility"
-              title="Account Visibility"
-              subtitle={!activeText ? 'Activate Account' : 'Deactivate Account'}
-              color={colors.secondary}
-              onPress={() => setModalVisibleAct(true)}
-            />
-
-            <ProfileActModal
-              modalVisibleAct={modalVisibleAct}
-              setModalVisibleAct={setModalVisibleAct}
-              activation={activation}
-            />
-          </> */}
+          )}
         </View>
       )}
     </ScrollView>
