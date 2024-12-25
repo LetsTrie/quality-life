@@ -1,3 +1,4 @@
+const { logger } = require('../config');
 const ErrRes = require('../utils/errorResponse');
 
 const errorHandler = (err, req, res, next) => {

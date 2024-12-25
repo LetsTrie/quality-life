@@ -7,7 +7,7 @@ const { StringOfMaxLength } = require('../utils/string');
 const profSchema = new mongoose.Schema(
     {
         name: {
-            ...StringOfMaxLength(100),
+            ...StringOfMaxLength(50),
             required: true,
             minlength: 2,
         },
@@ -18,7 +18,7 @@ const profSchema = new mongoose.Schema(
         },
         gender: {
             type: String,
-            enum: ['Male', 'Female', 'Other'],
+            enum: ['Male', 'Female', 'Others'],
         },
         password: {
             ...StringOfMaxLength(128),
@@ -27,7 +27,7 @@ const profSchema = new mongoose.Schema(
             ...StringOfMaxLength(50),
         },
         batch: {
-            ...StringOfMaxLength(10),
+            ...StringOfMaxLength(20),
         },
         bmdc: {
             ...StringOfMaxLength(50),
@@ -78,28 +78,33 @@ const profSchema = new mongoose.Schema(
         availableTime: [
             {
                 day: {
-                    ...StringOfMaxLength(10),
+                    ...StringOfMaxLength(20),
                 },
                 timeRange: [
                     {
                         from: {
-                            ...StringOfMaxLength(10),
+                            ...StringOfMaxLength(20),
                         },
                         to: {
-                            ...StringOfMaxLength(10),
+                            ...StringOfMaxLength(20),
                         },
                     },
                 ],
             },
         ],
-        maxClient: {
+        maximumWeeklyClient: {
             ...StringOfMaxLength(20),
         },
-        avgClient: {
+        averageWeeklyClient: {
             ...StringOfMaxLength(20),
         },
-        numOfClient: [String], // TODO: Update the structure
-        ref: {
+        numberOfClients: [
+            {
+                location: { ...StringOfMaxLength(20) },
+                count: { ...StringOfMaxLength(5) },
+            },
+        ],
+        reference: {
             ...StringOfMaxLength(100),
         },
         visibility: {

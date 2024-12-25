@@ -24,15 +24,33 @@ for (let i = 1997; i < CurrentYear; i++) {
 }
 
 const genderLists = [
-  { label: 'পুরুষ', value: 'Male' },
-  { label: 'মহিলা', value: 'Female' },
-  { label: 'অন্যান্য', value: 'Others' },
+  {
+    label: 'পুরুষ',
+    value: 'Male',
+  },
+  {
+    label: 'মহিলা',
+    value: 'Female',
+  },
+  {
+    label: 'অন্যান্য',
+    value: 'Others',
+  },
 ];
 
 const professionLists = [
-  { label: 'Clinical psychologist', value: 'Clinical psychologist' },
-  { label: 'Assistant clinical psychologist', value: 'Assistant clinical psychologist' },
-  { label: 'Psychiatrist', value: 'Psychiatrist' },
+  {
+    label: 'Clinical psychologist',
+    value: 'Clinical psychologist',
+  },
+  {
+    label: 'Assistant clinical psychologist',
+    value: 'Assistant clinical psychologist',
+  },
+  {
+    label: 'Psychiatrist',
+    value: 'Psychiatrist',
+  },
 ];
 
 const zillaList = Region.districts.map((d) => ({
@@ -139,9 +157,7 @@ const RegisterStep1 = () => {
     fields.password = fields.password.toString().trim();
 
     const response = await ApiExecutor(
-      ApiDefinitions.registerProfessionalStep1({
-        payload: fields,
-      })
+      ApiDefinitions.registerProfessionalStep1({ payload: fields })
     );
 
     setIsLoading(false);

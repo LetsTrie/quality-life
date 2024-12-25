@@ -8,6 +8,7 @@ const limiter = rateLimit({
         message: 'Too many requests, please try again later.',
     },
     headers: true,
+    validate: { xForwardedForHeader: false },
 });
 
 module.exports = limiter;

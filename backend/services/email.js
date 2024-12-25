@@ -9,38 +9,38 @@ const { sesClient } = require('./sesClient');
  * @returns {Promise<object>} - Result of the SES send command.
  */
 const sendEmail = async (toAddress, subject, htmlBody) => {
-  const sendEmailCommand = new SendEmailCommand({
-    Destination: {
-      ToAddresses: [toAddress],
-    },
-    Message: {
-      Body: {
-        Html: {
-          Charset: 'UTF-8',
-          Data: htmlBody,
+    const sendEmailCommand = new SendEmailCommand({
+        Destination: {
+            ToAddresses: [toAddress],
         },
-      },
-      Subject: {
-        Charset: 'UTF-8',
-        Data: subject,
-      },
-    },
-    Source: `"Tasnuva from Qlife" <${process.env.EMAIL_SENDER}>`,
-  });
+        Message: {
+            Body: {
+                Html: {
+                    Charset: 'UTF-8',
+                    Data: htmlBody,
+                },
+            },
+            Subject: {
+                Charset: 'UTF-8',
+                Data: subject,
+            },
+        },
+        Source: `"Tasnuva from Qlife" <${process.env.EMAIL_SENDER}>`,
+    });
 
-  try {
-    const response = await sesClient.send(sendEmailCommand);
-    console.log(response);
-    return {
-      success: true,
-      messageId: response.MessageId,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+    try {
+        const response = await sesClient.send(sendEmailCommand);
+        console.log(response);
+        return {
+            success: true,
+            messageId: response.MessageId,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            error: error.message,
+        };
+    }
 };
 
 module.exports = { sendEmail };

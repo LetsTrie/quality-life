@@ -176,8 +176,13 @@ const RegisterStep2 = () => {
           />
 
           <Loader visible={isLoading} style={{ paddingTop: 10 }} />
-          <ErrorButton visible={!!error} title={error} />
-          <SubmitButton title={'সাবমিট করুন'} onPress={HandleFormSubmit} style={{ marginTop: 8 }} />
+          <ErrorButton visible={!!error && !isLoading} title={error} />
+          <SubmitButton
+            title={'সাবমিট করুন'}
+            onPress={HandleFormSubmit}
+            style={{ marginTop: 8 }}
+            visible={!isLoading}
+          />
         </View>
       </View>
     </Container>

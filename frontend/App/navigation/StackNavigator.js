@@ -96,7 +96,6 @@ const screenOptions = ({ navigation }) => ({
 });
 
 const replaceNavigation = (navigation, route, screen, role) => {
-  console.log('StackNavigator.js: replaceNavigation: ', screen);
   if (!navigation || !screen) {
     console.error(
       '[replaceNavigation] Missing required arguments: navigation or screen is undefined.'
@@ -142,8 +141,6 @@ const safeTransit = ({ navigation, route, role }) => {
 
   const screen = route.name;
   const { goToBack } = route.params || {};
-
-  console.log('route.params: ', JSON.stringify(route.params));
 
   if (goToBack) {
     replaceNavigation(navigation, route, goToBack, role);

@@ -187,8 +187,6 @@ const RegisterProStep3 = () => {
 
     const payload = { availableTime };
 
-    console.log(availableTime);
-
     let mustScheduleAtleastOneTime = false;
     availableTime.forEach(({ timeRange }) => {
       if (timeRange.length > 0) {
@@ -202,7 +200,6 @@ const RegisterProStep3 = () => {
     }
 
     setError(null);
-
     setIsLoading(true);
     const response = await ApiExecutor(ApiDefinitions.registerProfessionalStep3({ payload }));
     setIsLoading(false);

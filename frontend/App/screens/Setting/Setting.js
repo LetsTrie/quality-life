@@ -87,26 +87,30 @@ const Setting = () => {
           <Text style={styles.textStyle}>পাসওয়ার্ড পরিবর্তন করুন</Text>
         </TouchableOpacity>
 
-        {visibility ? (
-          <TouchableOpacity style={styles.card} onPress={() => setModalViewForVisibility(true)}>
-            <MaterialCommunityIcons
-              name="eye-off-outline"
-              style={styles.iconStyle}
-              size={24}
-              color={colors.danger}
-            />
-            <Text style={styles.textStyle}>অ্যাকাউন্ট গোপন করুন</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.card} onPress={() => setModalViewForVisibility(true)}>
-            <MaterialCommunityIcons
-              name="eye-outline"
-              style={styles.iconStyle}
-              size={24}
-              color={colors.success}
-            />
-            <Text style={styles.textStyle}>অ্যাকাউন্ট দৃশ্যমান করুন</Text>
-          </TouchableOpacity>
+        {isProfessional(role) && (
+          <>
+            {visibility ? (
+              <TouchableOpacity style={styles.card} onPress={() => setModalViewForVisibility(true)}>
+                <MaterialCommunityIcons
+                  name="eye-off-outline"
+                  style={styles.iconStyle}
+                  size={24}
+                  color={colors.danger}
+                />
+                <Text style={styles.textStyle}>অ্যাকাউন্ট গোপন করুন</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={styles.card} onPress={() => setModalViewForVisibility(true)}>
+                <MaterialCommunityIcons
+                  name="eye-outline"
+                  style={styles.iconStyle}
+                  size={24}
+                  color={colors.success}
+                />
+                <Text style={styles.textStyle}>অ্যাকাউন্ট দৃশ্যমান করুন</Text>
+              </TouchableOpacity>
+            )}
+          </>
         )}
 
         <TouchableOpacity style={styles.card} onPress={() => setModalVisibleForDeleteAcc(true)}>

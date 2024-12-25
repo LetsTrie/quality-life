@@ -136,7 +136,7 @@ const DrawerContent = () => {
                 />
               </View>
             </DrawerContentScrollView>
-            <View style={{ paddingBottom: 2, backgroundColor: colors.danger }}>
+            <View style={{ paddingBottom: 2, backgroundColor: colors.primary }}>
               <DrawerItem
                 icon={({ size }) => (
                   <MaterialCommunityIcons name={'exit-to-app'} size={size} color={colors.white} />
@@ -145,7 +145,7 @@ const DrawerContent = () => {
                 labelStyle={{ color: colors.white }}
                 onPress={logout}
                 style={{ paddingHorizontal: 5 }}
-                pressColor={colors.danger}
+                pressColor={colors.primary}
               />
             </View>
           </>

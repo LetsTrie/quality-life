@@ -19,14 +19,11 @@ export const useBackPress = (screenName, previousPage = null) => {
     const backScreen = backScreenMap[screenName] || null;
 
     if ([backScreen, previousPage].includes(constants.SPECIAL_LOGOUT_ACTION)) {
-      console.log('Logging out...');
       logout();
     } else if ([backScreen, previousPage].includes(constants.GO_TO_BACK)) {
-      console.log('Going back...');
       navigation.goBack();
     } else {
       const targetScreen = previousPage || backScreen;
-      console.log('Target screen:', targetScreen);
       const destination = selectHomepageByRole(targetScreen, role);
 
       if (!destination) {

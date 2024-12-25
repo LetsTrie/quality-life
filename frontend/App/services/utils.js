@@ -1,4 +1,3 @@
-import { ToastAndroid } from 'react-native';
 import { isNotEmptyArray } from '../utils/array';
 
 export const sendSuccessResponse = (data = {}) => {
@@ -7,13 +6,13 @@ export const sendSuccessResponse = (data = {}) => {
 
 export const sendErrorResponse = (error) => {
   try {
-    const { errors, status, type, message } = error.response.data;
+    const { errors, status, type, message } = error?.response?.data;
 
     const errorMessage = isNotEmptyArray(errors)
       ? errors.map((e) => e.message).join(', ')
       : message;
 
-    ToastAndroid.show(errorMessage, ToastAndroid.LONG);
+    console.log(errorMessage);
 
     return {
       success: false,

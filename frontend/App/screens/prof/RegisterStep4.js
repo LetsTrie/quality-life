@@ -10,17 +10,24 @@ import { useBackPress, useHelper } from '../../hooks';
 import { ErrorButton, Loader } from '../../components';
 import { SubmitButton } from '../../components/SubmitButton';
 
-const dis = [
-  'ঢাকা',
-  'বরিশাল',
-  'খুলনা',
-  'চট্টগ্রাম',
-  'ময়মনসিংহ',
-  'রাজশাহী',
-  'সিলেট',
-  'রংপুর',
-  'অন্যান্য (উল্লেখ করুন)',
-];
+const locationMap = {
+  Dhaka: 'ঢাকা',
+  Barisal: 'বরিশাল',
+  Khulna: 'খুলনা',
+  Chittagong: 'চট্টগ্রাম',
+  Mymensingh: 'ময়মনসিংহ',
+  Rajshahi: 'রাজশাহী',
+  Sylhet: 'সিলেট',
+  Rangpur: 'রংপুর',
+  Others: 'অন্যান্য (উল্লেখ করুন)',
+};
+
+const initialClientData = Object.keys(locationMap).map((d) => {
+  return {
+    location: d,
+    count: '',
+  };
+});
 
 const optionList = ['০-৫ জন', '৬-১০ জন', '১১-১৫ জন', '১৬-২০ জন', '২১ বা তার উর্ধে'].map((m) => ({
   label: m,
@@ -40,25 +47,26 @@ const RegisterStep4 = () => {
 
   const [option1, setOption1] = useState(null);
   const [option2, setOption2] = useState(null);
-  const [numOfClient, setNumOfClient] = useState([0, 0, 0, 0, 0, 0, 0, 0, '']);
+  const [numOfClient, setNumOfClient] = useState(initialClientData);
   const [ref, setRef] = useState('');
 
-  const numOfClientHandler = (index, text) => {
-    setNumOfClient((p) => {
-      p[index] = text;
-      return p;
-    });
+  const numOfClientHandler = (index, value) => {
+    setNumOfClient((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, count: value } : item))
+    );
   };
 
   const handleSubmit = async () => {
     const payload = {
-      maxClient: option1?.label,
-      avgClient: option2?.label,
-      numOfClient,
-      ref,
+      maximumWeeklyClient: option1?.label,
+      averageWeeklyClient: option2?.label,
+      numberOfClients: numOfClient,
+      reference: ref,
     };
 
-    if (!payload.maxClient || !payload.avgClient) {
+    console.log(numOfClient);
+
+    if (!payload.maximumWeeklyClient || !payload.averageWeeklyClient) {
       setError('ফর্মটি সঠিকভাবে পূরণ করুন');
       return;
     }
@@ -127,9 +135,9 @@ const RegisterStep4 = () => {
             আপনার সেবা গ্রহণকারী ক্লায়েন্টের কতজন নিচে বর্ণিত স্থানগুলোতে অবস্থান করছেঃ
           </Text>
           <View>
-            {dis.map((d, i) => (
-              <View style={styles.NumberInRegionContainer} key={d}>
-                <Text style={styles.RegionNameStyle}>{d}: </Text>
+            {numOfClient.map((item, index) => (
+              <View style={styles.NumberInRegionContainer} key={item.location}>
+                <Text style={styles.RegionNameStyle}>{locationMap[item.location]}:</Text>
                 <TextInput
                   style={{
                     borderWidth: 0,
@@ -140,9 +148,11 @@ const RegisterStep4 = () => {
                   }}
                   autoCapitalize="none"
                   autoCorrect={false}
-                  onChangeText={(text) => numOfClientHandler(i, text)}
+                  onChangeText={(text) => numOfClientHandler(index, text)}
                   placeholderTextColor={'#6e6969'}
-                  keyboardType={d === 'অন্যান্য (উল্লেখ করুন)' ? 'default' : 'number-pad'}
+                  keyboardType={
+                    item.location === 'অন্যান্য (উল্লেখ করুন)' ? 'default' : 'number-pad'
+                  }
                 />
               </View>
             ))}
@@ -172,7 +182,7 @@ const RegisterStep4 = () => {
         <View>
           <Loader visible={isLoading} style={{ marginBottom: 8, marginTop: -5 }} />
           <ErrorButton
-            visible={!!error}
+            visible={!!error && !isLoading}
             title={error}
             style={{ borderRadius: 8, alignSelf: 'flex-start', width: '98%' }}
           />
@@ -180,6 +190,7 @@ const RegisterStep4 = () => {
             title="সাবমিট করুন"
             onPress={handleSubmit}
             style={{ borderRadius: 8, marginTop: 8, alignSelf: 'flex-start', width: '98%' }}
+            visible={!isLoading}
           />
         </View>
       </View>
