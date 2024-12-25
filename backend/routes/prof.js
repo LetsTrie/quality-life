@@ -1,106 +1,108 @@
-const router = require('express').Router();
-const professionalController = require('../controllers/prof');
-const userProfCtrl = require('../controllers/user-professional');
-const AuthCtrl = require('../controllers/auth');
-const M = require('../middlewares/authentication');
-const validate = require('../middlewares/validate');
-const { profValidation, authValidation } = require('../validations');
+const express = require('express');
+const router = express.Router();
+
+const ProfessionalController = require('../controllers/prof');
+const UserProfessionalController = require('../controllers/user-professional');
+const AuthController = require('../controllers/auth');
+
+const authenticationMiddleware = require('../middlewares/authentication');
+const validationMiddleware = require('../middlewares/validate');
+
+const authValidation = require('../validations/auth.validation');
+const profValidation = require('../validations/prof.validation');
 
 const ROLE = 'prof';
+const verifyUserToken = authenticationMiddleware.verifyToken(ROLE);
 
 router.post(
-  '/register/step-1',
-  validate(profValidation.registerProfessionalStep1),
-  professionalController.registerProfessionalStep1,
+    '/register/step-1',
+    validationMiddleware(profValidation.registerProfessionalStep1),
+    ProfessionalController.registerProfessionalStep1,
 );
 
-router.post('/login', professionalController.profLogin);
+router.post('/login', ProfessionalController.profLogin);
 
 router.post(
-  '/register/step-2',
-  M.verifyToken(ROLE),
-  validate(profValidation.registerProfessionalStep2),
-  professionalController.registerProfessionalStep2,
-);
-
-router.post(
-  '/register/step-3',
-  M.verifyToken(ROLE),
-  validate(profValidation.registerProfessionalStep3),
-  professionalController.registerProfessionalStep3,
+    '/register/step-2',
+    verifyUserToken,
+    validationMiddleware(profValidation.registerProfessionalStep2),
+    ProfessionalController.registerProfessionalStep2,
 );
 
 router.post(
-  '/register/step-4',
-  M.verifyToken(ROLE),
-  validate(profValidation.registerProfessionalStep4),
-  professionalController.registerProfessionalStep4,
+    '/register/step-3',
+    verifyUserToken,
+    validationMiddleware(profValidation.registerProfessionalStep3),
+    ProfessionalController.registerProfessionalStep3,
+);
+
+router.post(
+    '/register/step-4',
+    verifyUserToken,
+    validationMiddleware(profValidation.registerProfessionalStep4),
+    ProfessionalController.registerProfessionalStep4,
 );
 
 router.get(
-  '/all-informations',
-  M.verifyToken(ROLE),
-  professionalController.getAllInformations,
+    '/all-informations',
+    verifyUserToken,
+    ProfessionalController.getAllInformations,
 );
 
 router.post(
-  '/delete-account',
-  M.verifyToken(ROLE),
-  professionalController.deleteProfessionalAccount,
+    '/delete-account',
+    verifyUserToken,
+    ProfessionalController.deleteProfessionalAccount,
 );
 
 router.post(
-  '/reset-password',
-  M.verifyToken(ROLE),
-  validate(authValidation.resetPassword),
-  AuthCtrl.resetPassword,
+    '/reset-password',
+    verifyUserToken,
+    validationMiddleware(authValidation.resetPassword),
+    AuthController.resetPassword,
 );
 
 router.post(
-  '/update-visibility',
-  M.verifyToken(ROLE),
-  validate(profValidation.profVisibility),
-  professionalController.profVisibility,
+    '/update-visibility',
+    verifyUserToken,
+    validationMiddleware(profValidation.profVisibility),
+    ProfessionalController.profVisibility,
 );
 
 router.get(
-  '/homepage-notification-count',
-  M.verifyToken(ROLE),
-  professionalController.getHomepageInformationProf,
+    '/homepage-notification-count',
+    verifyUserToken,
+    ProfessionalController.getHomepageInformationProf,
 );
 
-router.get(
-  '/my-clients',
-  M.verifyToken(ROLE),
-  professionalController.myClients,
-);
+router.get('/my-clients', verifyUserToken, ProfessionalController.myClients);
 
 router.get(
-  '/user-profile/:userId',
-  professionalController.getUserCompleteProfile,
+    '/user-profile/:userId',
+    ProfessionalController.getUserCompleteProfile,
 );
 router.get(
-  '/primary-test-details/:testId',
-  professionalController.getPrimaryResultDetails,
+    '/primary-test-details/:testId',
+    ProfessionalController.getPrimaryResultDetails,
 );
 
 router.post(
-  '/result-suggested-scale',
-  M.verifyToken(ROLE),
-  professionalController.getScaleResult,
+    '/result-suggested-scale',
+    verifyUserToken,
+    ProfessionalController.getScaleResult,
 );
 
-router.get('/allProf', professionalController.allProf);
+router.get('/allProf', ProfessionalController.allProf);
 
 router.post(
-  '/:profId/update/profile',
-  M.verifyToken(ROLE),
-  professionalController.updateProfile,
+    '/:profId/update/profile',
+    verifyUserToken,
+    ProfessionalController.updateProfile,
 );
 
 router.post(
-  '/approve',
-  professionalController.approveProfessionalFromAdminPanel,
+    '/approve',
+    ProfessionalController.approveProfessionalFromAdminPanel,
 );
 
 // ****************************************************************
@@ -108,33 +110,37 @@ router.post(
 // ****************************************************************
 
 router.post(
-  '/appointment-seen/:appointmentId',
-  M.verifyToken(ROLE),
-  userProfCtrl.appointmentSeen,
+    '/appointment-seen/:appointmentId',
+    verifyUserToken,
+    UserProfessionalController.appointmentSeen,
 );
 
 router.get(
-  '/client-requests',
-  M.verifyToken(ROLE),
-  userProfCtrl.showAllClientRequests,
+    '/client-requests',
+    verifyUserToken,
+    UserProfessionalController.showAllClientRequests,
 );
 
 router.post(
-  '/appointment-response/:appointmentId',
-  M.verifyToken(ROLE),
-  userProfCtrl.respondToAppointment,
+    '/appointment-response/:appointmentId',
+    verifyUserToken,
+    UserProfessionalController.respondToAppointment,
 );
 
-router.post('/suggest-scale', M.verifyToken(ROLE), userProfCtrl.suggestAscale);
-router.get(
-  '/scales/:clientId',
-  M.verifyToken(ROLE),
-  userProfCtrl.findSuggestedScalesByClient,
+router.post(
+    '/suggest-scale',
+    verifyUserToken,
+    UserProfessionalController.suggestAscale,
 );
 router.get(
-  '/assessment/:assessmentId',
-  M.verifyToken(ROLE),
-  userProfCtrl.getAssessmentDetails,
+    '/scales/:clientId',
+    verifyUserToken,
+    UserProfessionalController.findSuggestedScalesByClient,
+);
+router.get(
+    '/assessment/:assessmentId',
+    verifyUserToken,
+    UserProfessionalController.getAssessmentDetails,
 );
 
 // ****************************************************************

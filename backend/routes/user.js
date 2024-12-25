@@ -1,94 +1,136 @@
-const router = require('express').Router();
-const C = require('../controllers/user');
-const userProfCtrl = require('../controllers/user-professional');
-const M = require('../middlewares/authentication');
-const validate = require('../middlewares/validate');
+const express = require('express');
+const router = express.Router();
+
+const AuthController = require('../controllers/auth');
+const UserController = require('../controllers/user');
+const UserProfessionalController = require('../controllers/user-professional');
+
+const authenticationMiddleware = require('../middlewares/authentication');
+const validationMiddleware = require('../middlewares/validate');
+
 const userValidation = require('../validations/user.validation');
 const authValidation = require('../validations/auth.validation');
-const AuthCtrl = require('../controllers/auth');
 
 const ROLE = 'user';
+const verifyUserToken = authenticationMiddleware.verifyToken(ROLE);
 
-router.post('/delete-account', M.verifyToken(ROLE), AuthCtrl.deleteUserAccount);
-router.post('/sign-in', validate(userValidation.loginAsUser), AuthCtrl.signIn);
-
-router.post(
-  '/sign-up',
-  validate(userValidation.registerUserStep1),
-  AuthCtrl.signUp,
-);
+// ****************************************************************
+// Auth Routes
+// ****************************************************************
 
 router.post(
-  '/add-info',
-  M.verifyToken(ROLE),
-  validate(userValidation.additionalInfoValidationSchema),
-  C.submitAdditionalInfo,
+    '/sign-in',
+    validationMiddleware(userValidation.loginAsUser),
+    AuthController.signIn,
 );
 
 router.post(
-  '/reset-password',
-  M.verifyToken(ROLE),
-  validate(authValidation.resetPassword),
-  AuthCtrl.resetPassword,
-);
-
-router.post('/test', M.verifyToken(ROLE), C.anyTestSubmit);
-router.get('/homepage', M.verifyToken(ROLE), C.userHomepage);
-
-router.get('/profile/all', M.verifyToken(ROLE), C.getProfileDetails);
-router.get('/all-informations', M.verifyToken(ROLE), C.getAllInformations);
-router.post('/seen-video/:videoUrl', M.verifyToken(ROLE), C.submitAVideo);
-
-router.post('/add-rating', M.verifyToken(ROLE), C.rating);
-router.post('/update/profile', M.verifyToken(ROLE), C.updateProfile);
-
-router.get('/all', C.allUsers);
-router.post('/userInfo', C.userInfo);
-
-router.post('/submit-suggested-scale', M.verifyToken(ROLE), C.submitProfScale);
-
-router.get(
-  '/suggested-scale-fillup-check/:assessmentId',
-  M.verifyToken(ROLE),
-  C.checkSuggestedScale,
-);
-
-router.get(
-  '/result-history-data/:testType',
-  M.verifyToken(ROLE),
-  C.resultHistoryTableData,
-);
-
-// ****************************************************************
-// ****************************************************************
-// ****************************************************************
-
-router.get(
-  '/professionals',
-  M.verifyToken(ROLE),
-  userProfCtrl.findProfessionals,
+    '/sign-up',
+    validationMiddleware(userValidation.registerUserStep1),
+    AuthController.signUp,
 );
 
 router.post(
-  '/take-appointment',
-  M.verifyToken(ROLE),
-  userProfCtrl.requestForAppointment,
+    '/reset-password',
+    verifyUserToken,
+    validationMiddleware(authValidation.resetPassword),
+    AuthController.resetPassword,
+);
+
+router.post(
+    '/delete-account',
+    verifyUserToken,
+    AuthController.deleteUserAccount,
+);
+
+// ****************************************************************
+// User Information Routes
+// ****************************************************************
+
+router.post(
+    '/add-info',
+    verifyUserToken,
+    validationMiddleware(userValidation.additionalInfoValidationSchema),
+    UserController.submitAdditionalInfo,
+);
+
+router.get('/homepage', verifyUserToken, UserController.userHomepage);
+
+router.get('/profile/all', verifyUserToken, UserController.getProfileDetails);
+
+router.get(
+    '/all-informations',
+    verifyUserToken,
+    UserController.getAllInformations,
+);
+
+router.post(
+    '/seen-video/:videoUrl',
+    verifyUserToken,
+    UserController.submitAVideo,
+);
+
+router.post('/add-rating', verifyUserToken, UserController.rating);
+
+router.post('/update/profile', verifyUserToken, UserController.updateProfile);
+
+// ****************************************************************
+// Public Routes
+// ****************************************************************
+
+router.get('/all', UserController.allUsers);
+router.post('/userInfo', UserController.userInfo);
+
+// ****************************************************************
+// Test and Assessment Routes
+// ****************************************************************
+
+router.post('/test', verifyUserToken, UserController.anyTestSubmit);
+
+router.post(
+    '/submit-suggested-scale',
+    verifyUserToken,
+    UserController.submitProfScale,
 );
 
 router.get(
-  '/appointment-details/:appointmentId',
-  M.verifyToken(ROLE),
-  userProfCtrl.getAppointmentDetailsForUser,
+    '/suggested-scale-fillup-check/:assessmentId',
+    verifyUserToken,
+    UserController.checkSuggestedScale,
 );
 
 router.get(
-  '/find-suggested-scales/:profId',
-  M.verifyToken(ROLE),
-  userProfCtrl.findSuggestedScales,
+    '/result-history-data/:testType',
+    verifyUserToken,
+    UserController.resultHistoryTableData,
 );
 
 // ****************************************************************
+// Professional Routes
 // ****************************************************************
-// ****************************************************************
+
+router.get(
+    '/professionals',
+    verifyUserToken,
+    UserProfessionalController.findProfessionals,
+);
+
+router.post(
+    '/take-appointment',
+    verifyUserToken,
+    UserProfessionalController.requestForAppointment,
+);
+
+router.get(
+    '/appointment-details/:appointmentId',
+    verifyUserToken,
+    UserProfessionalController.getAppointmentDetailsForUser,
+);
+
+router.get(
+    '/find-suggested-scales/:profId',
+    verifyUserToken,
+    UserProfessionalController.findSuggestedScales,
+);
 
 module.exports = router;

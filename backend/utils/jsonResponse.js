@@ -1,53 +1,52 @@
-const chalk = require("chalk");
-
-const pino = require("pino");
-const logger = pino({
-  level: process.env.LOG_LEVEL || "info",
-  transport: {
-    target: "pino-pretty",
-  },
-});
+const { logger } = require('../config');
 
 const sendJSONresponse = (res, status, content) => {
-  res.status(status).json(content);
+    res.status(status).json(content);
 };
 
-const sendErrorResponse = function (res, status, type, content) {
-  const errorBody = {
-    success: false,
-    status: status,
-    type: type || "INTERNAL_SERVER_ERROR",
-    errors: Array.isArray(content) ? content : [content],
-  };
+const sendErrorResponse = (res, status, type, content) => {
+    const errorBody = {
+        success: false,
+        status,
+        type: type || 'INTERNAL_SERVER_ERROR',
+        errors: Array.isArray(content) ? content : [content],
+    };
 
-  logger.error(
-    {
-      status,
-      type,
-      content,
-    },
-    chalk.redBright(content?.message || "An error occurred")
-  );
+    logger.error({
+        message: content?.message || 'An error occurred',
+        status,
+        type,
+        content,
+    });
 
-  res.status(status).json(errorBody);
+    res.status(status).json(errorBody);
 };
 
 const logInfo = (message, context = {}) => {
-  logger.info(context, chalk.blue(message));
+    logger.info({
+        message,
+        ...context,
+    });
 };
 
 const logWarn = (message, context = {}) => {
-  logger.warn(context, chalk.yellow(message));
+    logger.warn({
+        message,
+        ...context,
+    });
 };
 
 const logError = (message, context = {}) => {
-  logger.error(context, chalk.redBright(message));
+    logger.error({
+        message,
+        ...context,
+    });
 };
 
 module.exports = {
-  sendJSONresponse,
-  sendErrorResponse,
-  logInfo,
-  logWarn,
-  logError,
+    sendJSONresponse,
+    sendErrorResponse,
+    logInfo,
+    logWarn,
+    logError,
 };
