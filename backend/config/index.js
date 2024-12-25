@@ -1,5 +1,5 @@
-const logger = require("./winston");
+const logger = require('./winston');
 
 module.exports = {
-  logger,
+    logger,
 };

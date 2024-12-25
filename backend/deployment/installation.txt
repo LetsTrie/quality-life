@@ -1,0 +1,52 @@
+sudo apt update
+
+git config --global user.name "letstrie"
+git config --global user.email "sakibkhan111296@gmail.com"
+
+sudo apt update && sudo apt install nginx certbot python3-certbot-nginx
+
+sudo ufw status
+sudo ufw enable
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw allow 22
+sudo ufw allow 'Nginx Full'
+sudo ufw delete allow 'Nginx HTTP'
+sudo ufw status
+
+sudo systemctl start nginx
+sudo systemctl enable nginx
+systemctl status nginx
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install v20.11.0
+node -e "console.log('Running Node.js ' + process.version)"
+
+npm i pm2 -g
+
+*****************************************************
+*****************************************************
+
+create a new file: deploy.sh << copy paste the code
+sh deploy.sh
+
+cd server && npm install
+pm2 start index.js --name "api_prod" -i 1
+
+sudo nano /etc/nginx/sites-available/default
+>>> After updating the nginx file <<<
+sudo systemctl daemon-reload
+sudo systemctl reload nginx
+
+sudo certbot --nginx -d qlife-bd.com -d www.qlife-bd.com
+
+github auth-token: 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
+
+
+*******************
+NANO Documentation
+*******************
+
+* Press Ctrl + K to cut the line
+* Press Ctrl + U to undo
