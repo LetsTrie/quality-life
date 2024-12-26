@@ -61,8 +61,6 @@ exports.registerProfessionalStep1 = asyncHandler(async (req, res, _next) => {
         }),
     );
 
-    console.log(response);
-
     return sendJSONresponse(res, 201, {
         data: {
             id: newProfessional._id,

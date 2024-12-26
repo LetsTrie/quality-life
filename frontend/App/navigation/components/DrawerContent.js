@@ -62,7 +62,7 @@ const DrawerContent = () => {
                   style={{ paddingHorizontal: 5, marginBottom: 3 }}
                 />
 
-                {isUserRole && (
+                {
                   <DrawerItem
                     icon={({ color, size }) => (
                       <MaterialCommunityIcons name={'account'} size={size} color={colors.success} />
@@ -71,7 +71,7 @@ const DrawerContent = () => {
                     onPress={onProfileClick}
                     style={{ paddingHorizontal: 5, marginBottom: 3 }}
                   />
-                )}
+                }
 
                 {isUserRole && (
                   <DrawerItem

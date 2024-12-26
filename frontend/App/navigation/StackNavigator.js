@@ -507,16 +507,8 @@ const StackNavigator = () => {
       <Stack.Screen
         name={constants.PROF_PROFILE}
         component={ProfileProf}
-        options={({ navigation }) => ({
-          title: 'Profile',
-          headerLeft: (props) => (
-            <HeaderBackButton
-              {...props}
-              onPress={() => {
-                navigation.navigate(backScreenMap[constants.PROF_PROFILE]);
-              }}
-            />
-          ),
+        options={() => ({
+          title: 'My Profile',
         })}
       />
       <Stack.Screen
