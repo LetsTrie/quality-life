@@ -10,15 +10,9 @@ import DrawerContent from './App/navigation/components/DrawerContent';
 import { HelperProvider } from './App/contexts/helper';
 import { BackPressProvider } from './App/contexts/BackPress';
 
-import * as Sentry from '@sentry/react-native';
 import ErrorBoundary from './App/components/ErrorBoundary';
 
 const Drawer = createDrawerNavigator();
-
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: 1.0,
-});
 
 function App() {
   return (
@@ -48,4 +42,4 @@ function App() {
   );
 }
 
-export default Sentry.wrap(App);
+export default App;

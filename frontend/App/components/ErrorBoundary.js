@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import * as Sentry from '@sentry/react-native';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -13,7 +12,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    Sentry.Native.captureException(error, { extra: errorInfo });
+    console.log(error, errorInfo);
   }
 
   render() {

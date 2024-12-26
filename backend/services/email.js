@@ -30,7 +30,7 @@ const sendEmail = async (toAddress, subject, htmlBody) => {
 
     try {
         const response = await sesClient.send(sendEmailCommand);
-        console.log(response);
+        // console.log(response);
         return {
             success: true,
             messageId: response.MessageId,

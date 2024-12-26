@@ -95,14 +95,14 @@ exports.profLogin = asyncHandler(async (req, res, _next) => {
     const prof = await Professional.findOne({ email: req.body.email });
     if (!prof) {
         return sendErrorResponse(res, 401, 'UNAUTHORIZED', {
-            message: 'ব্যবহারকারী পাওয়া যায়নি',
+            message: 'ইমেইল/পাসওয়ার্ডটি ভুল',
         });
     }
 
     const isMatch = await bcrypt.compare(req.body.password, prof.password);
     if (!isMatch) {
         return sendErrorResponse(res, 401, 'UNAUTHORIZED', {
-            message: 'পাসওয়ার্ড মেলেনি',
+            message: 'ইমেইল/পাসওয়ার্ডটি ভুল',
         });
     }
 

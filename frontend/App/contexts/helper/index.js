@@ -16,7 +16,6 @@ import axios from 'axios';
 import { sendErrorResponse, sendSuccessResponse } from '../../services/utils';
 import { RoleEnum, isUser } from '../../utils/roles';
 import { setUnreadNotificationCount } from '../../redux/actions';
-import * as Sentry from '@sentry/react-native';
 
 const HelperContext = createContext();
 const INCOMPLETE_PROFILE = 'INCOMPLETE_PROFILE:';
@@ -146,7 +145,6 @@ export const HelperProvider = ({ children }) => {
           return;
         }
 
-        Sentry.captureException(error);
         return sendErrorResponse(error);
       }
     },

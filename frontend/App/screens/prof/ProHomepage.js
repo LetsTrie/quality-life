@@ -74,28 +74,39 @@ const Homepage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  async function getHomepageData() {
+  async function getAllInformations() {
     setIsLoading(true);
-    const response = await ApiExecutor(ApiDefinitions.getProfessionalHomepageNotificationCount());
-    setIsLoading(false);
+    setError(null);
 
-    if (!response.success) {
-      setError(response.error.message);
+    const nResponse = await ApiExecutor(ApiDefinitions.getProfessionalHomepageNotificationCount());
+    if (!nResponse.success) {
+      setError(nResponse.error.message);
       return;
     }
 
-    const { notificationCount, appointmentCount } = response.data;
+    const pResponse = await ApiExecutor(ApiDefinitions.getProfessionalsProfile());
+    if (!pResponse.success) {
+      setError(pResponse.error.message);
+      return;
+    }
 
-    dispatch(numOfNewNotificationsAction(parseFloat(appointmentCount)));
-    dispatch(setUnreadNotificationCount(parseFloat(notificationCount)));
+    dispatch(numOfNewNotificationsAction(parseFloat(nResponse.data.appointmentCount)));
+    dispatch(setUnreadNotificationCount(parseFloat(nResponse.data.notificationCount)));
+    dispatch(storeProfessionalsProfile(pResponse.data.prof));
+
+    setIsLoading(false);
   }
+
+  useEffect(() => {
+    if (isLoading && error) setIsLoading(false);
+  }, [error]);
 
   const anyNewNotifications = !(!unreadNotificationCount || unreadNotificationCount <= 0);
 
   const onRefresh = React.useCallback(() => {
     (async () => {
       setRefreshing(true);
-      await getHomepageData();
+      await getAllInformations();
       setRefreshing(false);
     })();
   }, []);
@@ -103,18 +114,8 @@ const Homepage = () => {
   useEffect(() => {
     if (!isFocused) return;
 
-    setError(null);
-
     (async () => {
-      await getHomepageData();
-
-      setIsLoading(true);
-      const response = await ApiExecutor(ApiDefinitions.getProfessionalsProfile());
-      if (response.success) {
-        const { prof } = response.data;
-        dispatch(storeProfessionalsProfile(prof));
-      }
-      setIsLoading(false);
+      await getAllInformations();
     })();
   }, [isFocused]);
 

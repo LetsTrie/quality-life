@@ -305,6 +305,7 @@ const ResponseClientRequest = () => {
               title={'Confirm Request'}
               onPress={onSubmitHandler}
               style={{ width: '100%' }}
+              visible={!isSubmitLoading}
             />
           </View>
         </View>

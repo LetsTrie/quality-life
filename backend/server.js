@@ -46,7 +46,7 @@ app.use(compression());
 if (!isProdEnvironment()) {
     app.use(requestLogger());
 }
-app.use(morgan('dev'));
+// app.use(morgan('dev'));
 app.use(rateLimiter);
 app.set('view engine', 'ejs');
 
