@@ -22,6 +22,9 @@ const { sendEmail } = require('../services/email');
 const {
     accountApprovedEmailTemplate,
 } = require('../services/email-templates/account-approved');
+const {
+    profRegStep1EmailTemplate,
+} = require('../services/email-templates/prof-reg-step1-verification');
 
 exports.registerProfessionalStep1 = asyncHandler(async (req, res, _next) => {
     const { email, password } = req.body;
@@ -38,6 +41,27 @@ exports.registerProfessionalStep1 = asyncHandler(async (req, res, _next) => {
         ...req.body,
         password: hashedPassword,
     });
+
+    const response = await sendEmail(
+        process.env.ADMIN_EMAIL,
+        'New Professional Registration: Approval Required!',
+        profRegStep1EmailTemplate({
+            name: newProfessional.name,
+            email: newProfessional.email,
+            profession: newProfessional.profession,
+            designation: newProfessional.designation,
+            workplace: newProfessional.workplace,
+            batch: newProfessional.batch,
+            gender: newProfessional.gender,
+            bmdc: newProfessional.bmdc,
+            union: newProfessional.union,
+            upazila: newProfessional.upazila,
+            zila: newProfessional.zila,
+            approvalLink: `${process.env.APP_URL}/admin/professionals`,
+        }),
+    );
+
+    console.log(response);
 
     return sendJSONresponse(res, 201, {
         data: {

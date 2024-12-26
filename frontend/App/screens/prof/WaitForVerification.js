@@ -4,6 +4,7 @@ import AuthIcon from '../../components/Auth/AuthIcon';
 import Text from '../../components/Text';
 import { useBackPress } from '../../hooks';
 import constants from '../../navigation/constants';
+import colors from '../../config/colors';
 
 const SCREEN_NAME = constants.WAIT_FOR_VERIFICATION;
 
@@ -33,8 +34,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 20,
     fontSize: 18,
-    lineHeight: 38,
-    color: '#444',
+    lineHeight: 34,
+    color: colors.textPrimary,
     fontWeight: 'bold',
   },
 });
