@@ -20,202 +20,202 @@ import { SubmitButton } from '../../components/SubmitButton';
 
 const SCREEN_NAME = constants.PROF_LOGIN;
 const ProfLoginComponent = () => {
-  useBackPress(SCREEN_NAME);
-  const { ApiExecutor } = useHelper();
+    useBackPress(SCREEN_NAME);
+    const { ApiExecutor } = useHelper();
 
-  const navigation = useNavigation();
-  const dispatch = useDispatch();
+    const navigation = useNavigation();
+    const dispatch = useDispatch();
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-  const initialState = {
-    email: '',
-    password: '',
-  };
+    const initialState = {
+        email: '',
+        password: '',
+    };
 
-  const { formFields, createChangeHandler } = useFormFields(initialState);
+    const { formFields, createChangeHandler } = useFormFields(initialState);
 
-  const HandleFormSubmit = async () => {
-    const fields = { ...formFields };
+    const HandleFormSubmit = async () => {
+        const fields = { ...formFields };
 
-    let fieldAbsent = false;
-    for (let key in initialState) {
-      if (fields[key] === '') {
-        fieldAbsent = true;
-      }
-    }
-
-    if (fieldAbsent) {
-      setError('ফর্মটি সঠিকভাবে পূরণ করুন');
-      return;
-    } else if (!validator.isEmail(fields.email)) {
-      setError('ইমেলটি বৈধ নয়');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    fields.email = fields.email.toString().trim().toLowerCase();
-    fields.password = fields.password.toString().trim();
-
-    const response = await ApiExecutor(
-      ApiDefinitions.loginProfessional({
-        payload: fields,
-      })
-    );
-
-    setIsLoading(false);
-
-    if (!response.success) {
-      setError(response.error.message);
-      return;
-    }
-
-    const { prof, accessToken, refreshToken } = response.data;
-
-    if (!('step' in prof)) {
-      setError('Step count not found');
-      return;
-    }
-
-    dispatch(setAuthToken(RoleEnum.PROFESSIONAL, accessToken, refreshToken));
-    dispatch(storeProfessionalsProfile(prof));
-
-    if (prof.step == 1) {
-      navigation.navigate(constants.PROF_REGISTER_STEP_2);
-    } else if (prof.step == 2) {
-      navigation.navigate(constants.PROF_REGISTER_STEP_3);
-    } else if (prof.step == 3) {
-      navigation.navigate(constants.PROF_REGISTER_STEP_4);
-    } else {
-      navigation.navigate(constants.PROF_HOMEPAGE);
-    }
-  };
-
-  return (
-    <Container>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>প্রফেশনাল হিসেবে</Text>
-        <Text style={styles.subHeaderText}> লগইন করুন</Text>
-      </View>
-      <View style={styles.loginContainer}>
-        <AuthIcon />
-        <View style={styles.loginButtons}>
-          <TextInput
-            autoCapitalize="none"
-            autoCorrect={false}
-            icon="email"
-            name="email"
-            placeholder="ইমেইল"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-            onChangeText={(text) => createChangeHandler(text, 'email')}
-          />
-
-          <TextInput
-            autoCapitalize="none"
-            autoCorrect={false}
-            icon="lock"
-            name="password"
-            placeholder="পাসওয়ার্ড"
-            textContentType="password"
-            keyboardType="default"
-            onChangeText={(text) => createChangeHandler(text, 'password')}
-          />
-
-          <TouchableOpacity
-            style={{
-              alignSelf: 'flex-end',
-              marginRight: 20,
-              paddingTop: 8,
-            }}
-            onPress={() =>
-              navigation.navigate(constants.FORGET_PASSWORD, {
-                accountType: RoleEnum.PROFESSIONAL,
-              })
+        let fieldAbsent = false;
+        for (let key in initialState) {
+            if (fields[key] === '') {
+                fieldAbsent = true;
             }
-          >
-            <AppText
-              style={{
-                fontSize: 14,
-                fontWeight: 'bold',
-                color: colors.primary,
-              }}
-            >
-              পাসওয়ার্ড ভুলে গিয়েছেন?
-            </AppText>
-          </TouchableOpacity>
+        }
 
-          <Loader style={{ paddingTop: 10 }} visible={isLoading} />
-          <ErrorButton title={error} visible={!!error && !isLoading} />
-          <SubmitButton
-            title={'লগইন করুন'}
-            onPress={HandleFormSubmit}
-            style={{ marginTop: 8 }}
-            visible={!isLoading}
-          />
+        if (fieldAbsent) {
+            setError('ফর্মটি সঠিকভাবে পূরণ করুন');
+            return;
+        } else if (!validator.isEmail(fields.email)) {
+            setError('ইমেলটি বৈধ নয়');
+            return;
+        }
 
-          <EndOptions
-            title1={'আপনার কি অ্যাকাউন্ট নেই?'}
-            title2={'রেজিস্ট্রেশন করুন'}
-            title3={'ইউজার হিসেবে লগইন করুন'}
-            onPress1={() => navigation.navigate(constants.PROF_REGISTRATION_CONSENT)}
-            onPress2={() => navigation.navigate(constants.LOGIN)}
-          />
-        </View>
-      </View>
-    </Container>
-  );
+        setIsLoading(true);
+        setError(null);
+
+        fields.email = fields.email.toString().trim().toLowerCase();
+        fields.password = fields.password.toString().trim();
+
+        const response = await ApiExecutor(
+            ApiDefinitions.loginProfessional({
+                payload: fields,
+            })
+        );
+
+        setIsLoading(false);
+
+        if (!response.success) {
+            setError(response.error.message);
+            return;
+        }
+
+        const { prof, accessToken, refreshToken } = response.data;
+
+        if (!('step' in prof)) {
+            setError('Step count not found');
+            return;
+        }
+
+        dispatch(setAuthToken(RoleEnum.PROFESSIONAL, accessToken, refreshToken));
+        dispatch(storeProfessionalsProfile(prof));
+
+        if (prof.step == 1) {
+            navigation.navigate(constants.PROF_REGISTER_STEP_2);
+        } else if (prof.step == 2) {
+            navigation.navigate(constants.PROF_REGISTER_STEP_3);
+        } else if (prof.step == 3) {
+            navigation.navigate(constants.PROF_REGISTER_STEP_4);
+        } else {
+            navigation.navigate(constants.PROF_HOMEPAGE);
+        }
+    };
+
+    return (
+        <Container colors={[colors.secondary, colors.secondary]}>
+            <View style={styles.header}>
+                <Text style={styles.headerText}>প্রফেশনাল হিসেবে</Text>
+                <Text style={styles.subHeaderText}> লগইন করুন</Text>
+            </View>
+            <View style={styles.loginContainer}>
+                <AuthIcon />
+                <View style={styles.loginButtons}>
+                    <TextInput
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        icon="email"
+                        name="email"
+                        placeholder="ইমেইল"
+                        keyboardType="email-address"
+                        textContentType="emailAddress"
+                        onChangeText={(text) => createChangeHandler(text, 'email')}
+                    />
+
+                    <TextInput
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        icon="lock"
+                        name="password"
+                        placeholder="পাসওয়ার্ড"
+                        textContentType="password"
+                        keyboardType="default"
+                        onChangeText={(text) => createChangeHandler(text, 'password')}
+                    />
+
+                    <TouchableOpacity
+                        style={{
+                            alignSelf: 'flex-end',
+                            marginRight: 20,
+                            paddingTop: 8,
+                        }}
+                        onPress={() =>
+                            navigation.navigate(constants.FORGET_PASSWORD, {
+                                accountType: RoleEnum.PROFESSIONAL,
+                            })
+                        }
+                    >
+                        <AppText
+                            style={{
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                color: colors.primary,
+                            }}
+                        >
+                            পাসওয়ার্ড ভুলে গিয়েছেন?
+                        </AppText>
+                    </TouchableOpacity>
+
+                    <Loader style={{ paddingTop: 10 }} visible={isLoading} />
+                    <ErrorButton title={error} visible={!!error && !isLoading} />
+                    <SubmitButton
+                        title={'লগইন করুন'}
+                        onPress={HandleFormSubmit}
+                        style={{ marginTop: 8 }}
+                        visible={!isLoading}
+                    />
+
+                    <EndOptions
+                        title1={'আপনার কি অ্যাকাউন্ট নেই?'}
+                        title2={'রেজিস্ট্রেশন করুন'}
+                        title3={'ইউজার হিসেবে লগইন করুন'}
+                        onPress1={() => navigation.navigate(constants.PROF_REGISTRATION_CONSENT)}
+                        onPress2={() => navigation.navigate(constants.LOGIN)}
+                    />
+                </View>
+            </View>
+        </Container>
+    );
 };
 
 let borderRadius = 35;
 const styles = StyleSheet.create({
-  loginContainer: {
-    backgroundColor: 'white',
-    flex: 1,
-    borderTopLeftRadius: borderRadius,
-    borderTopRightRadius: borderRadius,
-  },
-  loginButtons: {
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingBottom: 20,
-  },
-  forgetPassword: {
-    justifyContent: 'flex-end',
-    alignSelf: 'flex-end',
-    marginRight: 25,
-    marginTop: 10,
-    marginBottom: 5,
-  },
-  lowerTexts: {
-    fontSize: 14.5,
-    fontWeight: 'bold',
-    fontSize: 14.5,
-    color: colors.textSecondary,
-  },
-  header: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 180,
-  },
-  headerText: {
-    color: 'white',
-    fontSize: 26,
-    alignSelf: 'center',
-    letterSpacing: 1,
-    fontWeight: '700',
-  },
-  subHeaderText: {
-    color: 'white',
-    fontSize: 23,
-    alignSelf: 'center',
-    letterSpacing: 1.2,
-    fontWeight: '400',
-    paddingTop: 15,
-  },
+    loginContainer: {
+        backgroundColor: 'white',
+        flex: 1,
+        borderTopLeftRadius: borderRadius,
+        borderTopRightRadius: borderRadius,
+    },
+    loginButtons: {
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        paddingBottom: 20,
+    },
+    forgetPassword: {
+        justifyContent: 'flex-end',
+        alignSelf: 'flex-end',
+        marginRight: 25,
+        marginTop: 10,
+        marginBottom: 5,
+    },
+    lowerTexts: {
+        fontSize: 14.5,
+        fontWeight: 'bold',
+        fontSize: 14.5,
+        color: colors.textSecondary,
+    },
+    header: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 180,
+    },
+    headerText: {
+        color: 'white',
+        fontSize: 26,
+        alignSelf: 'center',
+        letterSpacing: 1,
+        fontWeight: '700',
+    },
+    subHeaderText: {
+        color: 'white',
+        fontSize: 23,
+        alignSelf: 'center',
+        letterSpacing: 1.2,
+        fontWeight: '400',
+        paddingTop: 15,
+    },
 });
 
 export default ProfLoginComponent;

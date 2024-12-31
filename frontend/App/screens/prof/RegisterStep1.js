@@ -14,6 +14,7 @@ import { ApiDefinitions } from '../../services/api';
 import { useBackPress, useHelper } from '../../hooks';
 import { SubmitButton } from '../../components/SubmitButton';
 import { genderLists, professionLists } from '../../utils/values';
+import colors from '../../config/colors';
 
 let borderRadius = 35;
 
@@ -135,7 +136,7 @@ const RegisterStep1 = () => {
     };
 
     return (
-        <Container>
+        <Container colors={[colors.secondary, colors.secondary]}>
             <View style={[styles.header, { height: 165 }]}>
                 <AppText style={styles.headerText}>প্রফেশনাল হিসেবে</AppText>
                 <AppText style={styles.subHeaderText}>এখনই জয়েন করুন!</AppText>
