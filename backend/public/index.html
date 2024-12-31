@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Q-Life - Modern Mental Health & Wellness</title>
+        <!-- Load external dependencies first -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"
+            rel="stylesheet"
+        />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <script>
+            // Configure Tailwind
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['Poppins', 'sans-serif'],
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            /* Base styles */
+            body {
+                font-family: 'Poppins', sans-serif;
+            }
+
+            /* Custom animations */
+            @keyframes float {
+                0% {
+                    transform: translateY(0px);
+                }
+                50% {
+                    transform: translateY(-20px);
+                }
+                100% {
+                    transform: translateY(0px);
+                }
+            }
+
+            .float-animation {
+                animation: float 3s ease-in-out infinite;
+            }
+
+            /* Custom gradients and transitions */
+            .hero-gradient {
+                background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+            }
+
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+
+            .card-hover:hover {
+                transform: translateY(-10px);
+            }
+        </style>
+    </head>
+    <body class="bg-gray-50">
+        <nav class="fixed w-full bg-white/90 backdrop-blur-md z-50 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <a href="#" class="text-2xl font-bold text-blue-600"
+                        >Q-Life</a
+                    >
+                    <div class="hidden md:flex space-x-8">
+                        <a
+                            href="#services"
+                            class="text-gray-700 hover:text-blue-600 transition-colors"
+                            >Services</a
+                        >
+                        <a
+                            href="#about"
+                            class="text-gray-700 hover:text-blue-600 transition-colors"
+                            >About</a
+                        >
+                        <a
+                            href="#testimonials"
+                            class="text-gray-700 hover:text-blue-600 transition-colors"
+                            >Testimonials</a
+                        >
+                        <a
+                            href="#faq"
+                            class="text-gray-700 hover:text-blue-600 transition-colors"
+                            >FAQ</a
+                        >
+                        <a
+                            href="#contact"
+                            class="text-gray-700 hover:text-blue-600 transition-colors"
+                            >Contact</a
+                        >
+                    </div>
+                    <button
+                        class="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition-colors"
+                    >
+                        Get Started
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <section class="hero-gradient pt-32 pb-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col lg:flex-row items-center">
+                    <div class="lg:w-1/2 text-white" data-aos="fade-right">
+                        <h1
+                            class="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+                        >
+                            Your Journey to Better Mental Health
+                        </h1>
+                        <p class="text-xl mb-8 text-blue-100">
+                            Experience personalized mental wellness support with
+                            cutting-edge assessments and expert guidance.
+                        </p>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button
+                                class="bg-white text-blue-600 px-8 py-3 rounded-full hover:bg-blue-50 transition-colors"
+                            >
+                                Start Assessment
+                            </button>
+                            <button
+                                class="border-2 border-white text-white px-8 py-3 rounded-full hover:bg-white/10 transition-colors"
+                            >
+                                Learn More
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:w-1/2 mt-12 lg:mt-0" data-aos="fade-left">
+                        <img
+                            src="/images/hero_header_image.png"
+                            alt="Mental Health"
+                            class="float-animation rounded-lg shadow-xl"
+                        />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="services" class="py-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16" data-aos="fade-up">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-4">
+                        Our Services
+                    </h2>
+                    <p class="text-gray-600 max-w-2xl mx-auto">
+                        Comprehensive mental health solutions tailored to your
+                        unique needs
+                    </p>
+                </div>
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
+                    <!-- Service Card 1 -->
+                    <div
+                        class="bg-white rounded-xl p-6 shadow-lg card-hover"
+                        data-aos="fade-up"
+                        data-aos-delay="100"
+                    >
+                        <div
+                            class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6"
+                        >
+                            <svg
+                                class="w-6 h-6 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-4">
+                            Mental Health Assessments
+                        </h3>
+                        <p class="text-gray-600">
+                            Take expert-designed tests to assess your mental
+                            well-being and receive actionable insights.
+                        </p>
+                    </div>
+
+                    <!-- Service Card 2 -->
+                    <div
+                        class="bg-white rounded-xl p-6 shadow-lg card-hover"
+                        data-aos="fade-up"
+                        data-aos-delay="200"
+                    >
+                        <div
+                            class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6"
+                        >
+                            <svg
+                                class="w-6 h-6 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-4">
+                            Personalized Recommendations
+                        </h3>
+                        <p class="text-gray-600">
+                            Get customized guidance and follow-up plans based on
+                            your assessment results.
+                        </p>
+                    </div>
+
+                    <!-- Service Card 3 -->
+                    <div
+                        class="bg-white rounded-xl p-6 shadow-lg card-hover"
+                        data-aos="fade-up"
+                        data-aos-delay="300"
+                    >
+                        <div
+                            class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6"
+                        >
+                            <svg
+                                class="w-6 h-6 text-blue-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                                ></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-4">
+                            Educational Resources
+                        </h3>
+                        <p class="text-gray-600">
+                            Access our extensive library of mental health
+                            resources and expert content.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="py-20 bg-blue-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col lg:flex-row items-center gap-20">
+                    <div class="lg:w-1/2" data-aos="fade-right">
+                        <img
+                            src="/images/about_us.png"
+                            alt="About Q-Life"
+                            class="float-animation rounded-xl"
+                        />
+                    </div>
+                    <div class="lg:w-1/2" data-aos="fade-left">
+                        <h2 class="text-4xl font-bold text-gray-800 mb-6">
+                            About Q-Life
+                        </h2>
+                        <p class="text-gray-600 mb-6">
+                            Q-Life is revolutionizing mental healthcare through
+                            innovative technology and personalized support. Our
+                            platform combines cutting-edge assessments with
+                            expert guidance.
+                        </p>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-md">
+                                <h4
+                                    class="text-2xl font-bold text-blue-600 mb-2"
+                                >
+                                    10k+
+                                </h4>
+                                <p class="text-gray-600">Users Helped</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-md">
+                                <h4
+                                    class="text-2xl font-bold text-blue-600 mb-2"
+                                >
+                                    95%
+                                </h4>
+                                <p class="text-gray-600">Success Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="testimonials" class="py-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16" data-aos="fade-up">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-4">
+                        What Our Users Say
+                    </h2>
+                    <p class="text-gray-600 max-w-2xl mx-auto">
+                        Real stories from people who have transformed their
+                        lives
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-lg"
+                        data-aos="fade-up"
+                        data-aos-delay="100"
+                    >
+                        <div class="flex items-center mb-6">
+                            <img
+                                src="https://randomuser.me/api/portraits/women/10.jpg"
+                                alt="User"
+                                class="w-12 h-12 rounded-full"
+                            />
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold">
+                                    Sarah Thompson
+                                </h4>
+                                <p class="text-gray-600">Marketing Executive</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">
+                            "Q-Life has been transformative for my mental
+                            well-being. The personalized assessments helped me
+                            understand myself better."
+                        </p>
+                    </div>
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-lg"
+                        data-aos="fade-up"
+                        data-aos-delay="200"
+                    >
+                        <div class="flex items-center mb-6">
+                            <img
+                                src="https://randomuser.me/api/portraits/men/20.jpg"
+                                alt="User"
+                                class="w-12 h-12 rounded-full"
+                            />
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold">
+                                    John Davidson
+                                </h4>
+                                <p class="text-gray-600">Software Engineer</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">
+                            "The educational resources and support from Q-Life
+                            have given me the tools I need to manage stress
+                            effectively."
+                        </p>
+                    </div>
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-lg"
+                        data-aos="fade-up"
+                        data-aos-delay="300"
+                    >
+                        <div class="flex items-center mb-6">
+                            <img
+                                src="https://randomuser.me/api/portraits/women/25.jpg"
+                                alt="User"
+                                class="w-12 h-12 rounded-full"
+                            />
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold">
+                                    Emily Carter
+                                </h4>
+                                <p class="text-gray-600">Freelance Designer</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">
+                            "Q-Life has brought clarity to my goals and helped
+                            me maintain a positive outlook on life. Highly
+                            recommended!"
+                        </p>
+                    </div>
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-lg"
+                        data-aos="fade-up"
+                        data-aos-delay="400"
+                    >
+                        <div class="flex items-center mb-6">
+                            <img
+                                src="https://randomuser.me/api/portraits/men/30.jpg"
+                                alt="User"
+                                class="w-12 h-12 rounded-full"
+                            />
+                            <div class="ml-4">
+                                <h4 class="text-lg font-semibold">
+                                    Michael Brown
+                                </h4>
+                                <p class="text-gray-600">Entrepreneur</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-600">
+                            "The tailored insights and strategies from Q-Life
+                            have significantly improved my work-life balance."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section id="faq" class="py-20 bg-blue-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16" data-aos="fade-up">
+                    <h2 class="text-4xl font-bold text-gray-800 mb-4">
+                        Frequently Asked Questions
+                    </h2>
+                    <p class="text-gray-600 max-w-2xl mx-auto">
+                        Find answers to common questions about our mental health
+                        services
+                    </p>
+                </div>
+
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto"
+                >
+                    <!-- FAQ Item 1 -->
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-lg"
+                        data-aos="fade-up"
+                        data-aos-delay="100"
+                    >
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">
+                            How do the assessments work?
+                        </h3>
+                        <p class="text-gray-600">
+                            Our assessments are scientifically designed
+                            questionnaires that evaluate different aspects of
+                            your mental well-being. They take about 15-20
+                            minutes to complete, and you'll receive immediate
+                            insights and recommendations.
+                        </p>
+                    </div>
+
+                    <!-- FAQ Item 2 -->
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-lg"
+                        data-aos="fade-up"
+                        data-aos-delay="200"
+                    >
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">
+                            Is my information confidential?
+                        </h3>
+                        <p class="text-gray-600">
+                            Absolutely. We maintain strict confidentiality and
+                            use bank-level encryption to protect your data. Your
+                            privacy is our top priority, and we comply with all
+                            relevant data protection regulations.
+                        </p>
+                    </div>
+
+                    <!-- FAQ Item 3 -->
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-lg"
+                        data-aos="fade-up"
+                        data-aos-delay="300"
+                    >
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">
+                            Can I speak with a professional?
+                        </h3>
+                        <p class="text-gray-600">
+                            Yes, we offer connections to licensed mental health
+                            professionals. After your assessment, you can
+                            schedule a consultation with a therapist who matches
+                            your needs and preferences.
+                        </p>
+                    </div>
+
+                    <!-- FAQ Item 4 -->
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-lg"
+                        data-aos="fade-up"
+                        data-aos-delay="400"
+                    >
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">
+                            How much does it cost?
+                        </h3>
+                        <p class="text-gray-600">
+                            We offer different plans to suit various needs. The
+                            initial assessment is free, and our subscription
+                            plans start at $29/month. We also work with several
+                            insurance providers.
+                        </p>
+                    </div>
+
+                    <!-- FAQ Item 5 -->
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-lg"
+                        data-aos="fade-up"
+                        data-aos-delay="500"
+                    >
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">
+                            How quickly can I get started?
+                        </h3>
+                        <p class="text-gray-600">
+                            You can start immediately! Sign up takes less than 2
+                            minutes, and you can begin your first assessment
+                            right away. Support resources are instantly
+                            accessible upon registration.
+                        </p>
+                    </div>
+
+                    <!-- FAQ Item 6 -->
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-lg"
+                        data-aos="fade-up"
+                        data-aos-delay="600"
+                    >
+                        <h3 class="text-xl font-semibold text-gray-800 mb-3">
+                            What if I need immediate help?
+                        </h3>
+                        <p class="text-gray-600">
+                            If you're experiencing a crisis, we provide direct
+                            connections to 24/7 crisis hotlines and emergency
+                            services. Your safety is our primary concern.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="py-20 bg-gray-900">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col lg:flex-row gap-12">
+                    <div class="lg:w-1/2" data-aos="fade-right">
+                        <h2 class="text-4xl font-bold text-white mb-6">
+                            Get in Touch
+                        </h2>
+                        <p class="text-gray-400 mb-8">
+                            Have questions? We're here to help you on your
+                            journey to better mental health.
+                        </p>
+                        <div class="space-y-4">
+                            <p class="text-gray-400 flex items-center">
+                                <svg
+                                    class="w-6 h-6 mr-3"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                    ></path>
+                                </svg>
+                                +8801938929740
+                            </p>
+                            <p class="text-gray-400 flex items-center">
+                                <svg
+                                    class="w-6 h-6 mr-3"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                    ></path>
+                                </svg>
+                                support@qlife-bd.com
+                            </p>
+                            <p class="text-gray-400 flex items-center">
+                                <svg
+                                    class="w-6 h-6 mr-3"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                    ></path>
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                    ></path>
+                                </svg>
+                                450/A Shewrapara, Mirpur, Dhaka, Bangladesh -
+                                1216
+                            </p>
+                        </div>
+                    </div>
+                    <div class="lg:w-1/2" data-aos="fade-left">
+                        <form class="space-y-6">
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-400 mb-2"
+                                    >Name</label
+                                >
+                                <input
+                                    type="text"
+                                    class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    placeholder="Your name"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-400 mb-2"
+                                    >Email</label
+                                >
+                                <input
+                                    type="email"
+                                    class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    placeholder="Your email"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-400 mb-2"
+                                    >Message</label
+                                >
+                                <textarea
+                                    class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-32"
+                                    placeholder="Your message"
+                                ></textarea>
+                            </div>
+                            <button
+                                class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                Send Message
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-gray-900 border-t border-gray-800 py-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center text-gray-400">
+                    <p>&copy; 2025 Q-Life. All rights reserved.</p>
+                </div>
+            </div>
+        </footer>
+
+        <!-- Initialize AOS -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                AOS.init({
+                    duration: 800,
+                    once: true,
+                    offset: 100,
+                });
+            });
+        </script>
+    </body>
+</html>

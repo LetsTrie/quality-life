@@ -83,7 +83,7 @@ app.use(
 );
 
 app.get('/', (req, res, next) => {
-    return res.send('Server is up!');
+    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.use(require('./index.routes'));
