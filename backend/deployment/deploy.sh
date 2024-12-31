@@ -45,4 +45,27 @@ else
     exit 1
 fi
 
+if cp .env server/.env; then
+    log "Environment variables successfully copied to server/.env."
+else
+    log "Failed to copy environment variables to server/.env. Exiting script."
+    exit 1
+fi
+
+if cd server && npm install; then
+    log "Server installation successful."
+else
+    log "Failed to install server dependencies. Exiting script."
+    exit 1
+fi
+
+if pm2 restart all; then 
+    log "Server instances restarted successfully."
+else
+    log "Failed to restart all server instances. Exiting script."
+    exit 1
+fi
+
+log "Starting server... 
+
 log "Script execution completed successfully."
