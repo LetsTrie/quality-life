@@ -73,3 +73,8 @@ export const specAreaLists = [
         value: 'প্রযোজ্য নয়',
     },
 ];
+
+export const maritalStatusLists = [
+    { label: 'বিবাহিত', value: 'Married' },
+    { label: 'অবিবাহিত', value: 'Single' },
+];

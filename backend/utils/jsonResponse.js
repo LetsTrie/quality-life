@@ -12,12 +12,14 @@ const sendErrorResponse = (res, status, type, content) => {
         errors: Array.isArray(content) ? content : [content],
     };
 
-    logger.error({
-        message: content?.message || 'An error occurred',
-        status,
-        type,
-        content,
-    });
+    if (status === 405) {
+        logger.error({
+            message: content?.message || 'An error occurred',
+            status,
+            type,
+            content,
+        });
+    }
 
     res.status(status).json(errorBody);
 };

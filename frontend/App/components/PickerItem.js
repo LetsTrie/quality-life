@@ -13,7 +13,15 @@ function PickerItem({ item, onPress, onChange, selectedItem }) {
     };
     return (
         <TouchableOpacity onPress={handlePress}>
-            <Text style={[styles.text, selectedItem.value === item.value && styles.selectedText]}>
+            <Text
+                style={[
+                    styles.text,
+                    selectedItem &&
+                        'value' in selectedItem &&
+                        selectedItem.value === item.value &&
+                        styles.selectedText,
+                ]}
+            >
                 {item.label}
             </Text>
         </TouchableOpacity>
