@@ -82,7 +82,7 @@ app.use(
     }),
 );
 
-app.get('/', (req, res, next) => {
+app.get('/', (_req, res, _next) => {
     return res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

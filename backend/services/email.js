@@ -1,39 +1,39 @@
-// const nodemailer = require('nodemailer');
+const { SendEmailCommand } = require('@aws-sdk/client-ses');
+const { sesClient } = require('./sesClient');
 
-const { Resend } = require('resend');
-const resend = new Resend('re_bCfxV6zg_4QA3s9kfXNdDZS5mQekADSeK');
-
+/**
+ * Sends an email using Amazon SES.
+ * @param {string} toAddress - Recipient email address.
+ * @param {string} subject - Email subject.
+ * @param {string} htmlBody - HTML content of the email.
+ * @returns {Promise<object>} - Result of the SES send command.
+ */
 const sendEmail = async (toAddress, subject, htmlBody) => {
-    // let transporter = nodemailer.createTransport({
-    //     host: process.env.SMTP_SERVER,
-    //     port: process.env.SMTP_PORT,
-    //     secure: false, // true for 465, false for other ports
-    //     auth: {
-    //         user: process.env.SMTP_LOGIN,
-    //         pass: process.env.SMTP_PASSWORD,
-    //     },
-    // });
+    const sendEmailCommand = new SendEmailCommand({
+        Destination: {
+            ToAddresses: [toAddress],
+        },
+        Message: {
+            Body: {
+                Html: {
+                    Charset: 'UTF-8',
+                    Data: htmlBody,
+                },
+            },
+            Subject: {
+                Charset: 'UTF-8',
+                Data: subject,
+            },
+        },
+        Source: `"Tasnuva from Qlife" <${process.env.EMAIL_SENDER}>`,
+    });
 
     try {
-        const r = await resend.emails.send({
-            from: 'qlife2025@gmail.com',
-            to: toAddress,
-            subject: subject,
-            html: htmlBody,
-        });
-
-        // let info = await transporter.sendMail({
-        //     from: `"Tasnuva from Qlife" <${process.env.EMAIL_SENDER}>`,
-        //     to: toAddress,
-        //     subject: subject,
-        //     html: htmlBody,
-        // });
-
-        // console.log('Message sent: %s', info.messageId);
-
+        const response = await sesClient.send(sendEmailCommand);
+        // console.log(response);
         return {
             success: true,
-            messageId: r,
+            messageId: response.MessageId,
         };
     } catch (error) {
         return {
