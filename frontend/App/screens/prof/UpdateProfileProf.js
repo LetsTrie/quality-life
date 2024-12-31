@@ -9,7 +9,8 @@ import Picker from '../../components/Picker';
 import TextInput from '../../components/TextInput';
 import { useBackPress } from '../../hooks';
 import constants from '../../navigation/constants';
-import { updateProfileActionProf } from '../../redux/actions/prof';
+import { logoutAction, updateProfileActionProf } from '../../redux/actions/prof';
+import { updateProfProfile } from '../../services/api';
 
 const professionLists = [
   { label: 'Clinical psychologist', value: 10 },
@@ -47,7 +48,8 @@ const UpdateProfileProf = () => {
     eduQualification,
     experience,
     fee,
-  } = useSelector((state) => state.prof?.prof || {});
+  } = useSelector((state) => state.prof.prof);
+  const { jwtToken } = useSelector((state) => state.auth);
 
   useEffect(() => {
     setprofession(professionLists.find((profession) => profession.label === currentProfession));
@@ -87,20 +89,19 @@ const UpdateProfileProf = () => {
     setIsLoading(true);
     setError(null);
 
-    throw new Error('Not implemented');
+    const response = await updateProfProfile({ _id, jwtToken, payload });
+    console.log(response);
+    setIsLoading(false);
 
-    // const response = await updateProfProfile({ _id, payload });
-    // console.log(response);
-    // setIsLoading(false);
+    if (response.success) {
+      dispatch(updateProfileActionProf(response.data));
+      navigation.navigate('ProfileProf');
+      return;
+    }
 
-    // if (response.success) {
-    //   dispatch(updateProfileActionProf(response.data));
-    //   navigation.navigate('ProfileProf');
-    //   return;
-    // }
-
-    // setError(response?.error?.message);
-    // write code here...
+    setError(response?.error?.message);
+    if (response.status === 401) dispatch(logoutAction());
+    processApiError(response);
   };
 
   return (

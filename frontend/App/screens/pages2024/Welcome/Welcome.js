@@ -1,9 +1,9 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { BackHandler, Image, StyleSheet, View } from 'react-native';
 import Swiper from 'react-native-swiper';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppButton, AppText } from '../../../components';
+import { AppButton, AppText, Loader } from '../../../components';
 import constants from '../../../navigation/constants';
 import { RoleEnum } from '../../../utils/roles';
 import { ApiDefinitions } from '../../../services/api';
@@ -28,6 +28,7 @@ export const Welcome = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const { role } = useSelector((state) => state.auth);
+  const [isLoading, setIsLoading] = useState(false);
 
   const isAuthenticated = !!role;
 
@@ -82,7 +83,10 @@ export const Welcome = () => {
 
   const authNavigate = useCallback(
     (defaultRoute) => async () => {
+      setIsLoading(true);
       const redirectionHandled = await tokenBasedRedirection();
+      setIsLoading(false);
+
       if (typeof redirectionHandled === 'boolean' && !redirectionHandled) {
         navigation.navigate(defaultRoute);
       }
@@ -99,11 +103,13 @@ export const Welcome = () => {
           মানসিক স্বাস্থ্য সম্পর্কিত যেকোনো তথ্য এবং বিভিন্ন টেস্ট আপনি এই অ্যাপ থেকে পাবেন। বিভিন্ন
           চিকিৎসক এবং স্বাস্থ্যকেন্দ্রে আপনি এই অ্যাপটি থেকে যোগাযোগ করতে পারবেন।
         </AppText>
+        <Loader visible={isLoading} />
         <AppButton
           title="অ্যাপে প্রবেশ করুন"
           style={styles.button}
           textStyle={styles.buttonText}
           onPress={authNavigate(constants.LOGIN)}
+          visible={!isLoading}
         />
       </View>
     </View>

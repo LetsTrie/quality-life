@@ -23,7 +23,7 @@ export default {
   [constants.PROF_LOGIN]: constants.WELCOME,
 
   [constants.PROF_PROFILE]: constants.PROF_HOMEPAGE,
-  [constants.PROF_UPDATE_PROFILE]: constants.PROF_PROFILE,
+  [constants.PROF_UPDATE_PROFILE]: constants.GO_TO_BACK,
   [constants.PROF_ASSESSMENT_TOOLS]: constants.GO_TO_BACK,
   [constants.PROF_ASSESSMENT_TOOL_DETAILS]: constants.GO_TO_BACK,
   [constants.PROF_CLIENT_REQUEST]: constants.PROF_HOMEPAGE,
