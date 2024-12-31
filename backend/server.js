@@ -51,33 +51,22 @@ if (!isProdEnvironment()) {
 const logDirectory = path.join(__dirname, 'logs');
 if (!fs.existsSync(logDirectory)) fs.mkdirSync(logDirectory);
 
-const accessLogStream = fs.createWriteStream(
-    path.join(logDirectory, 'access.log'),
-    { flags: 'a' },
-);
-
 if (isDevEnvironment()) {
     app.use(morgan('dev'));
 } else if (isProdEnvironment()) {
-    app.use(morgan('combined', { stream: accessLogStream }));
+    app.use(morgan('combined'));
+
     const errorLogStream = fs.createWriteStream(
         path.join(logDirectory, 'error.log'),
         { flags: 'a' },
     );
     app.use(
         morgan('combined', {
-            skip: (_req, res) => res.statusCode < 400,
+            skip: (_req, res) => res.statusCode < 400 || res.statusCode === 405,
             stream: errorLogStream,
         }),
     );
 }
-
-app.use(
-    morgan(':method :url :status :res[content-length] - :response-time ms', {
-        skip: (_req, res) => res.statusCode < 400,
-        stream: process.stderr,
-    }),
-);
 
 app.use(rateLimiter);
 app.set('view engine', 'ejs');
