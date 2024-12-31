@@ -5,8 +5,6 @@ const errorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
-    console.error(err);
-
     // Mongoose duplicate key
     if (err.code === 11000) {
         const message = `${Object.keys(error.keyPattern)[0]} is already used.`;

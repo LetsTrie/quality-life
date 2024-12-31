@@ -59,13 +59,11 @@ else
     exit 1
 fi
 
-if pm2 restart all; then 
+if pm2 restart all && pm2 logs; then 
     log "Server instances restarted successfully."
 else
     log "Failed to restart all server instances. Exiting script."
     exit 1
 fi
-
-log "Starting server... 
 
 log "Script execution completed successfully."
