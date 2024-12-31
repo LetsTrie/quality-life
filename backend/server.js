@@ -54,8 +54,6 @@ if (!fs.existsSync(logDirectory)) fs.mkdirSync(logDirectory);
 if (isDevEnvironment()) {
     app.use(morgan('dev'));
 } else if (isProdEnvironment()) {
-    app.use(morgan('combined'));
-
     const errorLogStream = fs.createWriteStream(
         path.join(logDirectory, 'error.log'),
         { flags: 'a' },
@@ -67,6 +65,13 @@ if (isDevEnvironment()) {
         }),
     );
 }
+
+app.use(
+    morgan(':method :url :status :res[content-length] - :response-time ms', {
+        skip: (_req, res) => res.statusCode < 400 || res.status === 405,
+        stream: process.stderr,
+    }),
+);
 
 app.use(rateLimiter);
 app.set('view engine', 'ejs');
