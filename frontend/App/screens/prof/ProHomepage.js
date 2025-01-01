@@ -138,6 +138,8 @@ const Homepage = () => {
         })();
     }, [isFocused]);
 
+    if (!prof) return null;
+
     return (
         <ScrollView
             style={styles.container}
@@ -164,24 +166,17 @@ const Homepage = () => {
                     {!prof.visibility && <WarningBlock />}
 
                     <CardItem
-                        icon="people"
+                        icon="person-add"
                         title="Client Requests"
                         badge={numOfNewClientRequests > 0 ? numOfNewClientRequests : null}
-                        color={colors.focus}
+                        color={colors.danger}
                         onPress={() => navigation.navigate(constants.PROF_CLIENT_REQUEST)}
-                    />
-
-                    <CardItem
-                        icon="assessment"
-                        title="Assessment Tools"
-                        color={colors.secondary}
-                        onPress={() => navigation.navigate(constants.PROF_ASSESSMENT_TOOLS)}
                     />
 
                     <CardItem
                         icon="group"
                         title="My Clients"
-                        color={colors.primary}
+                        color="#337AB7"
                         onPress={() =>
                             navigation.navigate(constants.PROFESSIONALS_CLIENT, {
                                 goToBack: SCREEN_NAME,
@@ -189,14 +184,28 @@ const Homepage = () => {
                         }
                     />
 
+                    <CardItem
+                        icon="assessment"
+                        title="Assessment Tools"
+                        color={colors.success}
+                        onPress={() => navigation.navigate(constants.PROF_ASSESSMENT_TOOLS)}
+                    />
+
                     {!anyNewNotifications && (
                         <CardItem
-                            icon="notifications"
+                            icon="notifications-active"
                             title="Notifications"
-                            color={colors.highlight}
+                            color="#FFC107"
                             onPress={() => navigation.navigate(constants.NOTIFICATIONS)}
                         />
                     )}
+
+                    <CardItem
+                        icon="verified-user"
+                        title="My Profile"
+                        color="#6F42C1"
+                        onPress={() => navigation.navigate(constants.PROF_PROFILE)}
+                    />
                 </View>
             )}
         </ScrollView>
@@ -220,7 +229,7 @@ const styles = StyleSheet.create({
     },
     card: {
         marginTop: 8,
-        marginBottom: 2,
+        marginBottom: 4,
         borderRadius: 8,
     },
     cardContent: {

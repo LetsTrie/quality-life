@@ -137,6 +137,16 @@ const Setting = () => {
                     />
                     <Text style={styles.textStyle}>অ্যাকাউন্ট ডিলিট করুন</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity style={styles.card} onPress={logout}>
+                    <MaterialCommunityIcons
+                        name="exit-to-app"
+                        style={styles.iconStyle}
+                        size={24}
+                        color="#f5690c"
+                    />
+                    <Text style={styles.textStyle}>লগ আউট করুন</Text>
+                </TouchableOpacity>
             </View>
             <DeleteAccountModal
                 modalVisible={modalVisibleForDeleteAcc}

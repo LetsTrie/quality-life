@@ -1,9 +1,11 @@
+const httpStatus = require('http-status');
 const {
     Professional,
     Appointment,
     ProfessionalsClient,
     ProfessionalsAssessment,
 } = require('../models');
+const User = require('../models/user');
 
 const { NotificationService } = require('../services');
 const { sendEmail } = require('../services/email');
@@ -18,7 +20,7 @@ const {
     constants,
 } = require('../utils');
 const { formatDate } = require('../utils/datetime');
-const { capitalizeFirstLetter } = require('../utils/string');
+const { capitalizeFirstLetter, formatSlugToTitle } = require('../utils/string');
 
 // GET /user/professionals
 exports.findProfessionals = asyncHandler(async (req, res, _next) => {
@@ -109,23 +111,19 @@ exports.requestForAppointment = asyncHandler(async (req, res, _next) => {
         dateByClient,
     });
 
-    await NotificationService.sendAppointmentRequestToProfessional(
-        userId,
-        profId,
-        newAppointment._id,
-    );
+    await NotificationService.sendAppointmentRequestToProfessional({
+        userId: req.user._id,
+        userName: capitalizeFirstLetter(req.user.name),
+        userEmail: req.user.email,
 
-    await sendEmail(
-        professional.email,
-        `New Appointment Request from ${capitalizeFirstLetter(req.user.name)}`,
-        generateAppointmentRequestEmail({
-            profName: capitalizeFirstLetter(professional.name),
-            userName: capitalizeFirstLetter(req.user.name),
-            userEmail: req.user.email,
-            dateByClient: formatDate(dateByClient),
-            permissionToSeeProfile,
-        }),
-    );
+        profId: professional._id,
+        profName: capitalizeFirstLetter(professional.name),
+        profEmail: professional.email,
+
+        appointmentId: newAppointment._id,
+        dateByClient: formatDate(dateByClient),
+        permissionToSeeProfile,
+    });
 
     return sendJSONresponse(res, 201, {
         data: {
@@ -207,6 +205,13 @@ exports.suggestAscale = asyncHandler(async (req, res, _next) => {
     const profId = req.user._id;
     const { userId, clientId, assessmentSlug } = req.body;
 
+    const user = await User.findById(userId);
+    if (!user) {
+        return sendErrorResponse(res, 404, 'NOT_FOUND', {
+            message: 'User not found',
+        });
+    }
+
     const assessment = await ProfessionalsAssessment.create({
         user: userId,
         client: clientId,
@@ -214,11 +219,17 @@ exports.suggestAscale = asyncHandler(async (req, res, _next) => {
         assessmentSlug,
     });
 
-    await NotificationService.scaleSuggestedByProfessional(
-        userId,
-        profId,
-        assessment._id,
-    );
+    await NotificationService.scaleSuggestedByProfessional({
+        userId: user._id,
+        userName: capitalizeFirstLetter(user.name),
+        userEmail: user.email,
+
+        profId: req.user._id,
+        profName: capitalizeFirstLetter(req.user.name),
+
+        assessmentId: assessment._id,
+        assessmentName: formatSlugToTitle(assessmentSlug),
+    });
 
     return sendJSONresponse(res, 201, {
         data: {
@@ -233,6 +244,13 @@ exports.respondToAppointment = asyncHandler(async (req, res, _next) => {
 
     const { dateByProfessional, message, initAssessmentSlug, userId } =
         req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+        return sendErrorResponse(res, 404, 'NOT_FOUND', {
+            message: 'User not found',
+        });
+    }
 
     const appointment = await Appointment.findById(appointmentId);
     if (!appointment) {
@@ -284,20 +302,35 @@ exports.respondToAppointment = asyncHandler(async (req, res, _next) => {
             client: client._id,
         });
 
-        await NotificationService.scaleSuggestedByProfessional(
-            userId,
-            profId,
-            assessment._id,
-        );
+        await NotificationService.scaleSuggestedByProfessional({
+            userId: user._id,
+            userName: capitalizeFirstLetter(user.name),
+            userEmail: user.email,
+
+            profId: req.user._id,
+            profName: capitalizeFirstLetter(req.user.name),
+
+            assessmentId: assessment._id,
+            assessmentName: formatSlugToTitle(initAssessmentSlug),
+        });
     }
 
     await appointment.save();
 
-    await NotificationService.appointmentAcceptedByProfessional(
-        userId,
-        profId,
-        appointment._id,
-    );
+    await NotificationService.appointmentAcceptedByProfessional({
+        userId: user._id,
+        userName: capitalizeFirstLetter(user.name),
+        userEmail: user.email,
+
+        profId: req.user._id,
+        profName: capitalizeFirstLetter(req.user.name),
+
+        appointmentId: appointment._id,
+        appointmentDate: formatDate(
+            appointment.dateByProfessional || appointment.dateByClient,
+        ),
+        message,
+    });
 
     return sendJSONresponse(res, 200, {
         data: {

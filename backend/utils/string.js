@@ -15,3 +15,19 @@ exports.StringOfMaxLength = len => {
         maxlength: len,
     };
 };
+
+exports.formatSlugToTitle = slug => {
+    try {
+        return slug
+            .split('_')
+            .map((word, index, arr) => {
+                if (index === arr.length - 1 && /\(([^)]+)\)/.test(word)) {
+                    return word.toUpperCase(); // Keep the acronym in uppercase
+                }
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            })
+            .join(' ');
+    } catch (e) {
+        return slug;
+    }
+};

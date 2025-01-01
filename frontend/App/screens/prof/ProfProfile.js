@@ -185,11 +185,11 @@ const MyProfileScreen = () => {
                 {renderClients(data.numberOfClients)}
             </View>
 
-            <SubmitButton
+            {/* <SubmitButton
                 title={'Edit Profile'}
                 style={{ marginBottom: 15, backgroundColor: colors.secondary }}
                 onPress={() => navigation.navigate(constants.PROF_UPDATE_PROFILE)}
-            />
+            /> */}
         </ScrollView>
     );
 };
