@@ -195,9 +195,16 @@ const StackNavigator = () => {
             <Stack.Screen
                 name={constants.EMAIL_VERIFICATION_PAGE}
                 component={EmailVerification}
-                options={() => ({
+                options={({ navigation, route }) => ({
                     title: 'অ্যাকাউন্ট ভেরিফাই করুন',
-                    headerLeft: () => undefined,
+                    headerLeft: (props) => (
+                        <HeaderBackButton
+                            {...props}
+                            onPress={() => {
+                                safeTransit({ navigation, route, role });
+                            }}
+                        />
+                    ),
                 })}
             />
             <Stack.Screen
