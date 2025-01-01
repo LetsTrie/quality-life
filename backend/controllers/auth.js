@@ -187,7 +187,7 @@ exports.verifyEmail = asyncHandler(async (req, res, _next) => {
         });
     }
 
-    if (entity.otpExpiredAt > Date.now()) {
+    if (entity.otpUseCase === useCase && entity.otpExpiredAt > Date.now()) {
         return sendJSONresponse(res, 200, {
             data: {
                 message: 'আপনাকে ইতোমধ্যে অনুসন্ধান কোড পাঠানো হয়েছে।',
@@ -201,6 +201,7 @@ exports.verifyEmail = asyncHandler(async (req, res, _next) => {
 
     entity.otp = otp;
     entity.otpExpiredAt = otpExpiredAt.toISOString();
+    entity.otpUseCase = useCase;
 
     const result = await sendEmail(
         entity.email,
@@ -251,6 +252,7 @@ exports.verifyOtp = asyncHandler(async (req, res, _next) => {
     entity.isEmailVerified = true;
     entity.otp = null;
     entity.otpExpiredAt = null;
+    entity.otpUseCase = null;
 
     if (useCase === constants.FORGET_PASSWORD) {
         entity.canResetPassword = true;

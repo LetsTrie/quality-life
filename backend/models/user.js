@@ -5,65 +5,69 @@ const { MODEL_NAME } = require('./model_name');
 const { constants } = require('../utils');
 
 const userSchema = new mongoose.Schema(
-  {
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
+    {
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+        },
+        password: {
+            type: String,
+            required: true,
+        },
 
-    name: String,
-    age: {
-      type: Number,
-      min: 5,
-      max: 150,
-    },
-    gender: String,
-    isMarried: Boolean,
-    location: {
-      zila: String,
-      upazila: String,
-      union: String,
-    },
+        name: String,
+        age: {
+            type: Number,
+            min: 5,
+            max: 150,
+        },
+        gender: String,
+        isMarried: Boolean,
+        location: {
+            zila: String,
+            upazila: String,
+            union: String,
+        },
 
-    // Associate
-    lastIntroTestDate: String,
-    mentalHealthProfile: [String],
-    shownVideo: [String],
-    suggestedScale: [String],
+        // Associate
+        lastIntroTestDate: String,
+        mentalHealthProfile: [String],
+        shownVideo: [String],
+        suggestedScale: [String],
 
-    isEmailVerified: {
-      type: Boolean,
-      default: false,
-    },
+        isEmailVerified: {
+            type: Boolean,
+            default: false,
+        },
 
-    otp: String,
-    otpExpiredAt: Date,
-    canResetPassword: {
-      type: Boolean,
-      default: false,
+        otp: String,
+        otpExpiredAt: Date,
+        otpUseCase: {
+            type: String,
+            enum: [constants.FORGET_PASSWORD, constants.VERIFY_EMAIL],
+        },
+        canResetPassword: {
+            type: Boolean,
+            default: false,
+        },
     },
-  },
-  { timestamps: true },
+    { timestamps: true },
 );
 
 userSchema.methods.generateTokens = async id => {
-  const accessToken = await jwt.sign(
-    { id, role: constants.ROLES.USER },
-    process.env.JWT_ACCESS_TOKEN,
-    { expiresIn: process.env.JWT_EXPIRATION },
-  );
-  const refreshToken = await jwt.sign(
-    { id, role: constants.ROLES.USER },
-    process.env.JWT_REFRESH_TOKEN,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRATION },
-  );
+    const accessToken = await jwt.sign(
+        { id, role: constants.ROLES.USER },
+        process.env.JWT_ACCESS_TOKEN,
+        { expiresIn: process.env.JWT_EXPIRATION },
+    );
+    const refreshToken = await jwt.sign(
+        { id, role: constants.ROLES.USER },
+        process.env.JWT_REFRESH_TOKEN,
+        { expiresIn: process.env.JWT_REFRESH_EXPIRATION },
+    );
 
-  return [accessToken, refreshToken];
+    return [accessToken, refreshToken];
 };
 
 const User = mongoose.model(MODEL_NAME.USER, userSchema);

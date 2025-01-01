@@ -18,6 +18,7 @@ const {
 } = require('./utils');
 const madge = require('madge');
 const { logger } = require('./config');
+const { sendEmail } = require('./services/email');
 
 const app = express();
 

@@ -121,6 +121,10 @@ const profSchema = new mongoose.Schema(
         otpExpiredAt: {
             type: Date,
         },
+        otpUseCase: {
+            type: String,
+            enum: [constants.FORGET_PASSWORD, constants.VERIFY_EMAIL],
+        },
         canResetPassword: {
             type: Boolean,
             default: false,
