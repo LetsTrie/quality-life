@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/router.dart';
 import '../../../shared/models/appointment.dart';
 import '../../../shared/models/paged_result.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../data/appointments_repository.dart';
 
 class AppointmentsScreen extends ConsumerWidget {
@@ -24,20 +25,16 @@ class AppointmentsScreen extends ConsumerWidget {
         ],
       ),
       body: asyncAppointments.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Could not load appointments. Please try again.',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-          ),
+        loading: () => const LoadingView(),
+        error: (e, _) => const ErrorView(
+          message: 'Could not load appointments. Please try again.',
         ),
         data: (result) {
           if (result.items.isEmpty) {
-            return const Center(child: Text('No appointments'));
+            return const EmptyView(
+              message: 'No appointments yet',
+              icon: Icons.event_available_outlined,
+            );
           }
           return ListView.separated(
             itemCount: result.items.length,

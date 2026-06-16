@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
 import '../../../shared/models/instrument.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../data/instruments_repository.dart';
 
 class InstrumentsScreen extends ConsumerWidget {
@@ -23,20 +24,16 @@ class InstrumentsScreen extends ConsumerWidget {
         ],
       ),
       body: asyncInstruments.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Could not load scales. Please try again.',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-          ),
+        loading: () => const LoadingView(),
+        error: (e, _) => const ErrorView(
+          message: 'Could not load scales. Please try again.',
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const Center(child: Text('No scales available'));
+            return const EmptyView(
+              message: 'No scales available',
+              icon: Icons.assignment_outlined,
+            );
           }
           return ListView.separated(
             itemCount: items.length,

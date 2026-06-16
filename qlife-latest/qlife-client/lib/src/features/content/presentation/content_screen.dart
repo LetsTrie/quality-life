@@ -4,6 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../shared/models/content_item.dart';
 import '../../../shared/theme/app_colors.dart';
+import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../data/content_repository.dart';
 
 class ContentScreen extends ConsumerWidget {
@@ -23,19 +25,17 @@ class ContentScreen extends ConsumerWidget {
         ],
       ),
       body: asyncContent.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Could not load content. Please try again.',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-          ),
+        loading: () => const LoadingView(),
+        error: (e, _) => const ErrorView(
+          message: 'Could not load content. Please try again.',
         ),
         data: (items) {
-          if (items.isEmpty) return const Center(child: Text('No content'));
+          if (items.isEmpty) {
+            return const EmptyView(
+              message: 'No content available yet',
+              icon: Icons.video_library_outlined,
+            );
+          }
           return ListView.separated(
             itemCount: items.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
@@ -104,7 +104,7 @@ class ContentScreen extends ConsumerWidget {
                   );
                 }),
               ),
-              const SizedBox(height: 8),
+              const Gap(AppSpacing.sm),
               TextField(
                 controller: commentCtrl,
                 decoration: const InputDecoration(

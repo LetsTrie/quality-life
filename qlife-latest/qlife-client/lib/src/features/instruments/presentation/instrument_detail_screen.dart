@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/assessment.dart';
 import '../../../shared/models/instrument.dart';
+import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../../assessments/data/assessments_repository.dart';
 import '../data/instruments_repository.dart';
 
@@ -55,25 +57,18 @@ class _InstrumentDetailScreenState extends ConsumerState<InstrumentDetailScreen>
     return Scaffold(
       appBar: AppBar(title: Text(widget.slug)),
       body: asyncInstrument.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Could not load this scale. Please go back and try again.',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-          ),
+        loading: () => const LoadingView(),
+        error: (e, _) => const ErrorView(
+          message: 'Could not load this scale. Please go back and try again.',
         ),
         data: (instrument) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.page),
           children: [
             Text(instrument.name, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
+            const Gap(AppSpacing.md),
             for (final question in instrument.questions) ...[
               Text(question.prompt, style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
+              const Gap(AppSpacing.sm),
               RadioGroup<String>(
                 groupValue: _selectedByQuestionId[question.id],
                 onChanged: (value) {
@@ -98,21 +93,21 @@ class _InstrumentDetailScreenState extends ConsumerState<InstrumentDetailScreen>
               child: Text(_submitting ? 'Submitting...' : 'Submit'),
             ),
             if (_result != null) ...[
-              const SizedBox(height: 16),
+              const Gap(AppSpacing.lg),
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Result', style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 8),
+                      const Gap(AppSpacing.sm),
                       if (_result!.severityLabel != null)
                         Text('Severity: ${_result!.severityLabel}'),
                       if (_result!.rawScore != null)
                         Text('Score: ${_result!.rawScore}${_result!.maxScore != null ? ' / ${_result!.maxScore}' : ''}'),
                       if (_result!.recommendedAction != null) ...[
-                        const SizedBox(height: 8),
+                        const Gap(AppSpacing.sm),
                         Text(
                           'Recommendation: ${_result!.recommendedAction}',
                           style: const TextStyle(fontWeight: FontWeight.w500),

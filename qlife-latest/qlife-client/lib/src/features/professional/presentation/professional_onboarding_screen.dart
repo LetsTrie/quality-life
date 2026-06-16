@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
+import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../data/professional_repository.dart';
 
 class ProfessionalOnboardingScreen extends ConsumerStatefulWidget {
@@ -105,7 +107,7 @@ class _ProfessionalOnboardingScreenState extends ConsumerState<ProfessionalOnboa
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading) return const Scaffold(body: LoadingView());
     return Scaffold(
       appBar: AppBar(
         title: const Text('Professional onboarding'),
@@ -115,7 +117,7 @@ class _ProfessionalOnboardingScreenState extends ConsumerState<ProfessionalOnboa
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.page),
           child: Form(
             key: _formKey,
             child: ListView(
@@ -124,15 +126,15 @@ class _ProfessionalOnboardingScreenState extends ConsumerState<ProfessionalOnboa
                   Text('Verification: $_verificationStatus',
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                 if (_error != null) ...[
-                  const SizedBox(height: 12),
+                  const Gap(AppSpacing.md),
                   Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 ],
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 TextFormField(
                   controller: _workplaceCtrl,
                   decoration: const InputDecoration(labelText: 'Workplace (optional)'),
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 TextFormField(
                   controller: _yearsCtrl,
                   keyboardType: TextInputType.number,
@@ -145,14 +147,14 @@ class _ProfessionalOnboardingScreenState extends ConsumerState<ProfessionalOnboa
                     return null;
                   },
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 TextFormField(
                   controller: _bioCtrl,
                   minLines: 3,
                   maxLines: 6,
                   decoration: const InputDecoration(labelText: 'Bio (optional)'),
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 SwitchListTile(
                   title: const Text('Accepting new clients'),
                   value: _acceptingNewClients,
@@ -164,7 +166,7 @@ class _ProfessionalOnboardingScreenState extends ConsumerState<ProfessionalOnboa
                   value: _isVisible,
                   onChanged: _saving ? null : (v) => setState(() => _isVisible = v),
                 ),
-                const SizedBox(height: 20),
+                const Gap(AppSpacing.xl),
                 FilledButton(
                   onPressed: _saving ? null : _finish,
                   child: Text(_saving ? 'Saving...' : 'Finish onboarding'),

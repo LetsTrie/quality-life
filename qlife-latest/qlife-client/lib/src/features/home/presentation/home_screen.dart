@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../auth/state/auth_state.dart';
 import '../../../app/router.dart';
+import '../../../shared/theme/app_spacing.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -20,47 +21,44 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FilledButton(
-              onPressed: () => context.go(const ProfileRoute().location),
-              child: const Text('My profile'),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => context.go(const InstrumentsRoute().location),
-              child: const Text('Scales'),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => context.go(const ProfessionalsDirectoryRoute().location),
-              child: const Text('Professionals'),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => context.go(const AppointmentsRoute().location),
-              child: const Text('Appointments'),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => context.go(const NotificationsRoute().location),
-              child: const Text('Notifications'),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => context.go(const ContentLibraryRoute().location),
-              child: const Text('Content'),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: () => context.go(const ProfessionalRegisterRoute().location),
-              child: const Text('Become a professional'),
-            ),
-          ],
-        ),
+      body: ListView(
+        padding: const EdgeInsets.all(AppSpacing.page),
+        children: [
+          FilledButton(
+            onPressed: () => context.go(const ProfileRoute().location),
+            child: const Text('My profile'),
+          ),
+          const Gap(AppSpacing.md),
+          FilledButton(
+            onPressed: () => context.go(const InstrumentsRoute().location),
+            child: const Text('Scales'),
+          ),
+          const Gap(AppSpacing.md),
+          FilledButton(
+            onPressed: () => context.go(const ProfessionalsDirectoryRoute().location),
+            child: const Text('Professionals'),
+          ),
+          const Gap(AppSpacing.md),
+          FilledButton(
+            onPressed: () => context.go(const AppointmentsRoute().location),
+            child: const Text('Appointments'),
+          ),
+          const Gap(AppSpacing.md),
+          FilledButton(
+            onPressed: () => context.go(const NotificationsRoute().location),
+            child: const Text('Notifications'),
+          ),
+          const Gap(AppSpacing.md),
+          FilledButton(
+            onPressed: () => context.go(const ContentLibraryRoute().location),
+            child: const Text('Content'),
+          ),
+          const Gap(AppSpacing.md),
+          FilledButton(
+            onPressed: () => context.go(const ProfessionalRegisterRoute().location),
+            child: const Text('Become a professional'),
+          ),
+        ],
       ),
     );
   }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
+import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../../geo/data/geo_repository.dart';
 import '../data/users_repository.dart';
 
@@ -171,7 +173,7 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: LoadingView());
     }
     return Scaffold(
       appBar: AppBar(
@@ -185,21 +187,21 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.page),
           child: Form(
             key: _formKey,
             child: ListView(
               children: [
                 if (_error != null) ...[
                   Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                  const SizedBox(height: 12),
+                  const Gap(AppSpacing.md),
                 ],
                 TextFormField(
                   controller: _nameCtrl,
                   decoration: const InputDecoration(labelText: 'Name'),
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Name required' : null,
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 TextFormField(
                   controller: _ageCtrl,
                   keyboardType: TextInputType.number,
@@ -212,7 +214,7 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                     return null;
                   },
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 DropdownMenu<String>(
                   initialSelection: _gender,
                   label: const Text('Gender'),
@@ -226,7 +228,7 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                     DropdownMenuEntry(value: 'UNDISCLOSED', label: 'Prefer not to say'),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 DropdownMenu<String>(
                   initialSelection: _marital,
                   label: const Text('Marital status'),
@@ -242,12 +244,12 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                     DropdownMenuEntry(value: 'UNDISCLOSED', label: 'Prefer not to say'),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 TextFormField(
                   controller: _phoneCtrl,
                   decoration: const InputDecoration(labelText: 'Phone (optional)'),
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 DropdownMenu<String>(
                   initialSelection: _districtId,
                   label: const Text('District'),
@@ -261,7 +263,7 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                           ))
                       .toList(),
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 DropdownMenu<String>(
                   initialSelection: _upazilaId,
                   label: const Text('Upazila (optional)'),
@@ -275,7 +277,7 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                           ))
                       .toList(),
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 DropdownMenu<String>(
                   initialSelection: _unionId,
                   label: const Text('Union (optional)'),
@@ -289,7 +291,7 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                           ))
                       .toList(),
                 ),
-                const SizedBox(height: 20),
+                const Gap(AppSpacing.xl),
                 FilledButton(
                   onPressed: _saving ? null : _save,
                   child: Text(_saving ? 'Saving...' : 'Save & continue'),

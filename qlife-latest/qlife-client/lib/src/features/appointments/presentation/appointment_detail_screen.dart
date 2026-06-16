@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/appointment.dart';
+import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../data/appointments_repository.dart';
 
 class AppointmentDetailScreen extends ConsumerStatefulWidget {
@@ -72,12 +74,12 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
                   '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')} UTC',
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
-              if (pickedDate != null) const SizedBox(height: 12),
+              if (pickedDate != null) const Gap(AppSpacing.md),
               TextField(
                 controller: link,
                 decoration: const InputDecoration(labelText: 'Meeting link / address (optional)'),
               ),
-              const SizedBox(height: 8),
+              const Gap(AppSpacing.sm),
               TextField(
                 controller: message,
                 decoration: const InputDecoration(labelText: 'Message (optional)'),
@@ -137,18 +139,11 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
     }
 
     return asyncAppointment.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const Scaffold(body: LoadingView()),
       error: (e, _) => Scaffold(
         appBar: AppBar(title: const Text('Appointment')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Could not load appointment details. Please go back and try again.',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-          ),
+        body: const ErrorView(
+          message: 'Could not load appointment details. Please go back and try again.',
         ),
       ),
       data: (appointment) => _buildDetail(context, appointment),
@@ -173,37 +168,37 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.page),
           child: ListView(
             children: [
               Text('Status: ${a.status}'),
-              const SizedBox(height: 8),
+              const Gap(AppSpacing.sm),
               Text('Requested: ${a.requestedStartAt ?? '—'}'),
-              const SizedBox(height: 8),
+              const Gap(AppSpacing.sm),
               Text('Scheduled: ${a.scheduledStartAt ?? '—'}'),
-              const SizedBox(height: 8),
+              const Gap(AppSpacing.sm),
               Text('Meeting link: ${a.meetingLink ?? '—'}'),
-              const SizedBox(height: 8),
+              const Gap(AppSpacing.sm),
               Text('Client message: ${a.requestMessage ?? '—'}'),
-              const SizedBox(height: 8),
+              const Gap(AppSpacing.sm),
               Text('Professional message: ${a.professionalMessage ?? '—'}'),
-              const SizedBox(height: 16),
+              const Gap(AppSpacing.lg),
               if (a.isProfessionalView) ...[
                 FilledButton(
                   onPressed: _acting ? null : _markSeen,
                   child: const Text('Mark seen'),
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 FilledButton(
                   onPressed: _acting ? null : () => _respond('ACCEPTED'),
                   child: const Text('Accept'),
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 FilledButton(
                   onPressed: _acting ? null : () => _respond('RESCHEDULE_PROPOSED'),
                   child: const Text('Propose reschedule'),
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 OutlinedButton(
                   onPressed: _acting ? null : () => _respond('DECLINED'),
                   child: const Text('Decline'),

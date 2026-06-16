@@ -28,11 +28,12 @@ class CognitoAuthRepository implements AuthRepository {
 
   CognitoAuthRepository({required this.appAuth, required this.storage});
 
-  // TODO: wire these from build-time config per environment.
-  static const _cognitoDomain = 'YOUR_DOMAIN_PREFIX.auth.YOUR_REGION.amazoncognito.com';
-  static const _clientId = 'YOUR_COGNITO_APP_CLIENT_ID';
+  // TODO: move these to build-time config (--dart-define) per environment.
+  // Pool: us-east-1_hOeGWWCFT (us-east-1). The hosted-UI domain is resolved
+  // automatically via OIDC discovery from `_issuer`, so it isn't hardcoded.
+  static const _clientId = '6htidlqi2jqk7t45j5ntnb40di';
   static const _redirectUrl = 'qlife://auth/callback';
-  static const _issuer = 'https://cognito-idp.YOUR_REGION.amazonaws.com/YOUR_USER_POOL_ID';
+  static const _issuer = 'https://cognito-idp.us-east-1.amazonaws.com/us-east-1_hOeGWWCFT';
 
   @override
   Future<AuthTokens?> loadTokens() async {
@@ -66,7 +67,6 @@ class CognitoAuthRepository implements AuthRepository {
         _clientId,
         _redirectUrl,
         issuer: _issuer,
-        discoveryUrl: 'https://$_cognitoDomain/.well-known/openid-configuration',
         scopes: const ['openid', 'email', 'profile'],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
+import '../../../shared/theme/app_spacing.dart';
 import '../data/professional_repository.dart';
 
 class ProfessionalRegisterScreen extends ConsumerStatefulWidget {
@@ -88,21 +89,21 @@ class _ProfessionalRegisterScreenState extends ConsumerState<ProfessionalRegiste
       appBar: AppBar(title: const Text('Become a professional')),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.page),
           child: Form(
             key: _formKey,
             child: ListView(
               children: [
                 if (_error != null) ...[
                   Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                  const SizedBox(height: 12),
+                  const Gap(AppSpacing.md),
                 ],
                 TextFormField(
                   controller: _nameCtrl,
                   decoration: const InputDecoration(labelText: 'Full name'),
                   validator: (v) => (v == null || v.trim().length < 2) ? 'Name required' : null,
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 DropdownMenu<String>(
                   initialSelection: _professionType,
                   label: const Text('Profession type'),
@@ -113,7 +114,7 @@ class _ProfessionalRegisterScreenState extends ConsumerState<ProfessionalRegiste
                       .map((p) => DropdownMenuEntry(value: p, label: _labelForProfession(p)))
                       .toList(),
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 DropdownMenu<String>(
                   initialSelection: _gender,
                   label: const Text('Gender (optional)'),
@@ -127,17 +128,17 @@ class _ProfessionalRegisterScreenState extends ConsumerState<ProfessionalRegiste
                     DropdownMenuEntry(value: 'UNDISCLOSED', label: 'Prefer not to say'),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 TextFormField(
                   controller: _designationCtrl,
                   decoration: const InputDecoration(labelText: 'Designation (optional)'),
                 ),
-                const SizedBox(height: 12),
+                const Gap(AppSpacing.md),
                 TextFormField(
                   controller: _phoneCtrl,
                   decoration: const InputDecoration(labelText: 'Phone (optional)'),
                 ),
-                const SizedBox(height: 20),
+                const Gap(AppSpacing.xl),
                 FilledButton(
                   onPressed: _saving ? null : _submit,
                   child: Text(_saving ? 'Submitting...' : 'Continue'),

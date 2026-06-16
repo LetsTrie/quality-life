@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/router.dart';
 import '../../../shared/models/client.dart';
 import '../../../shared/models/paged_result.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../data/clients_repository.dart';
 
 class ClientsScreen extends ConsumerWidget {
@@ -24,13 +25,16 @@ class ClientsScreen extends ConsumerWidget {
         ],
       ),
       body: asyncClients.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => const Center(
-          child: _ErrorView(message: 'Could not load clients. Please try again.'),
+        loading: () => const LoadingView(),
+        error: (e, _) => const ErrorView(
+          message: 'Could not load clients. Please try again.',
         ),
         data: (result) {
           if (result.items.isEmpty) {
-            return const Center(child: Text('No clients yet'));
+            return const EmptyView(
+              message: 'No clients yet',
+              icon: Icons.folder_shared_outlined,
+            );
           }
           return ListView.separated(
             itemCount: result.items.length,
@@ -48,23 +52,6 @@ class ClientsScreen extends ConsumerWidget {
             },
           );
         },
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  const _ErrorView({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Text(
-        message,
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
-        textAlign: TextAlign.center,
       ),
     );
   }

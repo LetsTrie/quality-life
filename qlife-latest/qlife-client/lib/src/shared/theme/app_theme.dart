@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'app_typography.dart';
 
 /// Central theme definitions for QLife.
 ///
@@ -31,12 +32,16 @@ abstract final class AppTheme {
     final base = ThemeData(
       colorScheme: scheme,
       useMaterial3: true,
+      fontFamily: AppTypography.fontFamily,
       scaffoldBackgroundColor:
           isLight ? AppColors.background : AppColors.darkBackground,
       extensions: [isLight ? AppSemanticColors.light : AppSemanticColors.dark],
     );
 
+    final textTheme = AppTypography.textTheme(base.textTheme);
+
     return base.copyWith(
+      textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         foregroundColor: scheme.onSurface,
@@ -44,8 +49,7 @@ abstract final class AppTheme {
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 2,
-        titleTextStyle: base.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w600,
+        titleTextStyle: textTheme.titleLarge?.copyWith(
           color: scheme.onSurface,
         ),
       ),

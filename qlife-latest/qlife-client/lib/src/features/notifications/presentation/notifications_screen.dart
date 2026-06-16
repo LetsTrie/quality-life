@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/notification_model.dart';
 import '../../../shared/models/paged_result.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../data/notifications_repository.dart';
 
 class NotificationsScreen extends ConsumerWidget {
@@ -22,20 +23,16 @@ class NotificationsScreen extends ConsumerWidget {
         ],
       ),
       body: asyncNotifications.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Could not load notifications. Please try again.',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-          ),
+        loading: () => const LoadingView(),
+        error: (e, _) => const ErrorView(
+          message: 'Could not load notifications. Please try again.',
         ),
         data: (result) {
           if (result.items.isEmpty) {
-            return const Center(child: Text('No notifications'));
+            return const EmptyView(
+              message: 'You have no notifications',
+              icon: Icons.notifications_none_outlined,
+            );
           }
           return ListView.separated(
             itemCount: result.items.length,

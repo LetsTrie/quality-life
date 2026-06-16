@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/client.dart';
 import '../../../shared/models/instrument.dart';
+import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../../assessments/data/assessments_repository.dart';
 import '../../instruments/data/instruments_repository.dart';
 import '../data/clients_repository.dart';
@@ -53,14 +55,11 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     final asyncInstruments = ref.watch(_instrumentsProvider);
 
     return asyncClient.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const Scaffold(body: LoadingView()),
       error: (e, _) => Scaffold(
         appBar: AppBar(title: const Text('Client')),
-        body: const Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text('Could not load client details. Please go back and try again.'),
-          ),
+        body: const ErrorView(
+          message: 'Could not load client details. Please go back and try again.',
         ),
       ),
       data: (client) {
@@ -82,20 +81,24 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
           ),
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.page),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Assign multiple scales', style: TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
+                  Text('Assign multiple scales',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const Gap(AppSpacing.sm),
                   Expanded(
                     child: asyncInstruments.when(
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (e, _) => const Center(
-                        child: Text('Could not load scales. Please refresh.'),
+                      loading: () => const LoadingView(),
+                      error: (e, _) => const ErrorView(
+                        message: 'Could not load scales. Please refresh.',
                       ),
                       data: (instruments) => instruments.isEmpty
-                          ? const Center(child: Text('No scales available'))
+                          ? const EmptyView(
+                              message: 'No scales available',
+                              icon: Icons.assignment_outlined,
+                            )
                           : ListView.separated(
                               itemCount: instruments.length,
                               separatorBuilder: (_, __) => const Divider(height: 1),
@@ -121,7 +124,7 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const Gap(AppSpacing.md),
                   FilledButton(
                     onPressed: _assigning ? null : _assign,
                     child: Text(_assigning ? 'Assigning...' : 'Assign selected'),

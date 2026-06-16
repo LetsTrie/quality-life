@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/models/professional.dart';
 import '../../../shared/models/paged_result.dart';
+import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/async_state_views.dart';
 import '../../appointments/data/appointments_repository.dart';
 import '../data/professionals_repository.dart';
 
@@ -23,20 +25,16 @@ class ProfessionalsScreen extends ConsumerWidget {
         ],
       ),
       body: asyncProfessionals.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Could not load professionals. Please try again.',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-              textAlign: TextAlign.center,
-            ),
-          ),
+        loading: () => const LoadingView(),
+        error: (e, _) => const ErrorView(
+          message: 'Could not load professionals. Please try again.',
         ),
         data: (result) {
           if (result.items.isEmpty) {
-            return const Center(child: Text('No professionals'));
+            return const EmptyView(
+              message: 'No professionals available',
+              icon: Icons.people_outline,
+            );
           }
           return ListView.separated(
             itemCount: result.items.length,
@@ -167,10 +165,10 @@ class _AppointmentRequestSheetState extends State<_AppointmentRequestSheet> {
 
     return Padding(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 24,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        top: AppSpacing.xl,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -180,10 +178,10 @@ class _AppointmentRequestSheetState extends State<_AppointmentRequestSheet> {
             'Request appointment with ${widget.professional.fullName}',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(height: 16),
+          const Gap(AppSpacing.lg),
           if (_error != null) ...[
             Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            const SizedBox(height: 8),
+            const Gap(AppSpacing.sm),
           ],
           Row(
             children: [
@@ -194,7 +192,7 @@ class _AppointmentRequestSheetState extends State<_AppointmentRequestSheet> {
                   label: Text(dateLabel),
                 ),
               ),
-              const SizedBox(width: 8),
+              const Gap.horizontal(AppSpacing.sm),
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: _submitting ? null : _pickTime,
@@ -204,7 +202,7 @@ class _AppointmentRequestSheetState extends State<_AppointmentRequestSheet> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const Gap(AppSpacing.md),
           TextFormField(
             controller: _messageCtrl,
             decoration: const InputDecoration(
@@ -215,7 +213,7 @@ class _AppointmentRequestSheetState extends State<_AppointmentRequestSheet> {
             maxLength: 500,
             enabled: !_submitting,
           ),
-          const SizedBox(height: 16),
+          const Gap(AppSpacing.lg),
           FilledButton(
             onPressed: _submitting ? null : _submit,
             child: Text(_submitting ? 'Requesting...' : 'Confirm'),
