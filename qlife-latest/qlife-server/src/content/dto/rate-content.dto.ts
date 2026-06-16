@@ -1,0 +1,14 @@
+import { IsInt, IsOptional, IsString, MaxLength, Min, Max } from 'class-validator';
+
+export class RateContentDto {
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  rating!: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  comment?: string;
+}
+

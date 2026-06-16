@@ -1,0 +1,31 @@
+import { Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import type { Request } from 'express';
+
+import { NotificationsService } from './notifications.service';
+
+@Controller('/v1/notifications')
+export class NotificationsController {
+  constructor(private readonly notifications: NotificationsService) {}
+
+  @Get('/unread-count')
+  async unreadCount(@Req() req: Request) {
+    const recipientAccountId = req.auth!.account.id;
+    const unreadNotificationCount = await this.notifications.unreadCount(recipientAccountId);
+    return { data: { unreadNotificationCount } };
+  }
+
+  @Get()
+  async list(@Req() req: Request, @Query('page', new ParseIntPipe({ optional: true })) page?: number) {
+    const recipientAccountId = req.auth!.account.id;
+    const result = await this.notifications.list(recipientAccountId, page ?? 1);
+    return { data: result };
+  }
+
+  @Patch('/:id/seen')
+  async seen(@Req() req: Request, @Param('id') id: string) {
+    const recipientAccountId = req.auth!.account.id;
+    await this.notifications.markSeen(id, recipientAccountId);
+    return { data: {} };
+  }
+}
+
