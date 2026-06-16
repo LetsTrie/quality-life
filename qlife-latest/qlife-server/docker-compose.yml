@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: qlife
+      POSTGRES_USER: qlife
+      POSTGRES_PASSWORD: qlife
+    ports:
+      - "15432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qlife -d qlife"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+

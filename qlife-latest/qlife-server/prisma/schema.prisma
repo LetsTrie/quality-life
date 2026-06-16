@@ -1,0 +1,1156 @@
+// =============================================================================
+//  QLife — PostgreSQL data model (Prisma schema)
+// =============================================================================
+//  A mental-health platform: public users self-screen with validated clinical
+//  instruments, watch educational content, and connect with verified clinicians
+//  who schedule appointments and assign/score assessments.
+//
+//  DESIGN PRINCIPLES (built to outlive any one application generation)
+//  ---------------------------------------------------------------------------
+//  1. Identity vs. domain separation. Authentication itself is FEDERATED to a
+//     managed identity provider (AWS Cognito): the mobile app logs in against
+//     Cognito and the backend trusts a verified JWT (signature + issuer +
+//     audience) on every request — there is NO server-side session lookup and
+//     no local password store. `accounts` is the local *product identity*: it
+//     maps a Cognito user (`cognito_sub`) to our domain and owns domain-specific
+//     authorization (`role`, `status`, approval/suspension/verification flows).
+//     Role-specific clinical data lives in `user_profiles` and
+//     `professional_profiles`. Clinical tables reference the *profile*; consent,
+//     audit, notifications reference the *account*.
+//     - Email verification, password reset and MFA are handled by Cognito
+//       (Hosted UI / managed flows), NOT by a local `verification_tokens` table.
+//     - Refresh tokens live on the device keychain/keystore, NOT in our DB.
+//  2. Instruments are first-class and *versioned*. A questionnaire's wording and
+//     scoring change over decades; every response is bound to the exact
+//     `instrument_versions` row it answered, so historical scores stay valid and
+//     reproducible forever. (Mirrors HL7 FHIR Questionnaire / QuestionnaireResponse.)
+//  3. No stringly-typed clinical data. Scores are Decimal, money is Decimal+currency,
+//     dates are `timestamptz`, dates-of-birth are `date`, enums are native PG enums.
+//  4. Append-only audit + soft delete for clinical records. We retain rather than
+//     destroy; erasure is handled by anonymization, not cascade deletes.
+//  5. Normalized reference data (geography, specializations, topics, instruments,
+//     help-center) instead of hardcoded application constants.
+//  6. Surrogate UUID keys (DB-generated) + natural unique keys where they exist.
+//
+//  CONVENTIONS
+//  ---------------------------------------------------------------------------
+//  - All identifiers are snake_case in the database (`@@map` / `@map`).
+//  - All timestamps are UTC `timestamptz`. `created_at` / `updated_at` everywhere.
+//  - PKs: `id uuid` defaulted via `gen_random_uuid()` (consider UUIDv7 on PG18+
+//    for index locality — swap the default in a migration when available).
+//  - `deleted_at` marks soft-deleted rows on user-facing/clinical tables.
+//
+//  NOTES FOR MIGRATIONS (Prisma cannot yet express these declaratively):
+//  - PARTIAL UNIQUE indexes (one *active* appointment / care-relationship per
+//    user+professional) — see comments at those models; add via raw SQL migration.
+//  - CHECK constraints (rating BETWEEN 1 AND 5, score >= 0, time ordering) — add
+//    via raw SQL migration.
+//  - Partition `audit_logs` and `notifications` by month (range on created_at) at
+//    scale; declare partitions in migrations.
+// =============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  // citext  -> case-insensitive email/handles; pgcrypto -> gen_random_uuid().
+  extensions = [citext, pgcrypto]
+}
+
+// =============================================================================
+//  ENUMS
+// =============================================================================
+
+enum AccountRole {
+  USER
+  PROFESSIONAL
+  ADMIN
+
+  @@map("account_role")
+}
+
+enum AccountStatus {
+  PENDING_VERIFICATION // created, email not yet verified
+  ACTIVE
+  SUSPENDED // blocked by an admin
+  DEACTIVATED // self-deactivated, recoverable
+  DELETED // soft-deleted / anonymized
+
+  @@map("account_status")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNDISCLOSED
+
+  @@map("gender")
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  SEPARATED
+  UNDISCLOSED
+
+  @@map("marital_status")
+}
+
+enum ProfessionType {
+  CLINICAL_PSYCHOLOGIST
+  ASSISTANT_CLINICAL_PSYCHOLOGIST
+  PSYCHIATRIST
+  COUNSELOR
+  OTHER
+
+  @@map("profession_type")
+}
+
+enum ProfessionalVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REVOKED
+
+  @@map("professional_verification_status")
+}
+
+enum Weekday {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+
+  @@map("weekday")
+}
+
+enum AppointmentStatus {
+  REQUESTED // user asked
+  VIEWED // professional opened it
+  ACCEPTED // professional confirmed (a time is set)
+  DECLINED // professional declined
+  RESCHEDULE_PROPOSED // professional proposed a different time
+  CANCELLED_BY_USER
+  CANCELLED_BY_PROFESSIONAL
+  COMPLETED
+  NO_SHOW
+  EXPIRED // request lapsed without action
+
+  @@map("appointment_status")
+}
+
+enum AppointmentModality {
+  IN_PERSON
+  VIDEO
+  PHONE
+  CHAT
+
+  @@map("appointment_modality")
+}
+
+enum CareRelationshipStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+
+  @@map("care_relationship_status")
+}
+
+// Classifies an instrument's role in the product.
+enum InstrumentCategory {
+  WELLBEING_INDEX // intro 5-item well-being self-rating (result out of 100)
+  PRIMARY_SCREENING // GHQ-style general state, perceived stress, anxiety
+  RISK_PROFILE // short yes/no risk profiles (suicide, violence, psychosis, etc.)
+  CLINICAL_ASSESSMENT // clinician-administered scales (depression, OCD, etc.)
+
+  @@map("instrument_category")
+}
+
+enum InstrumentStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+
+  @@map("instrument_status")
+}
+
+enum ScoringMethod {
+  NONE // no numeric score (informational only)
+  SUM // sum of selected option weights
+  WEIGHTED_SUM // sum of weights with reverse-scored items handled per question
+  AVERAGE // mean of option weights
+  NORMALIZED_PERCENT // sum then scale to `normalization_max` (e.g. 0-100)
+
+  @@map("scoring_method")
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTI_CHOICE
+  BOOLEAN
+  NUMERIC
+  SCALE // Likert
+  TEXT
+
+  @@map("question_type")
+}
+
+// What the app should do after a band is reached (replaces the legacy
+// profileScales `redirectTo` constants SHOW_VIDEO / HELP_CENTER / SHOW_RESULT).
+enum OutcomeAction {
+  NONE
+  SHOW_RESULT
+  RECOMMEND_CONTENT
+  SHOW_HELP_CENTER
+  SHOW_HELP_CENTER_URGENT
+
+  @@map("outcome_action")
+}
+
+enum AssessmentSource {
+  SELF_INITIATED // user took it themselves
+  PROFESSIONAL_ASSIGNED // a clinician assigned/suggested it
+
+  @@map("assessment_source")
+}
+
+enum AssessmentStatus {
+  ASSIGNED // created by a professional, awaiting the user
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+  CANCELLED
+
+  @@map("assessment_status")
+}
+
+enum ContentType {
+  VIDEO
+  ARTICLE
+  AUDIO
+  EXERCISE
+
+  @@map("content_type")
+}
+
+enum ContentProvider {
+  YOUTUBE
+  VIMEO
+  INTERNAL
+  EXTERNAL
+
+  @@map("content_provider")
+}
+
+enum ContactChannel {
+  PHONE
+  WHATSAPP
+  EMAIL
+  WEBSITE
+  HOTLINE
+
+  @@map("contact_channel")
+}
+
+enum NotificationType {
+  APPOINTMENT_REQUESTED
+  APPOINTMENT_ACCEPTED
+  APPOINTMENT_DECLINED
+  APPOINTMENT_RESCHEDULED
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_REMINDER
+  ASSESSMENT_ASSIGNED
+  ASSESSMENT_COMPLETED
+  ACCOUNT_APPROVED
+  SYSTEM
+
+  @@map("notification_type")
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  PUSH
+  SMS
+
+  @@map("notification_channel")
+}
+
+enum ConsentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  DATA_PROCESSING
+  RESEARCH_USE
+  MARKETING
+  // NOTE: profile-sharing is NOT a consent record — it is captured per-booking
+  // by `appointments.profile_share_granted` (the single source of truth).
+
+  @@map("consent_type")
+}
+
+enum LegalDocumentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  CONSENT_FORM
+
+  @@map("legal_document_type")
+}
+
+// =============================================================================
+//  IDENTITY & AUTHENTICATION
+// =============================================================================
+
+/// Local product identity for one Cognito user. Exactly one of user_profile /
+/// professional_profile is populated according to `role` (ADMIN accounts have
+/// neither).
+///
+/// STATELESS AUTH: the backend never checks a server-side session. On each
+/// request it verifies the Cognito access/ID JWT (signature + issuer +
+/// audience) and resolves this row by `cognitoSub` (preferred) or `email`.
+/// Credentials, refresh tokens, email verification, password reset and MFA are
+/// all owned by Cognito — only domain authorization (`role`, `status`) is local.
+model Account {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  // Cognito subject (the `sub` claim). The stable link to the IdP user; the
+  // primary key the backend maps a verified token to. Nullable only to allow
+  // back-office/seed accounts created before their first Cognito login.
+  cognitoSub   String? @unique @map("cognito_sub")
+  // Identity provider that owns this account's credentials. Defaults to Cognito;
+  // kept as a column so future providers can coexist without a schema change.
+  authProvider String  @default("cognito") @map("auth_provider")
+
+  email           String        @unique @db.Citext
+  role            AccountRole
+  status          AccountStatus @default(PENDING_VERIFICATION)
+  // Mirror of Cognito's `email_verified` claim, synced at login (display/gating
+  // convenience only — Cognito remains the source of truth).
+  emailVerifiedAt DateTime?     @map("email_verified_at") @db.Timestamptz(6)
+  preferredLocale String        @default("bn") @map("preferred_locale") // BCP-47
+  lastLoginAt     DateTime?     @map("last_login_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  // On erasure, anonymize email (e.g. deleted+<id>@invalid) and set this.
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  userProfile         UserProfile?
+  professionalProfile ProfessionalProfile?
+  consents            ConsentRecord[]
+  contentViews        ContentView[]
+  contentRatings      ContentRating[]
+
+  notificationsReceived Notification[]             @relation("NotificationRecipient")
+  notificationsSent     Notification[]             @relation("NotificationSender")
+  auditLogs             AuditLog[]                 @relation("AuditActor")
+  reviewedVerifications ProfessionalVerification[] @relation("VerificationReviewer")
+  appointmentEvents     AppointmentEvent[]         @relation("AppointmentEventActor")
+
+  @@index([role, status])
+  @@index([deletedAt])
+  @@map("accounts")
+}
+
+// =============================================================================
+//  CONSENT & LEGAL
+// =============================================================================
+
+/// Versioned legal documents (ToS, privacy policy, consent forms). Immutable
+/// once published; new text = new version. Consents reference the exact version.
+model LegalDocument {
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type          LegalDocumentType
+  version       String // semantic or date-based, e.g. "2026-06-01"
+  locale        String            @default("bn")
+  title         String
+  contentUrl    String?           @map("content_url") // where the rendered text lives
+  effectiveFrom DateTime          @map("effective_from") @db.Timestamptz(6)
+  isCurrent     Boolean           @default(false) @map("is_current")
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  consents ConsentRecord[]
+
+  @@unique([type, version, locale])
+  @@index([type, isCurrent])
+  @@map("legal_documents")
+}
+
+/// An auditable record that an account granted (or revoked) a platform consent
+/// (terms, privacy, data-processing, research, marketing). Profile-sharing with a
+/// clinician is NOT modeled here — it lives on `appointments.profile_share_granted`.
+model ConsentRecord {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId       String      @map("account_id") @db.Uuid
+  type            ConsentType
+  legalDocumentId String?     @map("legal_document_id") @db.Uuid
+  grantedAt       DateTime    @default(now()) @map("granted_at") @db.Timestamptz(6)
+  revokedAt       DateTime?   @map("revoked_at") @db.Timestamptz(6)
+  method          String? // how it was captured (e.g. "mobile-checkbox")
+  ipAddress       String?     @map("ip_address") @db.Inet
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  legalDocument LegalDocument? @relation(fields: [legalDocumentId], references: [id], onDelete: Restrict)
+
+  @@index([accountId, type])
+  @@map("consent_records")
+}
+
+// =============================================================================
+//  GEOGRAPHY (Bangladesh administrative hierarchy: division > district(zila)
+//  > upazila > union). Canonical reference data; profiles reference by FK.
+// =============================================================================
+
+model Division {
+  id        String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code      String     @unique // official BBS code
+  nameEn    String     @map("name_en")
+  nameBn    String     @map("name_bn")
+  districts District[]
+
+  @@map("divisions")
+}
+
+model District {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  divisionId String @map("division_id") @db.Uuid
+  code       String @unique
+  nameEn     String @map("name_en")
+  nameBn     String @map("name_bn")
+
+  division             Division              @relation(fields: [divisionId], references: [id], onDelete: Restrict)
+  upazilas             Upazila[]
+  userProfiles         UserProfile[]
+  professionalProfiles ProfessionalProfile[]
+
+  @@index([divisionId])
+  @@map("districts")
+}
+
+model Upazila {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  districtId String @map("district_id") @db.Uuid
+  code       String @unique
+  nameEn     String @map("name_en")
+  nameBn     String @map("name_bn")
+
+  district             District              @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  unions               Union[]
+  userProfiles         UserProfile[]
+  professionalProfiles ProfessionalProfile[]
+
+  @@index([districtId])
+  @@map("upazilas")
+}
+
+model Union {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  upazilaId String @map("upazila_id") @db.Uuid
+  code      String @unique
+  nameEn    String @map("name_en")
+  nameBn    String @map("name_bn")
+
+  upazila              Upazila               @relation(fields: [upazilaId], references: [id], onDelete: Restrict)
+  userProfiles         UserProfile[]
+  professionalProfiles ProfessionalProfile[]
+
+  @@index([upazilaId])
+  @@map("unions")
+}
+
+// =============================================================================
+//  PROFILES
+// =============================================================================
+
+/// The clinical/demographic profile of a public user. 1:1 with an Account.
+/// Store date_of_birth (age is derived) for lifelong accuracy.
+model UserProfile {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId   String         @unique @map("account_id") @db.Uuid
+  displayName String?        @map("display_name")
+  dateOfBirth DateTime?      @map("date_of_birth") @db.Date
+  gender      Gender?
+  marital     MaritalStatus?
+  phone       String? // E.164
+
+  districtId String? @map("district_id") @db.Uuid
+  upazilaId  String? @map("upazila_id") @db.Uuid
+  unionId    String? @map("union_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  account  Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  district District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  upazila  Upazila?  @relation(fields: [upazilaId], references: [id], onDelete: SetNull)
+  union    Union?    @relation(fields: [unionId], references: [id], onDelete: SetNull)
+
+  appointments      Appointment[]
+  careRelationships CareRelationship[]
+  assessments       Assessment[]       @relation("SubjectAssessments")
+
+  @@index([districtId])
+  @@map("user_profiles")
+}
+
+/// A clinician's profile. 1:1 with an Account. Built up during multi-step
+/// onboarding; `isOnboardingComplete` replaces the legacy numeric `step` gate
+/// (track granular step completion in the app/onboarding service if needed).
+model ProfessionalProfile {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId          String         @unique @map("account_id") @db.Uuid
+  slug               String?        @unique // public profile handle
+  fullName           String         @map("full_name")
+  gender             Gender?
+  professionType     ProfessionType @map("profession_type")
+  designation        String?
+  bmdcRegistrationNo String?        @map("bmdc_registration_no") // BMDC reg. no.
+  graduationBatch    String?        @map("graduation_batch")
+  workplace          String?
+  yearsOfExperience  Int?           @map("years_of_experience")
+  educationSummary   String?        @map("education_summary")
+  bio                String?
+  phone              String? // E.164
+
+  feeAmount   Decimal? @map("fee_amount") @db.Decimal(10, 2)
+  feeCurrency String   @default("BDT") @map("fee_currency") // ISO 4217
+
+  // Self-reported weekly client capacity (replaces legacy stringly buckets).
+  maxWeeklyClients Int? @map("max_weekly_clients")
+  avgWeeklyClients Int? @map("avg_weekly_clients")
+
+  // IANA tz for interpreting availability (e.g. "Asia/Dhaka").
+  timezone String @default("Asia/Dhaka")
+
+  // Whether the clinician is listed to users (legacy `visibility`) and is
+  // currently taking new clients.
+  isVisible            Boolean @default(true) @map("is_visible")
+  acceptingNewClients  Boolean @default(true) @map("accepting_new_clients")
+  isOnboardingComplete Boolean @default(false) @map("is_onboarding_complete")
+
+  districtId String? @map("district_id") @db.Uuid
+  upazilaId  String? @map("upazila_id") @db.Uuid
+  unionId    String? @map("union_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  account  Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  district District? @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  upazila  Upazila?  @relation(fields: [upazilaId], references: [id], onDelete: SetNull)
+  union    Union?    @relation(fields: [unionId], references: [id], onDelete: SetNull)
+
+  availability        ProfessionalAvailability[]
+  caseloads           ProfessionalLocationCaseload[]
+  specializations     ProfessionalSpecialization[]
+  verifications       ProfessionalVerification[]
+  appointments        Appointment[]
+  careRelationships   CareRelationship[]
+  assignedAssessments Assessment[]                   @relation("AssignedAssessments")
+
+  // Listing query: visible & verified & accepting clients.
+  @@index([isVisible, acceptingNewClients])
+  @@index([professionType])
+  @@index([districtId])
+  @@map("professional_profiles")
+}
+
+/// Recurring weekly availability window. One row per day+range.
+/// CHECK (start_time < end_time) added via migration.
+model ProfessionalAvailability {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professionalProfileId String   @map("professional_profile_id") @db.Uuid
+  weekday               Weekday
+  startTime             DateTime @map("start_time") @db.Time(6)
+  endTime               DateTime @map("end_time") @db.Time(6)
+
+  professional ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
+
+  @@index([professionalProfileId, weekday])
+  @@map("professional_availability")
+}
+
+/// Self-reported active client counts by location (legacy `numberOfClients`).
+model ProfessionalLocationCaseload {
+  id                    String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professionalProfileId String @map("professional_profile_id") @db.Uuid
+  locationLabel         String @map("location_label")
+  clientCount           Int    @default(0) @map("client_count")
+
+  professional ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
+
+  @@index([professionalProfileId])
+  @@map("professional_location_caseloads")
+}
+
+/// Reference list of clinical specializations (extensible vocabulary).
+model Specialization {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug   String @unique
+  nameEn String @map("name_en")
+  nameBn String @map("name_bn")
+
+  professionals ProfessionalSpecialization[]
+
+  @@map("specializations")
+}
+
+model ProfessionalSpecialization {
+  professionalProfileId String  @map("professional_profile_id") @db.Uuid
+  specializationId      String  @map("specialization_id") @db.Uuid
+  // Free-text "other" specialization when not in the vocabulary.
+  note                  String?
+
+  professional   ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
+  specialization Specialization      @relation(fields: [specializationId], references: [id], onDelete: Restrict)
+
+  @@id([professionalProfileId, specializationId])
+  @@index([specializationId])
+  @@map("professional_specializations")
+}
+
+/// Admin verification workflow for a professional (replaces the boolean
+/// `isVerified` with an auditable review trail). Latest row = current state.
+model ProfessionalVerification {
+  id                    String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  professionalProfileId String                         @map("professional_profile_id") @db.Uuid
+  status                ProfessionalVerificationStatus @default(PENDING)
+  submittedAt           DateTime                       @default(now()) @map("submitted_at") @db.Timestamptz(6)
+  reviewedByAccountId   String?                        @map("reviewed_by_account_id") @db.Uuid
+  reviewedAt            DateTime?                      @map("reviewed_at") @db.Timestamptz(6)
+  decisionNote          String?                        @map("decision_note")
+
+  professional ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Cascade)
+  reviewedBy   Account?            @relation("VerificationReviewer", fields: [reviewedByAccountId], references: [id], onDelete: SetNull)
+
+  @@index([professionalProfileId, status])
+  @@index([status])
+  @@map("professional_verifications")
+}
+
+// =============================================================================
+//  CARE RELATIONSHIP & SCHEDULING
+// =============================================================================
+
+/// The ongoing clinician<->client link (legacy ProfessionalsClient). Formed when
+/// a professional accepts an appointment; survives across appointments.
+/// One ACTIVE relationship per (user, professional) — enforce with a PARTIAL
+/// UNIQUE index in a migration:
+///   CREATE UNIQUE INDEX ... ON care_relationships (user_profile_id, professional_profile_id)
+///   WHERE status = 'ACTIVE';
+model CareRelationship {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userProfileId         String                 @map("user_profile_id") @db.Uuid
+  professionalProfileId String                 @map("professional_profile_id") @db.Uuid
+  referenceCode         String                 @unique @map("reference_code") // human-friendly id
+  status                CareRelationshipStatus @default(ACTIVE)
+  establishedAt         DateTime               @default(now()) @map("established_at") @db.Timestamptz(6)
+  endedAt               DateTime?              @map("ended_at") @db.Timestamptz(6)
+  endedReason           String?                @map("ended_reason")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user         UserProfile         @relation(fields: [userProfileId], references: [id], onDelete: Restrict)
+  professional ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Restrict)
+  appointments Appointment[]
+  assessments  Assessment[]
+
+  @@index([professionalProfileId, status])
+  @@index([userProfileId, status])
+  @@map("care_relationships")
+}
+
+/// A booking and its lifecycle. `requested_start_at` = time the user asked for;
+/// `scheduled_start_at` = the confirmed time (may differ if the professional
+/// proposed another). One OPEN appointment per (user, professional) — enforce
+/// with a PARTIAL UNIQUE index in a migration:
+///   CREATE UNIQUE INDEX ... ON appointments (user_profile_id, professional_profile_id)
+///   WHERE status IN ('REQUESTED','VIEWED','ACCEPTED','RESCHEDULE_PROPOSED');
+model Appointment {
+  id                    String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userProfileId         String              @map("user_profile_id") @db.Uuid
+  professionalProfileId String              @map("professional_profile_id") @db.Uuid
+  careRelationshipId    String?             @map("care_relationship_id") @db.Uuid
+  status                AppointmentStatus   @default(REQUESTED)
+  modality              AppointmentModality @default(IN_PERSON)
+
+  requestedStartAt DateTime  @map("requested_start_at") @db.Timestamptz(6)
+  scheduledStartAt DateTime? @map("scheduled_start_at") @db.Timestamptz(6)
+  durationMinutes  Int?      @map("duration_minutes")
+
+  requestMessage      String? @map("request_message")
+  professionalMessage String? @map("professional_message") @db.VarChar(1000)
+  // MVP: no built-in chat/video. For VIDEO/PHONE modalities the clinician pastes
+  // an external meeting URL/dial-in here; for IN_PERSON it can hold the address.
+  meetingLink         String? @map("meeting_link")
+  // The user permitted this clinician to view their self-assessment profile.
+  profileShareGranted Boolean @default(false) @map("profile_share_granted")
+
+  viewedByProfessionalAt DateTime? @map("viewed_by_professional_at") @db.Timestamptz(6)
+  respondedAt            DateTime? @map("responded_at") @db.Timestamptz(6)
+  cancelledAt            DateTime? @map("cancelled_at") @db.Timestamptz(6)
+  cancellationReason     String?   @map("cancellation_reason")
+  completedAt            DateTime? @map("completed_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  user             UserProfile         @relation(fields: [userProfileId], references: [id], onDelete: Restrict)
+  professional     ProfessionalProfile @relation(fields: [professionalProfileId], references: [id], onDelete: Restrict)
+  careRelationship CareRelationship?   @relation(fields: [careRelationshipId], references: [id], onDelete: SetNull)
+  events           AppointmentEvent[]
+  notifications    Notification[]
+
+  @@index([professionalProfileId, status])
+  @@index([userProfileId, status])
+  @@index([scheduledStartAt])
+  @@map("appointments")
+}
+
+/// Immutable audit of every appointment state transition.
+model AppointmentEvent {
+  id             String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  appointmentId  String             @map("appointment_id") @db.Uuid
+  fromStatus     AppointmentStatus? @map("from_status")
+  toStatus       AppointmentStatus  @map("to_status")
+  actorAccountId String?            @map("actor_account_id") @db.Uuid
+  note           String?
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  actor       Account?    @relation("AppointmentEventActor", fields: [actorAccountId], references: [id], onDelete: SetNull)
+
+  @@index([appointmentId])
+  @@map("appointment_events")
+}
+
+// =============================================================================
+//  INSTRUMENTS (versioned questionnaires / clinical scales)
+//  Unifies the legacy frontend "tests", yes/no profiles, and professional scales
+//  into one catalog. Mirrors FHIR Questionnaire (Instrument/InstrumentVersion)
+//  and QuestionnaireResponse (Assessment/AssessmentAnswer).
+// =============================================================================
+
+/// A logical instrument (e.g. "GHQ-12", "Perceived Stress Scale"). Wording and
+/// scoring live in versions; this row is the stable identity.
+model Instrument {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String             @unique // stable key used by clients & assignments
+  name        String
+  category    InstrumentCategory
+  description String?
+  isActive    Boolean            @default(true) @map("is_active")
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  versions InstrumentVersion[]
+
+  @@index([category, isActive])
+  @@map("instruments")
+}
+
+/// An immutable published version of an instrument: its questions, options,
+/// scoring rules and severity bands at a point in time, in a given locale.
+model InstrumentVersion {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  instrumentId     String           @map("instrument_id") @db.Uuid
+  versionNumber    Int              @map("version_number")
+  locale           String           @default("bn")
+  status           InstrumentStatus @default(DRAFT)
+  scoringMethod    ScoringMethod    @map("scoring_method")
+  // For NORMALIZED_PERCENT scoring: the value raw scores are scaled against.
+  normalizationMax Decimal?         @map("normalization_max") @db.Decimal(10, 3)
+  attribution      String? // author / translator / copyright line
+  instructions     String?
+  publishedAt      DateTime?        @map("published_at") @db.Timestamptz(6)
+  retiredAt        DateTime?        @map("retired_at") @db.Timestamptz(6)
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  instrument   Instrument    @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+  questions    Question[]
+  scoringBands ScoringBand[]
+  assessments  Assessment[]
+
+  @@unique([instrumentId, versionNumber, locale])
+  @@index([instrumentId, status])
+  @@map("instrument_versions")
+}
+
+/// A single question within an instrument version.
+model Question {
+  id                  String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  instrumentVersionId String       @map("instrument_version_id") @db.Uuid
+  position            Int // 1-based ordering within the version
+  code                String? // optional stable code for analytics across versions
+  prompt              String
+  type                QuestionType @default(SINGLE_CHOICE)
+  // Reverse-scored item (e.g. positively-worded item in a distress scale).
+  isReverseScored     Boolean      @default(false) @map("is_reverse_scored")
+  isRequired          Boolean      @default(true) @map("is_required")
+  // Optional sub-scale / domain grouping (e.g. "somatic", "cognitive").
+  domain              String?
+
+  instrumentVersion InstrumentVersion  @relation(fields: [instrumentVersionId], references: [id], onDelete: Cascade)
+  options           AnswerOption[]
+  answers           AssessmentAnswer[]
+
+  @@unique([instrumentVersionId, position])
+  @@index([instrumentVersionId])
+  @@map("questions")
+}
+
+/// A selectable answer option for a (choice/scale/boolean) question.
+model AnswerOption {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questionId String  @map("question_id") @db.Uuid
+  position   Int
+  label      String
+  value      Int // the option's raw value as shown/recorded
+  weight     Decimal @db.Decimal(6, 3) // score contribution
+
+  question Question           @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers  AssessmentAnswer[]
+
+  @@unique([questionId, position])
+  @@index([questionId])
+  @@map("answer_options")
+}
+
+/// A severity band mapping a total score range to a label and a recommended
+/// action (replaces hardcoded severity thresholds & profile-scale redirects).
+/// CHECK (min_score <= max_score) added via migration.
+model ScoringBand {
+  id                   String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  instrumentVersionId  String        @map("instrument_version_id") @db.Uuid
+  position             Int // ordering of bands
+  label                String // e.g. "স্বাভাবিক মাত্রা" / "Severe"
+  severityRank         Int           @map("severity_rank") // 0=least severe, ascending
+  minScore             Decimal       @map("min_score") @db.Decimal(10, 3)
+  maxScore             Decimal       @map("max_score") @db.Decimal(10, 3)
+  colorHex             String?       @map("color_hex")
+  advice               String?
+  recommendedAction    OutcomeAction @default(SHOW_RESULT) @map("recommended_action")
+  // Optional content to surface for this band (e.g. a coping video).
+  recommendedContentId String?       @map("recommended_content_id") @db.Uuid
+
+  instrumentVersion  InstrumentVersion   @relation(fields: [instrumentVersionId], references: [id], onDelete: Cascade)
+  recommendedContent EducationalContent? @relation(fields: [recommendedContentId], references: [id], onDelete: SetNull)
+  assessments        Assessment[]
+
+  @@unique([instrumentVersionId, position])
+  @@index([instrumentVersionId])
+  @@map("scoring_bands")
+}
+
+// =============================================================================
+//  ASSESSMENTS (completed/assigned responses to an instrument version)
+// =============================================================================
+
+/// One administration of an instrument to a user — self-initiated or assigned by
+/// a professional. Bound to the exact instrument_version answered, with scores
+/// computed and snapshotted BY THE BACKEND (rawScore/maxScore/normalizedScore/
+/// scoringBandId/severityLabel are all server-derived from `assessment_answers`
+/// and the instrument definition — never supplied by the client).
+///
+/// MULTIPLE SCALES AT ONCE: a professional assigning N scales to a client simply
+/// creates N rows here (source = PROFESSIONAL_ASSIGNED). There is no uniqueness
+/// preventing several concurrent assigned/in-progress assessments per client, so
+/// a single "suggest" action can fan out to many instruments freely.
+model Assessment {
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subjectUserProfileId String           @map("subject_user_profile_id") @db.Uuid
+  instrumentVersionId  String           @map("instrument_version_id") @db.Uuid
+  source               AssessmentSource
+  status               AssessmentStatus @default(IN_PROGRESS)
+
+  // Set when source = PROFESSIONAL_ASSIGNED.
+  assignedByProfessionalId String? @map("assigned_by_professional_id") @db.Uuid
+  careRelationshipId       String? @map("care_relationship_id") @db.Uuid
+
+  // Scoring snapshot (computed at completion; immutable thereafter).
+  rawScore        Decimal? @map("raw_score") @db.Decimal(10, 3)
+  maxScore        Decimal? @map("max_score") @db.Decimal(10, 3)
+  normalizedScore Decimal? @map("normalized_score") @db.Decimal(6, 3) // e.g. 0-100
+  scoringBandId   String?  @map("scoring_band_id") @db.Uuid
+  severityLabel   String?  @map("severity_label") // denormalized snapshot for permanence
+
+  // Context flags carried over from the legacy flow.
+  isFromContentFlow  Boolean @default(false) @map("is_from_content_flow") // legacy fromVideo
+  isPostIntervention Boolean @default(false) @map("is_post_intervention") // legacy postTest
+
+  assignedAt  DateTime? @map("assigned_at") @db.Timestamptz(6)
+  dueAt       DateTime? @map("due_at") @db.Timestamptz(6)
+  startedAt   DateTime? @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  subject           UserProfile          @relation("SubjectAssessments", fields: [subjectUserProfileId], references: [id], onDelete: Restrict)
+  instrumentVersion InstrumentVersion    @relation(fields: [instrumentVersionId], references: [id], onDelete: Restrict)
+  assignedBy        ProfessionalProfile? @relation("AssignedAssessments", fields: [assignedByProfessionalId], references: [id], onDelete: SetNull)
+  careRelationship  CareRelationship?    @relation(fields: [careRelationshipId], references: [id], onDelete: SetNull)
+  scoringBand       ScoringBand?         @relation(fields: [scoringBandId], references: [id], onDelete: SetNull)
+  answers           AssessmentAnswer[]
+  notifications     Notification[]
+
+  @@index([subjectUserProfileId, instrumentVersionId])
+  @@index([assignedByProfessionalId])
+  @@index([careRelationshipId])
+  @@index([status])
+  @@index([completedAt])
+  @@map("assessments")
+}
+
+/// A single answer within an assessment. The CLIENT submits only what was chosen
+/// (`selectedOptionId` for choice/scale/boolean questions, or `valueNumeric` /
+/// `valueText` for numeric/free-text). The BACKEND derives and writes
+/// `weightApplied` from the option's weight + the question's reverse-scoring rule;
+/// the client never sends weights or scores.
+///
+/// One row per selected option, so MULTI_CHOICE questions store several rows for
+/// the same (assessment, question). Single-answer questions naturally have one row.
+model AssessmentAnswer {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  assessmentId     String   @map("assessment_id") @db.Uuid
+  questionId       String   @map("question_id") @db.Uuid
+  selectedOptionId String?  @map("selected_option_id") @db.Uuid
+  valueNumeric     Decimal? @map("value_numeric") @db.Decimal(10, 3)
+  valueText        String?  @map("value_text")
+  // Backend-computed score contribution (reverse-scoring already resolved).
+  weightApplied    Decimal? @map("weight_applied") @db.Decimal(6, 3)
+  answeredAt       DateTime @default(now()) @map("answered_at") @db.Timestamptz(6)
+
+  assessment     Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  question       Question      @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  selectedOption AnswerOption? @relation(fields: [selectedOptionId], references: [id], onDelete: Restrict)
+
+  // Supports multi-select (distinct option per row). For single-answer questions
+  // the app writes one row; to lock that at the DB level for free-text answers on
+  // PG15+, add a `NULLS NOT DISTINCT` unique index via migration.
+  @@unique([assessmentId, questionId, selectedOptionId])
+  @@index([assessmentId])
+  @@index([questionId])
+  @@map("assessment_answers")
+}
+
+// =============================================================================
+//  EDUCATIONAL CONTENT & ENGAGEMENT
+// =============================================================================
+
+/// A topic vocabulary shared by content and help-center resources (e.g.
+/// "anxiety", "grief", "domestic-violence", "suicide-risk").
+model Topic {
+  id     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug   String @unique
+  nameEn String @map("name_en")
+  nameBn String @map("name_bn")
+
+  contentLinks      ContentTopic[]
+  helpResourceLinks HelpResourceTopic[]
+
+  @@map("topics")
+}
+
+/// A curated educational resource (legacy hardcoded videos). Provider + ref
+/// identifies the external media (e.g. provider=YOUTUBE, ref=<video id>).
+model EducationalContent {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contentKey      String          @unique @map("content_key") // stable slug (legacy content_id)
+  type            ContentType     @default(VIDEO)
+  provider        ContentProvider @default(YOUTUBE)
+  providerRef     String          @map("provider_ref") // e.g. YouTube video id
+  title           String
+  description     String?
+  locale          String          @default("bn")
+  durationSeconds Int?            @map("duration_seconds")
+  thumbnailUrl    String?         @map("thumbnail_url")
+  displayOrder    Int             @default(0) @map("display_order")
+  isActive        Boolean         @default(true) @map("is_active")
+  publishedAt     DateTime?       @map("published_at") @db.Timestamptz(6)
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  topics             ContentTopic[]
+  views              ContentView[]
+  ratings            ContentRating[]
+  recommendedByBands ScoringBand[]
+
+  @@index([isActive, displayOrder])
+  @@map("educational_content")
+}
+
+model ContentTopic {
+  contentId String @map("content_id") @db.Uuid
+  topicId   String @map("topic_id") @db.Uuid
+
+  content EducationalContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  topic   Topic              @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, topicId])
+  @@index([topicId])
+  @@map("content_topics")
+}
+
+/// A user's engagement with a piece of content (legacy `shownVideo`). Upserted:
+/// one row per account+content, tracking watch count and completion.
+model ContentView {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId     String   @map("account_id") @db.Uuid
+  contentId     String   @map("content_id") @db.Uuid
+  viewCount     Int      @default(1) @map("view_count")
+  completed     Boolean  @default(false)
+  firstViewedAt DateTime @default(now()) @map("first_viewed_at") @db.Timestamptz(6)
+  lastViewedAt  DateTime @default(now()) @map("last_viewed_at") @db.Timestamptz(6)
+
+  account Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  content EducationalContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, contentId])
+  @@index([contentId])
+  @@map("content_views")
+}
+
+/// A user's rating of a piece of content (legacy `Rating`). One per account+content.
+/// CHECK (rating BETWEEN 1 AND 5) added via migration.
+model ContentRating {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId String   @map("account_id") @db.Uuid
+  contentId String   @map("content_id") @db.Uuid
+  rating    Int      @db.SmallInt
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  account Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  content EducationalContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, contentId])
+  @@index([contentId])
+  @@map("content_ratings")
+}
+
+// =============================================================================
+//  HELP CENTER (emergency & support resources — legacy helpCenter.js)
+// =============================================================================
+
+model HelpCenterResource {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug         String   @unique
+  nameBn       String   @map("name_bn")
+  nameEn       String?  @map("name_en")
+  locationNote String?  @map("location_note")
+  description  String?
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  contacts HelpCenterContact[]
+  topics   HelpResourceTopic[]
+
+  @@index([isActive, displayOrder])
+  @@map("help_center_resources")
+}
+
+model HelpCenterContact {
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  resourceId       String         @map("resource_id") @db.Uuid
+  channel          ContactChannel
+  value            String // phone number / whatsapp / url
+  availabilityNote String?        @map("availability_note") // e.g. "৮টা-১০টা"
+  isTollFree       Boolean        @default(false) @map("is_toll_free")
+  displayOrder     Int            @default(0) @map("display_order")
+
+  resource HelpCenterResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@map("help_center_contacts")
+}
+
+/// Links help resources to topics (legacy `keywords`), so risk-profile outcomes
+/// can surface the right hotline.
+model HelpResourceTopic {
+  resourceId String @map("resource_id") @db.Uuid
+  topicId    String @map("topic_id") @db.Uuid
+
+  resource HelpCenterResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  topic    Topic              @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([resourceId, topicId])
+  @@index([topicId])
+  @@map("help_resource_topics")
+}
+
+// =============================================================================
+//  NOTIFICATIONS
+// =============================================================================
+
+/// In-app (and optionally email/push/SMS) notification to an account. Typed
+/// foreign keys give referential integrity; `data` carries any extra payload.
+model Notification {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientAccountId String              @map("recipient_account_id") @db.Uuid
+  senderAccountId    String?             @map("sender_account_id") @db.Uuid
+  type               NotificationType
+  channel            NotificationChannel @default(IN_APP)
+  title              String?
+  body               String?
+  data               Json?
+
+  // Optional typed references to the originating entity.
+  appointmentId String? @map("appointment_id") @db.Uuid
+  assessmentId  String? @map("assessment_id") @db.Uuid
+
+  readAt      DateTime? @map("read_at") @db.Timestamptz(6)
+  // For non-in-app channels: when it was actually dispatched.
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  recipient   Account      @relation("NotificationRecipient", fields: [recipientAccountId], references: [id], onDelete: Cascade)
+  sender      Account?     @relation("NotificationSender", fields: [senderAccountId], references: [id], onDelete: SetNull)
+  appointment Appointment? @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  assessment  Assessment?  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([recipientAccountId, readAt])
+  @@index([type])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// =============================================================================
+//  AUDIT (append-only; consider monthly range partitioning at scale)
+// =============================================================================
+
+model AuditLog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorAccountId String?  @map("actor_account_id") @db.Uuid
+  action         String // e.g. "appointment.accept", "professional.approve"
+  entityType     String   @map("entity_type")
+  entityId       String?  @map("entity_id")
+  metadata       Json?
+  ipAddress      String?  @map("ip_address") @db.Inet
+  userAgent      String?  @map("user_agent")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  actor Account? @relation("AuditActor", fields: [actorAccountId], references: [id], onDelete: SetNull)
+
+  @@index([actorAccountId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

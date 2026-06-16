@@ -1,0 +1,2242 @@
+openapi: 3.0.3
+info:
+  title: QLife API
+  description: |
+    REST API for the QLife mental-health platform. Supports three primary roles:
+    - **USER** – a registered end-user seeking mental-health support
+    - **PROFESSIONAL** – a verified mental-health professional
+    - **ADMIN** – a platform administrator
+
+    All protected endpoints require a Bearer JWT obtained from the Cognito-backed
+    authentication flow. The token is passed in the `Authorization` header as
+    `Bearer <token>`.
+
+    All successful responses wrap their payload in a top-level `data` key.
+    Error responses use `{ "error": { "code": "...", "message": "..." } }`.
+  version: 1.0.0
+  contact:
+    name: QLife Engineering
+
+servers:
+  - url: https://api.qlife.app/v1
+    description: Production
+  - url: http://localhost:3000/v1
+    description: Local development
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Health
+    description: Service liveness probe (public)
+  - name: Auth
+    description: Account identity – current authenticated account info
+  - name: Users
+    description: User profile management (role USER)
+  - name: Professionals
+    description: Professional registration, directory, profile management, and verification (roles USER/PROFESSIONAL/ADMIN)
+  - name: Appointments
+    description: Appointment lifecycle between users and professionals (roles USER/PROFESSIONAL)
+  - name: Assessments
+    description: Psychometric assessment creation, assignment, and answer submission (roles USER/PROFESSIONAL)
+  - name: Clients
+    description: Professional's client list (role PROFESSIONAL)
+  - name: Instruments
+    description: Psychometric instrument catalogue (public after auth)
+  - name: Content
+    description: Educational/therapeutic content for users (role USER)
+  - name: Notifications
+    description: In-app notification inbox (all authenticated roles)
+  - name: Geography
+    description: Bangladesh administrative geography hierarchy (authenticated)
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+paths:
+
+  # ---------- Health --------------------------------------------------------
+  /health:
+    get:
+      tags: [Health]
+      operationId: getHealth
+      summary: Health check
+      description: |
+        Public liveness probe. Returns `{ "ok": true }` when the server is
+        running. No authentication required.
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+              example:
+                ok: true
+
+  # ---------- Auth / Account ------------------------------------------------
+  /me:
+    get:
+      tags: [Auth]
+      operationId: getMyAccount
+      summary: Get current account
+      description: |
+        Returns the authenticated account's identity record including `id`,
+        `email`, `role`, `status`, `cognitoSub`, and `authProvider`.
+        Available to any authenticated role.
+      responses:
+        '200':
+          description: Account record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account:
+                    $ref: '#/components/schemas/Account'
+              example:
+                account:
+                  id: "a1b2c3d4-0000-0000-0000-000000000001"
+                  email: "user@example.com"
+                  role: "USER"
+                  status: "ACTIVE"
+                  cognitoSub: "us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  authProvider: "COGNITO"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ---------- Users ---------------------------------------------------------
+  /users/me:
+    get:
+      tags: [Users]
+      operationId: getMyUserProfile
+      summary: Get own user profile
+      description: |
+        Returns the USER's profile record and a convenience boolean
+        `isProfileComplete` indicating whether all required profile fields
+        have been filled. Requires role **USER**.
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+              example:
+                data:
+                  user:
+                    id: "p1b2c3d4-0000-0000-0000-000000000010"
+                    displayName: "Rahim Uddin"
+                    ageYears: "28"
+                    gender: "MALE"
+                    marital: "SINGLE"
+                    phone: "01711000000"
+                    districtId: "550e8400-e29b-41d4-a716-446655440000"
+                    upazilaId: null
+                    unionId: null
+                  isProfileComplete: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags: [Users]
+      operationId: updateMyUserProfile
+      summary: Update own user profile
+      description: |
+        Partially updates the USER's profile. All fields are optional; only
+        supplied fields are changed. Requires role **USER**.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserProfileRequest'
+            example:
+              displayName: "Rahim Uddin"
+              ageYears: "28"
+              gender: "MALE"
+              marital: "SINGLE"
+              phone: "01711000000"
+              districtId: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+              example:
+                data:
+                  user:
+                    id: "p1b2c3d4-0000-0000-0000-000000000010"
+                    displayName: "Rahim Uddin"
+                    ageYears: "28"
+                    gender: "MALE"
+                    marital: "SINGLE"
+                    phone: "01711000000"
+                    districtId: "550e8400-e29b-41d4-a716-446655440000"
+                    upazilaId: null
+                    unionId: null
+                  isProfileComplete: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ---------- Professionals -------------------------------------------------
+  /professionals/register:
+    post:
+      tags: [Professionals]
+      operationId: registerProfessional
+      summary: Register as a professional
+      description: |
+        Converts the authenticated USER account into a PROFESSIONAL account
+        (step 1 of the onboarding flow). The account role changes to
+        PROFESSIONAL after this call. Requires role **USER**.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterProfessionalRequest'
+            example:
+              fullName: "Dr. Fatema Khanam"
+              professionType: "PSYCHIATRIST"
+              gender: "FEMALE"
+              designation: "MBBS, MD (Psychiatry)"
+              phone: "01811000001"
+      responses:
+        '200':
+          description: Professional registration result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: Registration details (varies by implementation)
+              example:
+                data:
+                  professionalProfileId: "prof-0000-0000-0000-000000000001"
+                  status: "PENDING_VERIFICATION"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /professionals:
+    get:
+      tags: [Professionals]
+      operationId: listProfessionals
+      summary: Browse professional directory
+      description: |
+        Returns a paginated list of verified, visible professionals for the
+        user-side directory. Requires role **USER**.
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+      responses:
+        '200':
+          description: Professional directory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      professionals:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Professional'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+              example:
+                data:
+                  professionals:
+                    - id: "prof-0000-0000-0000-000000000001"
+                      fullName: "Dr. Fatema Khanam"
+                      professionType: "PSYCHIATRIST"
+                      gender: "FEMALE"
+                      designation: "MBBS, MD (Psychiatry)"
+                      workplace: "Dhaka Medical College"
+                      yearsOfExperience: 10
+                      bio: "Specialist in anxiety and mood disorders."
+                      isVisible: true
+                      acceptingNewClients: true
+                  pagination:
+                    page: 1
+                    pageSize: 20
+                    total: 42
+                    hasMore: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /professionals/me:
+    get:
+      tags: [Professionals]
+      operationId: getMyProfessionalProfile
+      summary: Get own professional profile
+      description: |
+        Returns the full professional profile for the authenticated
+        PROFESSIONAL account. Requires role **PROFESSIONAL**.
+      responses:
+        '200':
+          description: Professional profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      professional:
+                        $ref: '#/components/schemas/ProfessionalProfile'
+              example:
+                data:
+                  professional:
+                    id: "prof-0000-0000-0000-000000000001"
+                    fullName: "Dr. Fatema Khanam"
+                    professionType: "PSYCHIATRIST"
+                    gender: "FEMALE"
+                    designation: "MBBS, MD (Psychiatry)"
+                    workplace: "Dhaka Medical College"
+                    yearsOfExperience: 10
+                    bio: "Specialist in anxiety and mood disorders."
+                    phone: "01811000001"
+                    isVisible: true
+                    acceptingNewClients: true
+                    isOnboardingComplete: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    patch:
+      tags: [Professionals]
+      operationId: updateMyProfessionalProfile
+      summary: Update own professional profile
+      description: |
+        Partially updates the authenticated PROFESSIONAL's profile. All fields
+        are optional. Requires role **PROFESSIONAL**.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfessionalRequest'
+            example:
+              bio: "Updated bio focusing on CBT and trauma therapy."
+              yearsOfExperience: 12
+              acceptingNewClients: false
+              isVisible: true
+      responses:
+        '200':
+          description: Updated professional profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      professional:
+                        $ref: '#/components/schemas/ProfessionalProfile'
+              example:
+                data:
+                  professional:
+                    id: "prof-0000-0000-0000-000000000001"
+                    fullName: "Dr. Fatema Khanam"
+                    professionType: "PSYCHIATRIST"
+                    gender: "FEMALE"
+                    designation: "MBBS, MD (Psychiatry)"
+                    workplace: "Dhaka Medical College"
+                    yearsOfExperience: 12
+                    bio: "Updated bio focusing on CBT and trauma therapy."
+                    phone: "01811000001"
+                    isVisible: true
+                    acceptingNewClients: false
+                    isOnboardingComplete: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /professionals/verifications/{id}/review:
+    post:
+      tags: [Professionals]
+      operationId: reviewVerification
+      summary: Review a professional verification (Admin)
+      description: |
+        Allows an ADMIN to approve, reject, or revoke a professional
+        verification submission. Requires role **ADMIN**.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Verification record UUID
+          schema:
+            type: string
+            format: uuid
+            example: "v1b2c3d4-0000-0000-0000-000000000001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewVerificationRequest'
+            example:
+              decision: "APPROVED"
+              decisionNote: "Documents verified successfully."
+      responses:
+        '200':
+          description: Updated verification record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      verification:
+                        $ref: '#/components/schemas/Verification'
+              example:
+                data:
+                  verification:
+                    id: "v1b2c3d4-0000-0000-0000-000000000001"
+                    decision: "APPROVED"
+                    decisionNote: "Documents verified successfully."
+                    decidedAt: "2025-06-01T10:00:00.000Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ---------- Appointments --------------------------------------------------
+  /appointments:
+    get:
+      tags: [Appointments]
+      operationId: listAppointments
+      summary: List appointments
+      description: |
+        Returns a paginated list of appointments relevant to the authenticated
+        account. USERs see their own appointment requests; PROFESSIONALs see
+        appointment requests directed to them. Requires role **USER** or
+        **PROFESSIONAL**.
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+      responses:
+        '200':
+          description: Appointment list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      appointments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Appointment'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+              example:
+                data:
+                  appointments:
+                    - id: "apt-0000-0000-0000-000000000001"
+                      status: "PENDING"
+                      requestedStartAt: "2025-07-15T09:00:00.000Z"
+                      requestMessage: "I would like to discuss anxiety management."
+                      profileShareGranted: true
+                      createdAt: "2025-06-10T08:00:00.000Z"
+                  pagination:
+                    page: 1
+                    pageSize: 20
+                    total: 3
+                    hasMore: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Appointments]
+      operationId: requestAppointment
+      summary: Request an appointment
+      description: |
+        Creates a new appointment request from the authenticated USER to a
+        specific professional. Requires role **USER**.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestAppointmentRequest'
+            example:
+              professionalProfileId: "prof-0000-0000-0000-000000000001"
+              requestedStartAt: "2025-07-15T09:00:00.000Z"
+              requestMessage: "I would like to discuss anxiety management."
+              profileShareGranted: true
+      responses:
+        '200':
+          description: Appointment created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      appointmentId:
+                        type: string
+                        format: uuid
+              example:
+                data:
+                  appointmentId: "apt-0000-0000-0000-000000000001"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /appointments/{id}:
+    get:
+      tags: [Appointments]
+      operationId: getAppointment
+      summary: Get appointment detail
+      description: |
+        Returns the full detail of a single appointment. The authenticated
+        account must be a party to the appointment (USER or PROFESSIONAL).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Appointment UUID
+          schema:
+            type: string
+            format: uuid
+            example: "apt-0000-0000-0000-000000000001"
+      responses:
+        '200':
+          description: Appointment detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      appointment:
+                        $ref: '#/components/schemas/AppointmentDetail'
+              example:
+                data:
+                  appointment:
+                    id: "apt-0000-0000-0000-000000000001"
+                    status: "ACCEPTED"
+                    requestedStartAt: "2025-07-15T09:00:00.000Z"
+                    scheduledStartAt: "2025-07-15T10:00:00.000Z"
+                    requestMessage: "I would like to discuss anxiety management."
+                    professionalMessage: "I look forward to our session."
+                    meetingLink: "https://meet.example.com/session-abc"
+                    profileShareGranted: true
+                    seenByProfessional: true
+                    createdAt: "2025-06-10T08:00:00.000Z"
+                    updatedAt: "2025-06-11T09:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /appointments/{id}/seen:
+    post:
+      tags: [Appointments]
+      operationId: markAppointmentSeen
+      summary: Mark appointment as seen (Professional)
+      description: |
+        Marks an appointment request as seen by the professional. Requires role
+        **PROFESSIONAL** and the appointment must belong to them.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Appointment UUID
+          schema:
+            type: string
+            format: uuid
+            example: "apt-0000-0000-0000-000000000001"
+      responses:
+        '200':
+          description: Updated appointment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      appointment:
+                        $ref: '#/components/schemas/AppointmentDetail'
+              example:
+                data:
+                  appointment:
+                    id: "apt-0000-0000-0000-000000000001"
+                    status: "PENDING"
+                    seenByProfessional: true
+                    requestedStartAt: "2025-07-15T09:00:00.000Z"
+                    createdAt: "2025-06-10T08:00:00.000Z"
+                    updatedAt: "2025-06-12T07:30:00.000Z"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /appointments/{id}/respond:
+    post:
+      tags: [Appointments]
+      operationId: respondToAppointment
+      summary: Respond to an appointment (Professional)
+      description: |
+        Allows a PROFESSIONAL to accept, decline, or propose a reschedule for
+        an appointment request. Requires role **PROFESSIONAL** and the
+        appointment must belong to them.
+
+        - `ACCEPTED`: confirm the appointment; provide `scheduledStartAt` and
+          optionally `meetingLink`.
+        - `DECLINED`: decline the request; optionally provide a
+          `professionalMessage`.
+        - `RESCHEDULE_PROPOSED`: propose a new time; provide `scheduledStartAt`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Appointment UUID
+          schema:
+            type: string
+            format: uuid
+            example: "apt-0000-0000-0000-000000000001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RespondAppointmentRequest'
+            example:
+              action: "ACCEPTED"
+              scheduledStartAt: "2025-07-15T10:00:00.000Z"
+              professionalMessage: "I look forward to our session."
+              meetingLink: "https://meet.example.com/session-abc"
+      responses:
+        '200':
+          description: Updated appointment after response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      appointment:
+                        $ref: '#/components/schemas/AppointmentDetail'
+              example:
+                data:
+                  appointment:
+                    id: "apt-0000-0000-0000-000000000001"
+                    status: "ACCEPTED"
+                    scheduledStartAt: "2025-07-15T10:00:00.000Z"
+                    meetingLink: "https://meet.example.com/session-abc"
+                    professionalMessage: "I look forward to our session."
+                    seenByProfessional: true
+                    createdAt: "2025-06-10T08:00:00.000Z"
+                    updatedAt: "2025-06-12T08:00:00.000Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ---------- Assessments ---------------------------------------------------
+  /assessments:
+    get:
+      tags: [Assessments]
+      operationId: listAssessments
+      summary: List assessments
+      description: |
+        Returns assessments for the authenticated account filtered by optional
+        status. USERs see their own assessments (self-initiated or assigned by
+        a professional). PROFESSIONALs see assessments they assigned to clients.
+        Requires role **USER** or **PROFESSIONAL**.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: Filter by assessment status (e.g. PENDING, COMPLETED)
+          schema:
+            type: string
+            example: "PENDING"
+      responses:
+        '200':
+          description: Assessment list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      assessments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Assessment'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+              example:
+                data:
+                  assessments:
+                    - id: "asmt-0000-0000-0000-000000000001"
+                      status: "PENDING"
+                      instrumentSlug: "phq-9"
+                      instrumentName: "PHQ-9"
+                      dueAt: null
+                      createdAt: "2025-06-05T12:00:00.000Z"
+                  pagination:
+                    page: 1
+                    pageSize: 20
+                    total: 1
+                    hasMore: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Assessments]
+      operationId: createAssessment
+      summary: Create a self-assessment
+      description: |
+        Creates a new self-initiated assessment for the authenticated account
+        using the specified instrument slug. Available to any authenticated user
+        (USER or PROFESSIONAL).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAssessmentRequest'
+            example:
+              instrumentSlug: "phq-9"
+      responses:
+        '200':
+          description: Newly created assessment
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      assessment:
+                        $ref: '#/components/schemas/Assessment'
+              example:
+                data:
+                  assessment:
+                    id: "asmt-0000-0000-0000-000000000002"
+                    status: "PENDING"
+                    instrumentSlug: "phq-9"
+                    instrumentName: "PHQ-9"
+                    dueAt: null
+                    createdAt: "2025-06-17T09:00:00.000Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /assessments/assign/{careRelationshipId}:
+    post:
+      tags: [Assessments]
+      operationId: assignAssessment
+      summary: Assign assessments to a client (Professional)
+      description: |
+        Allows a PROFESSIONAL to assign one or more instrument assessments to a
+        client identified by a care-relationship ID. An optional due date can be
+        set. Requires role **PROFESSIONAL**.
+      parameters:
+        - name: careRelationshipId
+          in: path
+          required: true
+          description: Care-relationship UUID linking professional to client
+          schema:
+            type: string
+            format: uuid
+            example: "cr-000000-0000-0000-0000-000000000001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignAssessmentRequest'
+            example:
+              instrumentSlugs: ["phq-9", "gad-7"]
+              dueAt: "2025-07-01T00:00:00.000Z"
+      responses:
+        '200':
+          description: List of created assessment records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      assessments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Assessment'
+              example:
+                data:
+                  assessments:
+                    - id: "asmt-0000-0000-0000-000000000003"
+                      status: "PENDING"
+                      instrumentSlug: "phq-9"
+                      instrumentName: "PHQ-9"
+                      dueAt: "2025-07-01T00:00:00.000Z"
+                      createdAt: "2025-06-17T09:05:00.000Z"
+                    - id: "asmt-0000-0000-0000-000000000004"
+                      status: "PENDING"
+                      instrumentSlug: "gad-7"
+                      instrumentName: "GAD-7"
+                      dueAt: "2025-07-01T00:00:00.000Z"
+                      createdAt: "2025-06-17T09:05:00.000Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /assessments/{id}/answers:
+    post:
+      tags: [Assessments]
+      operationId: submitAssessmentAnswers
+      summary: Submit answers for an assessment
+      description: |
+        Submits answers for a specific assessment. Each answer maps a
+        `questionId` to a `selectedOptionId`. When all required questions are
+        answered the assessment status transitions to COMPLETED and a scoring
+        band is computed. Requires the authenticated account to own the
+        assessment.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Assessment UUID
+          schema:
+            type: string
+            format: uuid
+            example: "asmt-0000-0000-0000-000000000002"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitAnswersRequest'
+            example:
+              answers:
+                - questionId: "q-0000-0000-0000-000000000001"
+                  selectedOptionId: "opt-0000-0000-0000-000000000003"
+                - questionId: "q-0000-0000-0000-000000000002"
+                  selectedOptionId: "opt-0000-0000-0000-000000000007"
+              note: ""
+      responses:
+        '200':
+          description: Assessment result after submission
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      assessment:
+                        $ref: '#/components/schemas/AssessmentDetail'
+              example:
+                data:
+                  assessment:
+                    id: "asmt-0000-0000-0000-000000000002"
+                    status: "COMPLETED"
+                    instrumentSlug: "phq-9"
+                    instrumentName: "PHQ-9"
+                    score: 12
+                    answers:
+                      - questionId: "q-0000-0000-0000-000000000001"
+                        selectedOptionId: "opt-0000-0000-0000-000000000003"
+                    scoringBand:
+                      label: "Moderate"
+                      minScore: 10
+                      maxScore: 14
+                    dueAt: null
+                    createdAt: "2025-06-17T09:00:00.000Z"
+                    completedAt: "2025-06-17T09:12:00.000Z"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ---------- Clients -------------------------------------------------------
+  /clients:
+    get:
+      tags: [Clients]
+      operationId: listClients
+      summary: List professional's clients
+      description: |
+        Returns all care-relationship records for the authenticated
+        PROFESSIONAL, effectively listing their client roster. Requires role
+        **PROFESSIONAL**.
+      responses:
+        '200':
+          description: Client list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      clients:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Client'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+              example:
+                data:
+                  clients:
+                    - id: "cr-000000-0000-0000-0000-000000000001"
+                      userId: "p1b2c3d4-0000-0000-0000-000000000010"
+                      displayName: "Rahim Uddin"
+                      gender: "MALE"
+                      ageYears: "28"
+                      phone: "01711000000"
+                      startedAt: "2025-05-20T00:00:00.000Z"
+                  pagination:
+                    page: 1
+                    pageSize: 20
+                    total: 1
+                    hasMore: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ---------- Instruments ---------------------------------------------------
+  /instruments:
+    get:
+      tags: [Instruments]
+      operationId: listInstruments
+      summary: List psychometric instruments
+      description: |
+        Returns the full catalogue of published psychometric instruments with
+        summary info. Available to all authenticated accounts.
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+      responses:
+        '200':
+          description: Instrument catalogue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      instruments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/InstrumentSummary'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+              example:
+                data:
+                  instruments:
+                    - slug: "phq-9"
+                      name: "PHQ-9"
+                      description: "Patient Health Questionnaire – 9 item depression scale."
+                      questionCount: 9
+                      estimatedMinutes: 3
+                    - slug: "gad-7"
+                      name: "GAD-7"
+                      description: "Generalised Anxiety Disorder – 7 item scale."
+                      questionCount: 7
+                      estimatedMinutes: 2
+                  pagination:
+                    page: 1
+                    pageSize: 20
+                    total: 2
+                    hasMore: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /instruments/{slug}:
+    get:
+      tags: [Instruments]
+      operationId: getInstrumentBySlug
+      summary: Get instrument with questions
+      description: |
+        Returns the full published version of a specific instrument including
+        all questions and their response options. Available to all authenticated
+        accounts.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Instrument slug (e.g. phq-9)
+          schema:
+            type: string
+            example: "phq-9"
+      responses:
+        '200':
+          description: Instrument detail with questions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      instrument:
+                        $ref: '#/components/schemas/InstrumentSummary'
+                      version:
+                        $ref: '#/components/schemas/InstrumentVersion'
+              example:
+                data:
+                  instrument:
+                    slug: "phq-9"
+                    name: "PHQ-9"
+                    description: "Patient Health Questionnaire – 9 item depression scale."
+                    questionCount: 9
+                    estimatedMinutes: 3
+                  version:
+                    id: "ver-0000-0000-0000-000000000001"
+                    questions:
+                      - id: "q-0000-0000-0000-000000000001"
+                        text: "Little interest or pleasure in doing things"
+                        order: 1
+                        options:
+                          - id: "opt-0000-0000-0000-000000000001"
+                            text: "Not at all"
+                            value: 0
+                          - id: "opt-0000-0000-0000-000000000002"
+                            text: "Several days"
+                            value: 1
+                          - id: "opt-0000-0000-0000-000000000003"
+                            text: "More than half the days"
+                            value: 2
+                          - id: "opt-0000-0000-0000-000000000004"
+                            text: "Nearly every day"
+                            value: 3
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ---------- Content -------------------------------------------------------
+  /content:
+    get:
+      tags: [Content]
+      operationId: listContent
+      summary: List educational/therapeutic content
+      description: |
+        Returns all available therapeutic and educational content items for the
+        authenticated USER. Requires role **USER**.
+      responses:
+        '200':
+          description: Content list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ContentItem'
+              example:
+                data:
+                  content:
+                    - key: "breathing-exercise-101"
+                      title: "Box Breathing Exercise"
+                      category: "EXERCISE"
+                      durationMinutes: 5
+                      thumbnailUrl: "https://cdn.qlife.app/content/breathing.jpg"
+                      viewed: false
+                      completed: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /content/{contentKey}/viewed:
+    post:
+      tags: [Content]
+      operationId: markContentViewed
+      summary: Mark content as viewed
+      description: |
+        Records that the authenticated USER has viewed (and optionally
+        completed) a content item. Requires role **USER**.
+      parameters:
+        - name: contentKey
+          in: path
+          required: true
+          description: Content item key
+          schema:
+            type: string
+            example: "breathing-exercise-101"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkViewedRequest'
+            example:
+              completed: true
+      responses:
+        '200':
+          description: View recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+              example:
+                data: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /content/{contentKey}/rating:
+    post:
+      tags: [Content]
+      operationId: rateContent
+      summary: Rate a content item
+      description: |
+        Submits a 1-5 star rating (and optional comment) for a content item by
+        the authenticated USER. Requires role **USER**.
+      parameters:
+        - name: contentKey
+          in: path
+          required: true
+          description: Content item key
+          schema:
+            type: string
+            example: "breathing-exercise-101"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RateContentRequest'
+            example:
+              rating: 5
+              comment: "Very calming and easy to follow."
+      responses:
+        '200':
+          description: Rating recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+              example:
+                data: {}
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ---------- Notifications -------------------------------------------------
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      operationId: getUnreadNotificationCount
+      summary: Get unread notification count
+      description: |
+        Returns the number of unread notifications for the authenticated
+        account. Available to all authenticated roles.
+      responses:
+        '200':
+          description: Unread notification count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      unreadNotificationCount:
+                        type: integer
+                        example: 3
+              example:
+                data:
+                  unreadNotificationCount: 3
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      operationId: listNotifications
+      summary: List notifications
+      description: |
+        Returns a paginated list of notifications for the authenticated account,
+        ordered by most recent first. Available to all authenticated roles.
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+      responses:
+        '200':
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      notifications:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Notification'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+              example:
+                data:
+                  notifications:
+                    - id: "notif-000-0000-0000-0000-000000000001"
+                      type: "APPOINTMENT_ACCEPTED"
+                      title: "Appointment Accepted"
+                      body: "Dr. Fatema has accepted your appointment request."
+                      seen: false
+                      createdAt: "2025-06-12T08:05:00.000Z"
+                  pagination:
+                    page: 1
+                    pageSize: 20
+                    total: 3
+                    hasMore: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /notifications/{id}/seen:
+    post:
+      tags: [Notifications]
+      operationId: markNotificationSeen
+      summary: Mark notification as seen
+      description: |
+        Marks a specific notification as seen for the authenticated account.
+        Available to all authenticated roles.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Notification UUID
+          schema:
+            type: string
+            format: uuid
+            example: "notif-000-0000-0000-0000-000000000001"
+      responses:
+        '200':
+          description: Notification marked as seen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+              example:
+                data: {}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ---------- Geography -----------------------------------------------------
+  /geo/districts:
+    get:
+      tags: [Geography]
+      operationId: listDistricts
+      summary: List Bangladesh districts
+      description: |
+        Returns all districts in Bangladesh. Used to populate location
+        selectors in user and professional profile forms. Requires
+        authentication.
+      responses:
+        '200':
+          description: District list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      districts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/GeoEntry'
+              example:
+                data:
+                  districts:
+                    - id: "550e8400-e29b-41d4-a716-446655440000"
+                      name: "Dhaka"
+                    - id: "550e8400-e29b-41d4-a716-446655440001"
+                      name: "Chittagong"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /geo/districts/{districtId}/upazilas:
+    get:
+      tags: [Geography]
+      operationId: listUpazilas
+      summary: List upazilas for a district
+      description: |
+        Returns all upazilas (sub-districts) that belong to the given district.
+        Requires authentication.
+      parameters:
+        - name: districtId
+          in: path
+          required: true
+          description: District UUID
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Upazila list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      upazilas:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/GeoEntry'
+              example:
+                data:
+                  upazilas:
+                    - id: "660e8400-e29b-41d4-a716-446655440010"
+                      name: "Dhanmondi"
+                    - id: "660e8400-e29b-41d4-a716-446655440011"
+                      name: "Mirpur"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /geo/upazilas/{upazilaId}/unions:
+    get:
+      tags: [Geography]
+      operationId: listUnions
+      summary: List unions for an upazila
+      description: |
+        Returns all unions that belong to the given upazila. Requires
+        authentication.
+      parameters:
+        - name: upazilaId
+          in: path
+          required: true
+          description: Upazila UUID
+          schema:
+            type: string
+            format: uuid
+            example: "660e8400-e29b-41d4-a716-446655440010"
+      responses:
+        '200':
+          description: Union list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      unions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/GeoEntry'
+              example:
+                data:
+                  unions:
+                    - id: "770e8400-e29b-41d4-a716-446655440020"
+                      name: "Dhanmondi Ward 1"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+# ---------------------------------------------------------------------------
+# Components
+# ---------------------------------------------------------------------------
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT issued by Amazon Cognito. Pass as Authorization: Bearer <token>.
+
+  parameters:
+    PageQuery:
+      name: page
+      in: query
+      required: false
+      description: Page number (1-based)
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+        example: 1
+
+  responses:
+    BadRequest:
+      description: Invalid request body or parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "VALIDATION_ERROR"
+              message: "professionalProfileId must be a UUID"
+    Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "UNAUTHORIZED"
+              message: "Unauthorized"
+    Forbidden:
+      description: Authenticated account lacks the required role
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "FORBIDDEN"
+              message: "Forbidden"
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "NOT_FOUND"
+              message: "Resource not found"
+    InternalServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "INTERNAL_ERROR"
+              message: "An unexpected error occurred"
+
+  schemas:
+
+    # ---- Shared / utility --------------------------------------------------
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              description: Human-readable error description
+              example: "professionalProfileId must be a UUID"
+
+    Pagination:
+      type: object
+      description: Pagination metadata included in list responses
+      required: [page, pageSize, total, hasMore]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 42
+        hasMore:
+          type: boolean
+          example: true
+
+    GeoEntry:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          example: "Dhaka"
+
+    # ---- Account -----------------------------------------------------------
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-0000-0000-0000-000000000001"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        role:
+          type: string
+          enum: [USER, PROFESSIONAL, ADMIN]
+          example: "USER"
+        status:
+          type: string
+          enum: [ACTIVE, SUSPENDED, DELETED]
+          example: "ACTIVE"
+        cognitoSub:
+          type: string
+          example: "us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        authProvider:
+          type: string
+          example: "COGNITO"
+
+    # ---- User profile -------------------------------------------------------
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "p1b2c3d4-0000-0000-0000-000000000010"
+        displayName:
+          type: string
+          nullable: true
+          example: "Rahim Uddin"
+        ageYears:
+          type: string
+          nullable: true
+          example: "28"
+        gender:
+          type: string
+          nullable: true
+          enum: [MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY]
+          example: "MALE"
+        marital:
+          type: string
+          nullable: true
+          enum: [SINGLE, MARRIED, DIVORCED, WIDOWED, SEPARATED]
+          example: "SINGLE"
+        phone:
+          type: string
+          nullable: true
+          example: "01711000000"
+        districtId:
+          type: string
+          format: uuid
+          nullable: true
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        upazilaId:
+          type: string
+          format: uuid
+          nullable: true
+          example: null
+        unionId:
+          type: string
+          format: uuid
+          nullable: true
+          example: null
+
+    UserProfileResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            user:
+              $ref: '#/components/schemas/UserProfile'
+            isProfileComplete:
+              type: boolean
+              example: false
+
+    UpdateUserProfileRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 120
+          example: "Rahim Uddin"
+        ageYears:
+          type: string
+          example: "28"
+        gender:
+          type: string
+          enum: [MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY]
+          example: "MALE"
+        marital:
+          type: string
+          enum: [SINGLE, MARRIED, DIVORCED, WIDOWED, SEPARATED]
+          example: "SINGLE"
+        phone:
+          type: string
+          maxLength: 32
+          example: "01711000000"
+        districtId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        upazilaId:
+          type: string
+          format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440010"
+        unionId:
+          type: string
+          format: uuid
+          example: "770e8400-e29b-41d4-a716-446655440020"
+
+    # ---- Professional ------------------------------------------------------
+    Professional:
+      type: object
+      description: Summary professional record for directory listings
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "prof-0000-0000-0000-000000000001"
+        fullName:
+          type: string
+          example: "Dr. Fatema Khanam"
+        professionType:
+          type: string
+          enum: [PSYCHIATRIST, PSYCHOLOGIST, COUNSELOR, THERAPIST, SOCIAL_WORKER, OTHER]
+          example: "PSYCHIATRIST"
+        gender:
+          type: string
+          nullable: true
+          enum: [MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY]
+          example: "FEMALE"
+        designation:
+          type: string
+          nullable: true
+          example: "MBBS, MD (Psychiatry)"
+        workplace:
+          type: string
+          nullable: true
+          example: "Dhaka Medical College"
+        yearsOfExperience:
+          type: integer
+          nullable: true
+          example: 10
+        bio:
+          type: string
+          nullable: true
+          example: "Specialist in anxiety and mood disorders."
+        isVisible:
+          type: boolean
+          example: true
+        acceptingNewClients:
+          type: boolean
+          example: true
+
+    ProfessionalProfile:
+      allOf:
+        - $ref: '#/components/schemas/Professional'
+        - type: object
+          properties:
+            phone:
+              type: string
+              nullable: true
+              example: "01811000001"
+            isOnboardingComplete:
+              type: boolean
+              example: true
+
+    RegisterProfessionalRequest:
+      type: object
+      required: [fullName, professionType]
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 120
+          example: "Dr. Fatema Khanam"
+        professionType:
+          type: string
+          enum: [PSYCHIATRIST, PSYCHOLOGIST, COUNSELOR, THERAPIST, SOCIAL_WORKER, OTHER]
+          example: "PSYCHIATRIST"
+        gender:
+          type: string
+          enum: [MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY]
+          example: "FEMALE"
+        designation:
+          type: string
+          maxLength: 80
+          example: "MBBS, MD (Psychiatry)"
+        phone:
+          type: string
+          maxLength: 32
+          example: "01811000001"
+
+    UpdateProfessionalRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 120
+          example: "Dr. Fatema Khanam"
+        professionType:
+          type: string
+          enum: [PSYCHIATRIST, PSYCHOLOGIST, COUNSELOR, THERAPIST, SOCIAL_WORKER, OTHER]
+          example: "PSYCHIATRIST"
+        gender:
+          type: string
+          enum: [MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY]
+          example: "FEMALE"
+        designation:
+          type: string
+          maxLength: 80
+          example: "MBBS, MD (Psychiatry)"
+        workplace:
+          type: string
+          maxLength: 200
+          example: "Dhaka Medical College"
+        yearsOfExperience:
+          type: integer
+          minimum: 0
+          example: 12
+        bio:
+          type: string
+          maxLength: 2000
+          example: "Updated bio focusing on CBT and trauma therapy."
+        phone:
+          type: string
+          maxLength: 32
+          example: "01811000001"
+        isVisible:
+          type: boolean
+          example: true
+        acceptingNewClients:
+          type: boolean
+          example: false
+        isOnboardingComplete:
+          type: boolean
+          example: true
+
+    Verification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "v1b2c3d4-0000-0000-0000-000000000001"
+        decision:
+          type: string
+          enum: [APPROVED, REJECTED, REVOKED]
+          example: "APPROVED"
+        decisionNote:
+          type: string
+          nullable: true
+          example: "Documents verified successfully."
+        decidedAt:
+          type: string
+          format: date-time
+          example: "2025-06-01T10:00:00.000Z"
+
+    ReviewVerificationRequest:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [APPROVED, REJECTED, REVOKED]
+          example: "APPROVED"
+        decisionNote:
+          type: string
+          maxLength: 2000
+          example: "Documents verified successfully."
+
+    # ---- Appointments ------------------------------------------------------
+    Appointment:
+      type: object
+      description: Summary appointment record for list views
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "apt-0000-0000-0000-000000000001"
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, DECLINED, RESCHEDULE_PROPOSED, CANCELLED, COMPLETED]
+          example: "PENDING"
+        requestedStartAt:
+          type: string
+          format: date-time
+          example: "2025-07-15T09:00:00.000Z"
+        requestMessage:
+          type: string
+          nullable: true
+          example: "I would like to discuss anxiety management."
+        profileShareGranted:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-06-10T08:00:00.000Z"
+
+    AppointmentDetail:
+      allOf:
+        - $ref: '#/components/schemas/Appointment'
+        - type: object
+          properties:
+            scheduledStartAt:
+              type: string
+              format: date-time
+              nullable: true
+              example: "2025-07-15T10:00:00.000Z"
+            professionalMessage:
+              type: string
+              nullable: true
+              example: "I look forward to our session."
+            meetingLink:
+              type: string
+              nullable: true
+              example: "https://meet.example.com/session-abc"
+            seenByProfessional:
+              type: boolean
+              example: true
+            updatedAt:
+              type: string
+              format: date-time
+              example: "2025-06-11T09:00:00.000Z"
+
+    RequestAppointmentRequest:
+      type: object
+      required: [professionalProfileId, requestedStartAt]
+      properties:
+        professionalProfileId:
+          type: string
+          format: uuid
+          example: "prof-0000-0000-0000-000000000001"
+        requestedStartAt:
+          type: string
+          format: date-time
+          description: Requested appointment start time (ISO 8601)
+          example: "2025-07-15T09:00:00.000Z"
+        requestMessage:
+          type: string
+          maxLength: 1000
+          example: "I would like to discuss anxiety management."
+        profileShareGranted:
+          type: boolean
+          example: true
+
+    RespondAppointmentRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [ACCEPTED, DECLINED, RESCHEDULE_PROPOSED]
+          example: "ACCEPTED"
+        scheduledStartAt:
+          type: string
+          format: date-time
+          description: Confirmed or proposed new start time (required for ACCEPTED or RESCHEDULE_PROPOSED)
+          example: "2025-07-15T10:00:00.000Z"
+        professionalMessage:
+          type: string
+          maxLength: 1000
+          example: "I look forward to our session."
+        meetingLink:
+          type: string
+          maxLength: 2000
+          example: "https://meet.example.com/session-abc"
+
+    # ---- Assessments -------------------------------------------------------
+    Assessment:
+      type: object
+      description: Assessment summary
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "asmt-0000-0000-0000-000000000001"
+        status:
+          type: string
+          enum: [PENDING, IN_PROGRESS, COMPLETED, EXPIRED]
+          example: "PENDING"
+        instrumentSlug:
+          type: string
+          example: "phq-9"
+        instrumentName:
+          type: string
+          example: "PHQ-9"
+        dueAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-06-05T12:00:00.000Z"
+
+    AssessmentDetail:
+      allOf:
+        - $ref: '#/components/schemas/Assessment'
+        - type: object
+          properties:
+            score:
+              type: number
+              nullable: true
+              example: 12
+            answers:
+              type: array
+              items:
+                type: object
+                properties:
+                  questionId:
+                    type: string
+                    format: uuid
+                    example: "q-0000-0000-0000-000000000001"
+                  selectedOptionId:
+                    type: string
+                    format: uuid
+                    example: "opt-0000-0000-0000-000000000003"
+            scoringBand:
+              nullable: true
+              type: object
+              properties:
+                label:
+                  type: string
+                  example: "Moderate"
+                minScore:
+                  type: number
+                  example: 10
+                maxScore:
+                  type: number
+                  example: 14
+            completedAt:
+              type: string
+              format: date-time
+              nullable: true
+              example: "2025-06-17T09:12:00.000Z"
+
+    CreateAssessmentRequest:
+      type: object
+      required: [instrumentSlug]
+      properties:
+        instrumentSlug:
+          type: string
+          minLength: 1
+          example: "phq-9"
+
+    AssignAssessmentRequest:
+      type: object
+      required: [instrumentSlugs]
+      properties:
+        instrumentSlugs:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          example: ["phq-9", "gad-7"]
+        dueAt:
+          type: string
+          format: date-time
+          example: "2025-07-01T00:00:00.000Z"
+
+    SubmitAnswersRequest:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [questionId, selectedOptionId]
+            properties:
+              questionId:
+                type: string
+                format: uuid
+                example: "q-0000-0000-0000-000000000001"
+              selectedOptionId:
+                type: string
+                format: uuid
+                example: "opt-0000-0000-0000-000000000003"
+        note:
+          type: string
+          example: ""
+
+    # ---- Clients -----------------------------------------------------------
+    Client:
+      type: object
+      description: Care-relationship record representing a professional's client
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Care-relationship UUID
+          example: "cr-000000-0000-0000-0000-000000000001"
+        userId:
+          type: string
+          format: uuid
+          example: "p1b2c3d4-0000-0000-0000-000000000010"
+        displayName:
+          type: string
+          nullable: true
+          example: "Rahim Uddin"
+        gender:
+          type: string
+          nullable: true
+          enum: [MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY]
+          example: "MALE"
+        ageYears:
+          type: string
+          nullable: true
+          example: "28"
+        phone:
+          type: string
+          nullable: true
+          example: "01711000000"
+        startedAt:
+          type: string
+          format: date-time
+          example: "2025-05-20T00:00:00.000Z"
+
+    # ---- Instruments -------------------------------------------------------
+    InstrumentSummary:
+      type: object
+      properties:
+        slug:
+          type: string
+          example: "phq-9"
+        name:
+          type: string
+          example: "PHQ-9"
+        description:
+          type: string
+          nullable: true
+          example: "Patient Health Questionnaire - 9 item depression scale."
+        questionCount:
+          type: integer
+          example: 9
+        estimatedMinutes:
+          type: integer
+          nullable: true
+          example: 3
+
+    InstrumentVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "ver-0000-0000-0000-000000000001"
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+
+    Question:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "q-0000-0000-0000-000000000001"
+        text:
+          type: string
+          example: "Little interest or pleasure in doing things"
+        order:
+          type: integer
+          example: 1
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionOption'
+
+    QuestionOption:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "opt-0000-0000-0000-000000000001"
+        text:
+          type: string
+          example: "Not at all"
+        value:
+          type: number
+          example: 0
+
+    # ---- Content -----------------------------------------------------------
+    ContentItem:
+      type: object
+      properties:
+        key:
+          type: string
+          example: "breathing-exercise-101"
+        title:
+          type: string
+          example: "Box Breathing Exercise"
+        category:
+          type: string
+          example: "EXERCISE"
+        durationMinutes:
+          type: integer
+          nullable: true
+          example: 5
+        thumbnailUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://cdn.qlife.app/content/breathing.jpg"
+        viewed:
+          type: boolean
+          example: false
+        completed:
+          type: boolean
+          example: false
+
+    MarkViewedRequest:
+      type: object
+      properties:
+        completed:
+          type: boolean
+          example: true
+
+    RateContentRequest:
+      type: object
+      required: [rating]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          maxLength: 2000
+          example: "Very calming and easy to follow."
+
+    # ---- Notifications -----------------------------------------------------
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "notif-000-0000-0000-0000-000000000001"
+        type:
+          type: string
+          example: "APPOINTMENT_ACCEPTED"
+        title:
+          type: string
+          example: "Appointment Accepted"
+        body:
+          type: string
+          example: "Dr. Fatema has accepted your appointment request."
+        seen:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-06-12T08:05:00.000Z"

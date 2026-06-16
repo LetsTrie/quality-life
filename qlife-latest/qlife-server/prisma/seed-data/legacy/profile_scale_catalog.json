@@ -1,0 +1,37 @@
+[
+  {
+    "label": "করোনা সম্পর্কিত তথ্য",
+    "scaleId": "coronaProfile",
+    "redirectTo": "SHOW_VIDEO",
+    "type": "coronaProfile",
+    "link": "coronaProfile"
+  },
+  {
+    "label": "গুরুতর সমস্যা সম্পর্কিত তথ্য",
+    "scaleId": "psychoticProfile",
+    "redirectTo": "HELP_CENTER",
+    "type": "psychoticProfile",
+    "link": "psychoticProfile"
+  },
+  {
+    "label": "আত্মহত্যা পরিকল্পনা সম্পর্কিত তথ্য",
+    "scaleId": "suicideIdeation",
+    "redirectTo": "HELP_CENTER",
+    "type": "suicideIdeation",
+    "link": "suicideIdeation"
+  },
+  {
+    "label": "পারিবারিক সহিংসতা সম্পর্কিত তথ্য",
+    "scaleId": "domesticViolence",
+    "redirectTo": "HELP_CENTER",
+    "type": "domesticViolence",
+    "link": "domesticViolence"
+  },
+  {
+    "label": "সন্তান পালন সম্পর্কিত তথ্য",
+    "scaleId": "childCare",
+    "redirectTo": "SHOW_VIDEO",
+    "type": "childCare",
+    "link": "childCare"
+  }
+]
