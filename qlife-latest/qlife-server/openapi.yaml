@@ -97,16 +97,20 @@ paths:
               schema:
                 type: object
                 properties:
-                  account:
-                    $ref: '#/components/schemas/Account'
+                  data:
+                    type: object
+                    properties:
+                      account:
+                        $ref: '#/components/schemas/Account'
               example:
-                account:
-                  id: "a1b2c3d4-0000-0000-0000-000000000001"
-                  email: "user@example.com"
-                  role: "USER"
-                  status: "ACTIVE"
-                  cognitoSub: "us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                  authProvider: "COGNITO"
+                data:
+                  account:
+                    id: "a1b2c3d4-0000-0000-0000-000000000001"
+                    email: "user@example.com"
+                    role: "USER"
+                    status: "ACTIVE"
+                    cognitoSub: "us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                    authProvider: "COGNITO"
         '401':
           $ref: '#/components/responses/Unauthorized'
 

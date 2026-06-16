@@ -68,8 +68,8 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
             children: [
               if (pickedDate != null && pickedTime != null)
                 Text(
-                  'Scheduled: ${pickedDate!.year}-${pickedDate!.month.toString().padLeft(2, '0')}-${pickedDate!.day.toString().padLeft(2, '0')} '
-                  '${pickedTime!.hour.toString().padLeft(2, '0')}:${pickedTime!.minute.toString().padLeft(2, '0')} UTC',
+                  'Scheduled: ${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')} '
+                  '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')} UTC',
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               if (pickedDate != null) const SizedBox(height: 12),
@@ -97,11 +97,11 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
       String? scheduledIso;
       if (pickedDate != null && pickedTime != null) {
         final dt = DateTime.utc(
-          pickedDate!.year,
-          pickedDate!.month,
-          pickedDate!.day,
-          pickedTime!.hour,
-          pickedTime!.minute,
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
         );
         scheduledIso = dt.toIso8601String();
       }

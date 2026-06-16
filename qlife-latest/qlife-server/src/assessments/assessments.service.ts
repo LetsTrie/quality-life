@@ -135,7 +135,7 @@ export class AssessmentsService {
     return { assessments, pagination: { page: args.page, pageSize: take, total, hasMore: skip + assessments.length < total } };
   }
 
-  async getById(args: { accountId: string; assessmentId: string }) {
+  async getById(args: { accountId: string; role: 'USER' | 'PROFESSIONAL'; assessmentId: string }) {
     const assessment = await this.prisma.assessment.findUnique({
       where: { id: args.assessmentId },
       include: {
@@ -152,12 +152,25 @@ export class AssessmentsService {
             selectedOption: { select: { id: true, label: true } },
           },
         },
-        scoringBand: { select: { label: true, recommendedAction: true, description: true } },
+        scoringBand: { select: { label: true, recommendedAction: true, advice: true } },
         subject: { select: { accountId: true, displayName: true } },
       },
     });
     if (!assessment) throw new NotFoundException('Assessment not found');
-    if (assessment.subject.accountId !== args.accountId) throw new NotFoundException('Assessment not found');
+
+    // Scope to the caller: a USER may read assessments where they are the subject;
+    // a PROFESSIONAL may read assessments they assigned.
+    if (args.role === 'USER') {
+      if (assessment.subject.accountId !== args.accountId) throw new NotFoundException('Assessment not found');
+    } else {
+      const professional = await this.prisma.professionalProfile.findUnique({
+        where: { accountId: args.accountId },
+        select: { id: true },
+      });
+      if (!professional || assessment.assignedByProfessionalId !== professional.id) {
+        throw new NotFoundException('Assessment not found');
+      }
+    }
     return assessment;
   }
 

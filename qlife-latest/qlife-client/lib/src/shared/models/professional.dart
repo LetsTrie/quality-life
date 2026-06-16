@@ -28,7 +28,7 @@ class Professional {
       fullName: json['fullName'] as String? ?? '',
       professionType: json['professionType'] as String? ?? '',
       designation: json['designation'] as String?,
-      yearsOfExperience: json['yearsOfExperience'] as int?,
+      yearsOfExperience: (json['yearsOfExperience'] as num?)?.toInt(),
       workplace: json['workplace'] as String?,
       feeAmount: json['feeAmount'] as String?,
       feeCurrency: json['feeCurrency'] as String?,

@@ -2,9 +2,9 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsOptional,
   IsString,
   IsUUID,
-  MinLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -24,8 +24,8 @@ export class SubmitAnswersDto {
   answers!: AnswerItemDto[];
 
   // Optional client note (not stored today; reserved for audit payload later).
+  @IsOptional()
   @IsString()
-  @MinLength(0)
   note?: string;
 }
 

@@ -47,7 +47,7 @@ class AppointmentsRepository {
   }
 
   Future<AppointmentDetail> markSeen(String appointmentId) async {
-    final res = await _dio.post('/v1/appointments/$appointmentId/seen');
+    final res = await _dio.patch('/v1/appointments/$appointmentId/seen');
     final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
     return AppointmentDetail.fromJson(data['appointment'] as Map<String, dynamic>);
   }

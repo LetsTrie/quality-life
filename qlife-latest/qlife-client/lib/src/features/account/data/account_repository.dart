@@ -18,7 +18,7 @@ class HttpAccountRepository implements AccountRepository {
   @override
   Future<Map<String, dynamic>> me() async {
     final res = await _dio.get('/v1/me');
-    return res.data as Map<String, dynamic>;
+    return (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
   }
 }
 

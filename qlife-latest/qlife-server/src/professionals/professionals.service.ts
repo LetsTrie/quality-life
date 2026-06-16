@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -89,7 +90,7 @@ export class ProfessionalsService {
     const skip = Math.max(0, (args.page - 1) * take);
 
     // "Verified" = latest verification status APPROVED.
-    const where = {
+    const where: Prisma.ProfessionalProfileWhereInput = {
       deletedAt: null,
       isVisible: true,
       acceptingNewClients: true,

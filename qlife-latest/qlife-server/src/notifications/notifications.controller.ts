@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Patch, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 
 import { NotificationsService } from './notifications.service';

@@ -137,6 +137,13 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
       final ok = _formKey.currentState?.validate() ?? false;
       if (!ok) return;
 
+      // DropdownMenu does not participate in Form validation, so required
+      // selections are validated explicitly here.
+      if (_gender == null || _marital == null || _districtId == null) {
+        setState(() => _error = 'Please select gender, marital status, and district.');
+        return;
+      }
+
       final users = ref.read(usersRepositoryProvider);
       await users.updateMe(
         displayName: _nameCtrl.text.trim(),

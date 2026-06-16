@@ -22,7 +22,7 @@ class ContentItem {
       provider: json['provider'] as String?,
       providerRef: json['providerRef'] as String?,
       description: json['description'] as String?,
-      durationSeconds: json['durationSeconds'] as int?,
+      durationSeconds: (json['durationSeconds'] as num?)?.toInt(),
     );
   }
 }

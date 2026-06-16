@@ -9,4 +9,3 @@ import { AccountsService } from './accounts.service';
   exports: [AccountsService],
 })
 export class AccountsModule {}
-

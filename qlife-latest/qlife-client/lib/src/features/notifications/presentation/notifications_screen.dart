@@ -51,9 +51,16 @@ class NotificationsScreen extends ConsumerWidget {
                 title: Text(n.displayTitle),
                 subtitle: Text(n.isUnread ? 'Unread' : 'Read'),
                 onTap: () async {
-                  if (n.isUnread) {
+                  if (!n.isUnread) return;
+                  try {
                     await ref.read(notificationsRepositoryProvider).markSeen(n.id);
                     ref.invalidate(_notificationsProvider);
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Could not mark as read. Please try again.')),
+                      );
+                    }
                   }
                 },
               );

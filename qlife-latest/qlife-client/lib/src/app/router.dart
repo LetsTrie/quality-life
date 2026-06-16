@@ -38,7 +38,8 @@ final appSessionProvider = FutureProvider<AppSession?>((ref) async {
 
   final dio = ref.watch(apiClientProvider);
   final meRes = await dio.get('/v1/me');
-  final account = (meRes.data as Map<String, dynamic>)['account'] as Map<String, dynamic>?;
+  final meData = (meRes.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+  final account = meData['account'] as Map<String, dynamic>?;
   final role = account?['role']?.toString() ?? '';
 
   if (role == 'USER') {

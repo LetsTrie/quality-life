@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 
 import { Public } from '../auth/public.decorator';
@@ -23,9 +23,8 @@ export class ProfessionalsController {
   // Professional directory (user-side browsing)
   @Get()
   @Roles('USER')
-  async directory(@Query('page') page?: string) {
-    const p = page ? Number(page) : 1;
-    const result = await this.professionals.listDirectory({ page: Number.isFinite(p) ? p : 1 });
+  async directory(@Query('page', new ParseIntPipe({ optional: true })) page?: number) {
+    const result = await this.professionals.listDirectory({ page: page && page > 0 ? page : 1 });
     return { data: result };
   }
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Req } from '@nestjs/common';
+import { Controller, Get, Req, UnauthorizedException } from '@nestjs/common';
 import type { Request } from 'express';
 
 import { AccountsService } from './accounts.service';
@@ -10,20 +10,22 @@ export class AccountsController {
   @Get('/me')
   async me(@Req() req: Request) {
     const id = req.auth?.account.id;
-    if (!id) return { error: { code: 'UNAUTHORIZED', message: 'Unauthorized' } };
+    if (!id) throw new UnauthorizedException('Unauthorized');
 
     const account = await this.accounts.getAccountById(id);
     return {
-      account: account
-        ? {
-            id: account.id,
-            email: account.email,
-            role: account.role,
-            status: account.status,
-            cognitoSub: account.cognitoSub,
-            authProvider: account.authProvider,
-          }
-        : null,
+      data: {
+        account: account
+          ? {
+              id: account.id,
+              email: account.email,
+              role: account.role,
+              status: account.status,
+              cognitoSub: account.cognitoSub,
+              authProvider: account.authProvider,
+            }
+          : null,
+      },
     };
   }
 }

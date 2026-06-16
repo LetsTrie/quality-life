@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../shared/models/content_item.dart';
+import '../../../shared/theme/app_colors.dart';
 import '../data/content_repository.dart';
 
 class ContentScreen extends ConsumerWidget {
@@ -56,7 +57,15 @@ class ContentScreen extends ConsumerWidget {
                   ],
                 ),
                 onTap: () async {
-                  await ref.read(contentRepositoryProvider).markViewed(item.contentKey, completed: true);
+                  // View tracking is best-effort and must not block opening the
+                  // content or surface as an uncaught async error.
+                  try {
+                    await ref
+                        .read(contentRepositoryProvider)
+                        .markViewed(item.contentKey, completed: true);
+                  } catch (_) {
+                    // ignore: tracking failure should not interrupt playback
+                  }
                   if (item.provider == 'YOUTUBE' && item.providerRef != null) {
                     final uri = Uri.parse('https://www.youtube.com/watch?v=${item.providerRef}');
                     await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -89,7 +98,7 @@ class ContentScreen extends ConsumerWidget {
                   return IconButton(
                     icon: Icon(
                       rating <= (selectedRating ?? 0) ? Icons.star : Icons.star_outline,
-                      color: Colors.amber,
+                      color: AppSemanticColors.of(context).rating,
                     ),
                     onPressed: () => setDialogState(() => selectedRating = rating),
                   );

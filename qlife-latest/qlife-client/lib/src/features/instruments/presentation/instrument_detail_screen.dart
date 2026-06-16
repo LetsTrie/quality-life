@@ -74,16 +74,23 @@ class _InstrumentDetailScreenState extends ConsumerState<InstrumentDetailScreen>
             for (final question in instrument.questions) ...[
               Text(question.prompt, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
-              ...question.options.map((option) {
-                final qid = question.id;
-                final oid = option.id;
-                return RadioListTile<String>(
-                  value: oid,
-                  groupValue: _selectedByQuestionId[qid],
-                  onChanged: (v) => setState(() => _selectedByQuestionId[qid] = v!),
-                  title: Text(option.label),
-                );
-              }),
+              RadioGroup<String>(
+                groupValue: _selectedByQuestionId[question.id],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _selectedByQuestionId[question.id] = value);
+                },
+                child: Column(
+                  children: question.options
+                      .map(
+                        (option) => RadioListTile<String>(
+                          value: option.id,
+                          title: Text(option.label),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
               const Divider(height: 24),
             ],
             FilledButton(

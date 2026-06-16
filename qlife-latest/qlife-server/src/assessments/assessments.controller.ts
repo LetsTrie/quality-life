@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, ParseIntPipe, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 
 import { CreateAssessmentDto } from './dto/create-assessment.dto';
@@ -30,7 +30,9 @@ export class AssessmentsController {
 
   @Get('/:id')
   async get(@Req() req: Request, @Param('id') id: string) {
-    const assessment = await this.assessments.getById({ accountId: req.auth!.account.id, assessmentId: id });
+    const role = req.auth!.account.role;
+    if (role !== 'USER' && role !== 'PROFESSIONAL') throw new NotFoundException('Assessment not found');
+    const assessment = await this.assessments.getById({ accountId: req.auth!.account.id, role, assessmentId: id });
     return { data: { assessment } };
   }
 
@@ -63,10 +65,12 @@ export class AssessmentsController {
   @Post(':id/answers')
   async submit(@Req() req: Request, @Param('id') id: string, @Body() body: SubmitAnswersDto) {
     const accountId = req.auth!.account.id;
-    return await this.assessments.submitAnswers({
-      accountId,
-      assessmentId: id,
-      answers: body.answers,
-    });
+    return {
+      data: await this.assessments.submitAnswers({
+        accountId,
+        assessmentId: id,
+        answers: body.answers,
+      }),
+    };
   }
 }

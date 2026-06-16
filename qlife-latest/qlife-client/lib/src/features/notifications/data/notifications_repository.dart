@@ -16,7 +16,8 @@ class NotificationsRepository {
 
   Future<int> unreadCount() async {
     final res = await _dio.get('/v1/notifications/unread-count');
-    return ((res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>)['unreadNotificationCount'] as int;
+    final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    return (data['unreadNotificationCount'] as num?)?.toInt() ?? 0;
   }
 
   Future<PagedResult<AppNotification>> list({int page = 1}) async {
