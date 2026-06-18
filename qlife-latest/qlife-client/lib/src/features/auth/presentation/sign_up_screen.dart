@@ -7,23 +7,23 @@ import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../data/auth_repository.dart';
 import '../state/auth_intent.dart';
-import '../state/auth_state.dart';
 import 'email_verification_screen.dart';
 import 'widgets/auth_form_scaffold.dart';
 
-class SignInScreen extends ConsumerStatefulWidget {
-  /// When true, this is the professional sign-in variant (blue accent).
+class SignUpScreen extends ConsumerStatefulWidget {
+  /// When true, this is the professional registration variant (blue accent).
   final bool professional;
-  const SignInScreen({super.key, this.professional = false});
+  const SignUpScreen({super.key, this.professional = false});
 
   @override
-  ConsumerState<SignInScreen> createState() => _SignInScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignInScreenState extends ConsumerState<SignInScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _confirm = TextEditingController();
   bool _obscure = true;
 
   /// Standard input text size — the themed body style runs large for Bengali.
@@ -35,6 +35,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   void dispose() {
     _email.dispose();
     _password.dispose();
+    _confirm.dispose();
     super.dispose();
   }
 
@@ -48,25 +49,21 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     });
 
     final email = _email.text.trim();
-    // The professional variant routes a plain USER account into the become-a-pro
-    // flow after sign-in; harmless for accounts that are already PROFESSIONAL.
+    final password = _password.text;
+    // Remember the chosen path so that, once the account is verified and signed
+    // in, the router can send a "professional" sign-up into the become-a-pro flow.
     ref.read(pendingProfessionalRegistrationProvider.notifier).state =
         widget.professional;
 
     try {
-      await ref
-          .read(authStateProvider.notifier)
-          .signInWithPassword(email, _password.text);
-      ref.invalidate(appSessionProvider);
-      if (mounted) context.go(const SplashRoute().location);
-    } on AuthException catch (e) {
-      if (e.code == 'UserNotConfirmedException' && mounted) {
+      await ref.read(authRepositoryProvider).signUp(email: email, password: password);
+      if (mounted) {
         context.go(
           const VerifyEmailRoute().location,
-          extra: VerifyEmailArgs(email: email, password: _password.text),
+          extra: VerifyEmailArgs(email: email, password: password),
         );
-        return;
       }
+    } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
       setState(() => _error = l.authErrGeneric);
@@ -82,9 +79,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     return AuthFormScaffold(
       professional: widget.professional,
       title: widget.professional
-          ? l.authProfessionalSignInTitle
-          : l.authSignInTitle,
-      subtitle: l.authSignInSubtitle,
+          ? l.authProfessionalSignUpTitle
+          : l.authSignUpTitle,
+      subtitle: l.authSignUpSubtitle,
+      onBack: () => context.go(const SignInRoute().location),
       children: [
         Form(
           key: _formKey,
@@ -113,9 +111,8 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 controller: _password,
                 style: _inputStyle,
                 obscureText: _obscure,
-                autofillHints: const [AutofillHints.password],
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => _submit(),
+                autofillHints: const [AutofillHints.newPassword],
+                textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                   labelText: l.authPassword,
                   prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -126,27 +123,38 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     onPressed: () => setState(() => _obscure = !_obscure),
                   ),
                 ),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? l.authErrPasswordRequired : null,
+                validator: (v) {
+                  final t = v ?? '';
+                  if (t.isEmpty) return l.authErrPasswordRequired;
+                  if (t.length < authMinPasswordLength) {
+                    return l.authErrPasswordShort;
+                  }
+                  return null;
+                },
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _busy
-                      ? null
-                      : () => context.go(const ForgotPasswordRoute().location),
-                  child: Text(l.authForgotPassword),
+              const Gap(AppSpacing.md),
+              TextFormField(
+                controller: _confirm,
+                style: _inputStyle,
+                obscureText: _obscure,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
+                decoration: InputDecoration(
+                  labelText: l.authConfirmPassword,
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
                 ),
+                validator: (v) =>
+                    (v != _password.text) ? l.authErrPasswordsMismatch : null,
               ),
               if (_error != null) ...[
-                const Gap(AppSpacing.xs),
+                const Gap(AppSpacing.md),
                 Text(
                   _error!,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
-              const Gap(AppSpacing.md),
+              const Gap(AppSpacing.lg),
               FilledButton(
                 onPressed: _busy ? null : _submit,
                 child: _busy
@@ -158,26 +166,26 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                           valueColor: AlwaysStoppedAnimation(Colors.white),
                         ),
                       )
-                    : Text(l.authSignInAction),
+                    : Text(l.authSignUpAction),
               ),
               const Gap(AppSpacing.sm),
               TextButton(
                 onPressed: _busy
                     ? null
                     : () => context.go(
-                        SignUpRoute(professional: widget.professional).location),
-                child: Text(l.authNoAccount),
+                        SignInRoute(professional: widget.professional).location),
+                child: Text(l.authHaveAccount),
               ),
               const Divider(height: AppSpacing.lg),
               TextButton(
                 onPressed: _busy
                     ? null
                     : () => context.go(
-                        SignInRoute(professional: !widget.professional)
+                        SignUpRoute(professional: !widget.professional)
                             .location),
                 child: Text(widget.professional
-                    ? l.authSignInAsUser
-                    : l.authSignInAsProfessional),
+                    ? l.authSignUpAsUser
+                    : l.authSignUpAsProfessional),
               ),
             ],
           ),
