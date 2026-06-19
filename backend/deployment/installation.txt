@@ -41,7 +41,9 @@ sudo systemctl reload nginx
 
 sudo certbot --nginx -d qlife-bd.com -d www.qlife-bd.com
 
-github auth-token: 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
+# GitHub auth:
+# - Prefer `gh auth login` interactively on the server, or use a token from a
+#   password manager / CI secret store. Never hardcode tokens in the repo.
 
 
 *******************

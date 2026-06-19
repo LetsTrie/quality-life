@@ -1,1 +1,813 @@
-{}
+{
+  "districts": [
+    {
+      "districtName": "ঢাকা",
+      "subDistricts": [
+        { "subDistrictName": "ধামরাই", "unions": [] },
+        { "subDistrictName": "দোহার", "unions": [] },
+        { "subDistrictName": "কেরানীগঞ্জ", "unions": [] },
+        { "subDistrictName": "নবাবগঞ্জ", "unions": [] },
+        { "subDistrictName": "সাভার", "unions": [] },
+        { "subDistrictName": "তেজগাঁও", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "ফরিদপুর",
+      "subDistricts": [
+        { "subDistrictName": "আলফাডাঙ্গা", "unions": [] },
+        { "subDistrictName": "ভাঙ্গা", "unions": [] },
+        { "subDistrictName": "বোয়ালমারী", "unions": [] },
+        { "subDistrictName": "চরভদ্রাসন", "unions": [] },
+        { "subDistrictName": "ফরিদপুর সদর", "unions": [] },
+        { "subDistrictName": "মধুখালী", "unions": [] },
+        { "subDistrictName": "নগরকান্দা", "unions": [] },
+        { "subDistrictName": "সালথা", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "গাজীপুর",
+      "subDistricts": [
+        { "subDistrictName": "কালিয়াকৈর", "unions": [] },
+        { "subDistrictName": "কালীগঞ্জ", "unions": [] },
+        { "subDistrictName": "কাপাসিয়া", "unions": [] },
+        { "subDistrictName": "গাজীপুর সদর", "unions": [] },
+        { "subDistrictName": "শ্রীপুর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "গোপালগঞ্জ",
+      "subDistricts": [
+        { "subDistrictName": "গোপালগঞ্জ সদর", "unions": [] },
+        { "subDistrictName": "কাশিয়ানী", "unions": [] },
+        { "subDistrictName": "কোটালীপাড়া", "unions": [] },
+        { "subDistrictName": "মকসুদপুর", "unions": [] },
+        { "subDistrictName": "টুঙ্গিপাড়া", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "কিশোরগঞ্জ",
+      "subDistricts": [
+        { "subDistrictName": "অষ্টগ্রাম", "unions": [] },
+        { "subDistrictName": "বাজিতপুর", "unions": [] },
+        { "subDistrictName": "ভৈরব", "unions": [] },
+        { "subDistrictName": "হোসেনপুর", "unions": [] },
+        { "subDistrictName": "ইটনা", "unions": [] },
+        { "subDistrictName": "কটিয়াদী", "unions": [] },
+        { "subDistrictName": "কিশোরগঞ্জ সদর", "unions": [] },
+        { "subDistrictName": "করিমগঞ্জ", "unions": [] },
+        { "subDistrictName": "কুলিয়ারচর", "unions": [] },
+        { "subDistrictName": "মিঠামইন", "unions": [] },
+        { "subDistrictName": "নিকলী", "unions": [] },
+        { "subDistrictName": "পাকুন্দিয়া", "unions": [] },
+        { "subDistrictName": "তাড়াইল", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "মাদারীপুর",
+      "subDistricts": [
+        { "subDistrictName": "কালকিনি", "unions": [] },
+        { "subDistrictName": "মাদারীপুর সদর", "unions": [] },
+        { "subDistrictName": "রাজৈর", "unions": [] },
+        { "subDistrictName": "শিবচর", "unions": [] },
+        { "subDistrictName": "ডাসার", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "মানিকগঞ্জ",
+      "subDistricts": [
+        { "subDistrictName": "দৌলতপুর", "unions": [] },
+        { "subDistrictName": "ঘিওর", "unions": [] },
+        { "subDistrictName": "হরিরামপুর", "unions": [] },
+        { "subDistrictName": "মানিকগঞ্জ সদর", "unions": [] },
+        { "subDistrictName": "শিবালয়", "unions": [] },
+        { "subDistrictName": "সাটুরিয়া", "unions": [] },
+        { "subDistrictName": "সিংগাইর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "মুন্সীগঞ্জ",
+      "subDistricts": [
+        { "subDistrictName": "গজারিয়া", "unions": [] },
+        { "subDistrictName": "লৌহজং", "unions": [] },
+        { "subDistrictName": "মুন্সীগঞ্জ সদর", "unions": [] },
+        { "subDistrictName": "শ্রীনগর", "unions": [] },
+        { "subDistrictName": "সিরাজদিখান", "unions": [] },
+        { "subDistrictName": "টঙ্গীবাড়ী", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "নারায়ণগঞ্জ",
+      "subDistricts": [
+        { "subDistrictName": "আড়াইহাজার", "unions": [] },
+        { "subDistrictName": "বন্দর", "unions": [] },
+        { "subDistrictName": "নারায়ণগঞ্জ সদর", "unions": [] },
+        { "subDistrictName": "রূপগঞ্জ", "unions": [] },
+        { "subDistrictName": "সোনারগাঁও", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "নরসিংদী",
+      "subDistricts": [
+        { "subDistrictName": "বেলাব", "unions": [] },
+        { "subDistrictName": "মনোহরদী", "unions": [] },
+        { "subDistrictName": "নরসিংদী সদর", "unions": [] },
+        { "subDistrictName": "পলাশ", "unions": [] },
+        { "subDistrictName": "রায়পুরা", "unions": [] },
+        { "subDistrictName": "শিবপুর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "রাজবাড়ী",
+      "subDistricts": [
+        { "subDistrictName": "বালিয়াকান্দি", "unions": [] },
+        { "subDistrictName": "গোয়ালন্দ", "unions": [] },
+        { "subDistrictName": "কালুখালী", "unions": [] },
+        { "subDistrictName": "পাংশা", "unions": [] },
+        { "subDistrictName": "রাজবাড়ী সদর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "শরীয়তপুর",
+      "subDistricts": [
+        { "subDistrictName": "ভেদরগঞ্জ", "unions": [] },
+        { "subDistrictName": "ডামুড্যা", "unions": [] },
+        { "subDistrictName": "গোসাইরহাট", "unions": [] },
+        { "subDistrictName": "জাজিরা", "unions": [] },
+        { "subDistrictName": "নড়িয়া", "unions": [] },
+        { "subDistrictName": "শরীয়তপুর সদর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "টাঙ্গাইল",
+      "subDistricts": [
+        { "subDistrictName": "বাসাইল", "unions": [] },
+        { "subDistrictName": "ভূঞাপুর", "unions": [] },
+        { "subDistrictName": "দেলদুয়ার", "unions": [] },
+        { "subDistrictName": "ঘাটাইল", "unions": [] },
+        { "subDistrictName": "গোপালপুর", "unions": [] },
+        { "subDistrictName": "কালিহাতী", "unions": [] },
+        { "subDistrictName": "মধুপুর", "unions": [] },
+        { "subDistrictName": "মির্জাপুর", "unions": [] },
+        { "subDistrictName": "নাগরপুর", "unions": [] },
+        { "subDistrictName": "সখিপুর", "unions": [] },
+        { "subDistrictName": "টাঙ্গাইল সদর", "unions": [] },
+        { "subDistrictName": "ধনবাড়ী", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "বরগুনা",
+      "subDistricts": [
+        { "subDistrictName": "আমতলী", "unions": [] },
+        { "subDistrictName": "বামনা", "unions": [] },
+        { "subDistrictName": "বরগুনা সদর", "unions": [] },
+        { "subDistrictName": "বেতাগী", "unions": [] },
+        { "subDistrictName": "পাথরঘাটা", "unions": [] },
+        { "subDistrictName": "তালতলী", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "বরিশাল",
+      "subDistricts": [
+        { "subDistrictName": "আগৈলঝাড়া", "unions": [] },
+        { "subDistrictName": "বাকেরগঞ্জ", "unions": [] },
+        { "subDistrictName": "বাণারীপাড়া", "unions": [] },
+        { "subDistrictName": "বরিশাল সদর", "unions": [] },
+        { "subDistrictName": "গৌরনদী", "unions": [] },
+        { "subDistrictName": "হিজলা", "unions": [] },
+        { "subDistrictName": "মেহেন্দিগঞ্জ", "unions": [] },
+        { "subDistrictName": "মুলাদী", "unions": [] },
+        { "subDistrictName": "উজিরপুর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "ভোলা",
+      "subDistricts": [
+        { "subDistrictName": "বোরহানউদ্দিন", "unions": [] },
+        { "subDistrictName": "চরফ্যাশন", "unions": [] },
+        { "subDistrictName": "দৌলতখান", "unions": [] },
+        { "subDistrictName": "লালমোহন", "unions": [] },
+        { "subDistrictName": "মনপুরা", "unions": [] },
+        { "subDistrictName": "তজুমদ্দিন", "unions": [] },
+        { "subDistrictName": "ভোলা সদর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "ঝালকাঠি",
+      "subDistricts": [
+        { "subDistrictName": "ঝালকাঠি সদর", "unions": [] },
+        { "subDistrictName": "কাঁঠালিয়া", "unions": [] },
+        { "subDistrictName": "নলছিটি", "unions": [] },
+        { "subDistrictName": "রাজাপুর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "পটুয়াখালী",
+      "subDistricts": [
+        { "subDistrictName": "বাউফল", "unions": [] },
+        { "subDistrictName": "দশমিনা", "unions": [] },
+        { "subDistrictName": "দুমকী", "unions": [] },
+        { "subDistrictName": "গলাচিপা", "unions": [] },
+        { "subDistrictName": "কলাপাড়া", "unions": [] },
+        { "subDistrictName": "মির্জাগঞ্জ", "unions": [] },
+        { "subDistrictName": "পটুয়াখালী সদর", "unions": [] },
+        { "subDistrictName": "রাঙ্গাবালী", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "পিরোজপুর",
+      "subDistricts": [
+        { "subDistrictName": "ভান্ডারিয়া", "unions": [] },
+        { "subDistrictName": "ইন্দুরকানী", "unions": [] },
+        { "subDistrictName": "কাউখালী", "unions": [] },
+        { "subDistrictName": "মঠবাড়িয়া", "unions": [] },
+        { "subDistrictName": "নাজিরপুর", "unions": [] },
+        { "subDistrictName": "নেছারাবাদ", "unions": [] },
+        { "subDistrictName": "পিরোজপুর সদর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "বান্দরবান",
+      "subDistricts": [
+        { "subDistrictName": "আলীকদম", "unions": [] },
+        { "subDistrictName": "বান্দরবান সদর", "unions": [] },
+        { "subDistrictName": "লামা", "unions": [] },
+        { "subDistrictName": "নাইক্ষ্যংছড়ি", "unions": [] },
+        { "subDistrictName": "রুমা", "unions": [] },
+        { "subDistrictName": "রোয়াংছড়ি", "unions": [] },
+        { "subDistrictName": "থানচি", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "ব্রাহ্মণবাড়িয়া",
+      "subDistricts": [
+        { "subDistrictName": "আখাউড়া", "unions": [] },
+        { "subDistrictName": "আশুগঞ্জ", "unions": [] },
+        { "subDistrictName": "বাঞ্ছারামপুর", "unions": [] },
+        { "subDistrictName": "বিজয়নগর", "unions": [] },
+        { "subDistrictName": "ব্রাহ্মণবাড়িয়া সদর", "unions": [] },
+        { "subDistrictName": "কসবা", "unions": [] },
+        { "subDistrictName": "নবীনগর", "unions": [] },
+        { "subDistrictName": "নাসিরনগর", "unions": [] },
+        { "subDistrictName": "সরাইল", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "চাঁদপুর",
+      "subDistricts": [
+        { "subDistrictName": "চাঁদপুর সদর", "unions": [] },
+        { "subDistrictName": "ফরিদগঞ্জ", "unions": [] },
+        { "subDistrictName": "হাইমচর", "unions": [] },
+        { "subDistrictName": "হাজীগঞ্জ", "unions": [] },
+        { "subDistrictName": "কচুয়া", "unions": [] },
+        { "subDistrictName": "মতলব উত্তর", "unions": [] },
+        { "subDistrictName": "মতলব দক্ষিণ", "unions": [] },
+        { "subDistrictName": "শাহরাস্তি", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "চট্টগ্রাম",
+      "subDistricts": [
+        { "subDistrictName": "আনোয়ারা", "unions": [] },
+        { "subDistrictName": "বাঁশখালী", "unions": [] },
+        { "subDistrictName": "বোয়ালখালী", "unions": [] },
+        { "subDistrictName": "চন্দনাইশ", "unions": [] },
+        { "subDistrictName": "চট্টগ্রাম সদর", "unions": [] },
+        { "subDistrictName": "ফটিকছড়ি", "unions": [] },
+        { "subDistrictName": "হাটহাজারী", "unions": [] },
+        { "subDistrictName": "কর্ণফুলী", "unions": [] },
+        { "subDistrictName": "লোহাগাড়া", "unions": [] },
+        { "subDistrictName": "মীরসরাই", "unions": [] },
+        { "subDistrictName": "পটিয়া", "unions": [] },
+        { "subDistrictName": "রাঙ্গুনিয়া", "unions": [] },
+        { "subDistrictName": "রাউজান", "unions": [] },
+        { "subDistrictName": "সন্দ্বীপ", "unions": [] },
+        { "subDistrictName": "সাতকানিয়া", "unions": [] },
+        { "subDistrictName": "সীতাকুণ্ড", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "কুমিল্লা",
+      "subDistricts": [
+        { "subDistrictName": "বরুড়া", "unions": [] },
+        { "subDistrictName": "ব্রাহ্মণপাড়া", "unions": [] },
+        { "subDistrictName": "বুড়িচং", "unions": [] },
+        { "subDistrictName": "চাঁদিনা", "unions": [] },
+        { "subDistrictName": "চৌদ্দগ্রাম", "unions": [] },
+        { "subDistrictName": "দাউদকান্দি", "unions": [] },
+        { "subDistrictName": "দেবিদ্বার", "unions": [] },
+        { "subDistrictName": "হোমনা", "unions": [] },
+        { "subDistrictName": "কুমিল্লা আদর্শ সদর", "unions": [] },
+        { "subDistrictName": "কুমিল্লা সদর দক্ষিণ", "unions": [] },
+        { "subDistrictName": "লাকসাম", "unions": [] },
+        { "subDistrictName": "লালমাই", "unions": [] },
+        { "subDistrictName": "মেঘনা", "unions": [] },
+        { "subDistrictName": "মুরাদনগর", "unions": [] },
+        { "subDistrictName": "নাঙ্গলকোট", "unions": [] },
+        { "subDistrictName": "তিতাস", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "কক্সবাজার",
+      "subDistricts": [
+        { "subDistrictName": "চকরিয়া", "unions": [] },
+        { "subDistrictName": "কক্সবাজার সদর", "unions": [] },
+        { "subDistrictName": "কুতুবদিয়া", "unions": [] },
+        { "subDistrictName": "মহেশখালী", "unions": [] },
+        { "subDistrictName": "পেকুয়া", "unions": [] },
+        { "subDistrictName": "রামু", "unions": [] },
+        { "subDistrictName": "টেকনাফ", "unions": [] },
+        { "subDistrictName": "উখিয়া", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "ফেনী",
+      "subDistricts": [
+        { "subDistrictName": "ছাগলনাইয়া", "unions": [] },
+        { "subDistrictName": "দাগনভূঞা", "unions": [] },
+        { "subDistrictName": "ফেনী সদর", "unions": [] },
+        { "subDistrictName": "ফুলগাজী", "unions": [] },
+        { "subDistrictName": "পরশুরাম", "unions": [] },
+        { "subDistrictName": "সোনাগাজী", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "খাগড়াছড়ি",
+      "subDistricts": [
+        { "subDistrictName": "দীঘিনালা", "unions": [] },
+        { "subDistrictName": "গুইমারা", "unions": [] },
+        { "subDistrictName": "খাগড়াছড়ি সদর", "unions": [] },
+        { "subDistrictName": "লক্ষ্মীছড়ি", "unions": [] },
+        { "subDistrictName": "মাটিরাঙ্গা", "unions": [] },
+        { "subDistrictName": "মহালছড়ি", "unions": [] },
+        { "subDistrictName": "মানিকছড়ি", "unions": [] },
+        { "subDistrictName": "পানছড়ি", "unions": [] },
+        { "subDistrictName": "রামগড়", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "লক্ষ্মীপুর",
+      "subDistricts": [
+        { "subDistrictName": "কমলনগর", "unions": [] },
+        { "subDistrictName": "লক্ষ্মীপুর সদর", "unions": [] },
+        { "subDistrictName": "রায়পুর", "unions": [] },
+        { "subDistrictName": "রামগঞ্জ", "unions": [] },
+        { "subDistrictName": "রামগতি", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "নোয়াখালী",
+      "subDistricts": [
+        { "subDistrictName": "বেগমগঞ্জ", "unions": [] },
+        { "subDistrictName": "চাটখিল", "unions": [] },
+        { "subDistrictName": "কবিরহাট", "unions": [] },
+        { "subDistrictName": "কোম্পানীগঞ্জ", "unions": [] },
+        { "subDistrictName": "হাতিয়া", "unions": [] },
+        { "subDistrictName": "নোয়াখালী সদর", "unions": [] },
+        { "subDistrictName": "সেনবাগ", "unions": [] },
+        { "subDistrictName": "সোনাইমুড়ী", "unions": [] },
+        { "subDistrictName": "সুবর্ণচর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "রাঙ্গামাটি",
+      "subDistricts": [
+        { "subDistrictName": "বাঘাইছড়ি", "unions": [] },
+        { "subDistrictName": "বরকল", "unions": [] },
+        { "subDistrictName": "বেলাইছড়ি", "unions": [] },
+        { "subDistrictName": "জুরাছড়ি", "unions": [] },
+        { "subDistrictName": "কাউখালী", "unions": [] },
+        { "subDistrictName": "কাপ্তাই", "unions": [] },
+        { "subDistrictName": "লংগদু", "unions": [] },
+        { "subDistrictName": "নানিয়ারচর", "unions": [] },
+        { "subDistrictName": "রাজস্থলী", "unions": [] },
+        { "subDistrictName": "রাঙ্গামাটি সদর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "বাগেরহাট",
+      "subDistricts": [
+        { "subDistrictName": "বাগেরহাট সদর", "unions": [] },
+        { "subDistrictName": "চিতলমারী", "unions": [] },
+        { "subDistrictName": "ফকিরহাট", "unions": [] },
+        { "subDistrictName": "কচুয়া", "unions": [] },
+        { "subDistrictName": "মংলা", "unions": [] },
+        { "subDistrictName": "মোরেলগঞ্জ", "unions": [] },
+        { "subDistrictName": "মোল্লাহাট", "unions": [] },
+        { "subDistrictName": "রামপাল", "unions": [] },
+        { "subDistrictName": "শরণখোলা", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "চুয়াডাঙ্গা",
+      "subDistricts": [
+        { "subDistrictName": "আলমডাঙ্গা", "unions": [] },
+        { "subDistrictName": "চুয়াডাঙ্গা সদর", "unions": [] },
+        { "subDistrictName": "দামুড়হুদা", "unions": [] },
+        { "subDistrictName": "জীবননগর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "যশোর",
+      "subDistricts": [
+        { "subDistrictName": "অভয়নগর", "unions": [] },
+        { "subDistrictName": "বাঘারপাড়া", "unions": [] },
+        { "subDistrictName": "চৌগাছা", "unions": [] },
+        { "subDistrictName": "ঝিকরগাছা", "unions": [] },
+        { "subDistrictName": "কেশবপুর", "unions": [] },
+        { "subDistrictName": "মণিরামপুর", "unions": [] },
+        { "subDistrictName": "শার্শা", "unions": [] },
+        { "subDistrictName": "যশোর সদর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "ঝিনাইদহ",
+      "subDistricts": [
+        { "subDistrictName": "হরিণাকুণ্ডু", "unions": [] },
+        { "subDistrictName": "ঝিনাইদহ সদর", "unions": [] },
+        { "subDistrictName": "কালীগঞ্জ", "unions": [] },
+        { "subDistrictName": "কোটচাঁদপুর", "unions": [] },
+        { "subDistrictName": "মহেশপুর", "unions": [] },
+        { "subDistrictName": "শৈলকুপা", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "খুলনা",
+      "subDistricts": [
+        { "subDistrictName": "বটিয়াঘাটা", "unions": [] },
+        { "subDistrictName": "দাকোপ", "unions": [] },
+        { "subDistrictName": "দিঘলিয়া", "unions": [] },
+        { "subDistrictName": "ডুমুরিয়া", "unions": [] },
+        { "subDistrictName": "ফুলতলা", "unions": [] },
+        { "subDistrictName": "কয়রা", "unions": [] },
+        { "subDistrictName": "খুলনা সদর", "unions": [] },
+        { "subDistrictName": "পাইকগাছা", "unions": [] },
+        { "subDistrictName": "রূপসা", "unions": [] },
+        { "subDistrictName": "তেরখাদা", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "কুষ্টিয়া",
+      "subDistricts": [
+        { "subDistrictName": "ভেড়ামারা", "unions": [] },
+        { "subDistrictName": "দৌলতপুর", "unions": [] },
+        { "subDistrictName": "খোকসা", "unions": [] },
+        { "subDistrictName": "কুমারখালী", "unions": [] },
+        { "subDistrictName": "কুষ্টিয়া সদর", "unions": [] },
+        { "subDistrictName": "মিরপুর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "মাগুরা",
+      "subDistricts": [
+        { "subDistrictName": "মাগুরা সদর", "unions": [] },
+        { "subDistrictName": "মোহাম্মদপুর", "unions": [] },
+        { "subDistrictName": "শালিখা", "unions": [] },
+        { "subDistrictName": "শ্রীপুর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "মেহেরপুর",
+      "subDistricts": [
+        { "subDistrictName": "গাংনী", "unions": [] },
+        { "subDistrictName": "মেহেরপুর সদর", "unions": [] },
+        { "subDistrictName": "মুজিবনগর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "নড়াইল",
+      "subDistricts": [
+        { "subDistrictName": "কালিয়া", "unions": [] },
+        { "subDistrictName": "লোহাগড়া", "unions": [] },
+        { "subDistrictName": "নড়াইল সদর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "সাতক্ষীরা",
+      "subDistricts": [
+        { "subDistrictName": "আশাশুনি", "unions": [] },
+        { "subDistrictName": "দেবহাটা", "unions": [] },
+        { "subDistrictName": "কালীগঞ্জ", "unions": [] },
+        { "subDistrictName": "কলারোয়া", "unions": [] },
+        { "subDistrictName": "সাতক্ষীরা সদর", "unions": [] },
+        { "subDistrictName": "শ্যামনগর", "unions": [] },
+        { "subDistrictName": "তালা", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "জামালপুর",
+      "subDistricts": [
+        { "subDistrictName": "বকশীগঞ্জ", "unions": [] },
+        { "subDistrictName": "দেওয়ানগঞ্জ", "unions": [] },
+        { "subDistrictName": "ইসলামপুর", "unions": [] },
+        { "subDistrictName": "জামালপুর সদর", "unions": [] },
+        { "subDistrictName": "মাদারগঞ্জ", "unions": [] },
+        { "subDistrictName": "মেলান্দহ", "unions": [] },
+        { "subDistrictName": "সরিষাবাড়ী", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "ময়মনসিংহ",
+      "subDistricts": [
+        { "subDistrictName": "ভালুকা", "unions": [] },
+        { "subDistrictName": "ধোবাউড়া", "unions": [] },
+        { "subDistrictName": "ফুলপুর", "unions": [] },
+        { "subDistrictName": "গৌরীপুর", "unions": [] },
+        { "subDistrictName": "গফরগাঁও", "unions": [] },
+        { "subDistrictName": "ঈশ্বরগঞ্জ", "unions": [] },
+        { "subDistrictName": "হালুয়াঘাট", "unions": [] },
+        { "subDistrictName": "ময়মনসিংহ সদর", "unions": [] },
+        { "subDistrictName": "মুক্তাগাছা", "unions": [] },
+        { "subDistrictName": "নান্দাইল", "unions": [] },
+        { "subDistrictName": "ফুলবাড়িয়া", "unions": [] },
+        { "subDistrictName": "তারাকান্দা", "unions": [] },
+        { "subDistrictName": "ত্রিশাল", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "নেত্রকোণা",
+      "subDistricts": [
+        { "subDistrictName": "আটপাড়া", "unions": [] },
+        { "subDistrictName": "বারহাট্টা", "unions": [] },
+        { "subDistrictName": "দুর্গাপুর", "unions": [] },
+        { "subDistrictName": "খালিয়াজুড়ি", "unions": [] },
+        { "subDistrictName": "কলমাকান্দা", "unions": [] },
+        { "subDistrictName": "কেন্দুয়া", "unions": [] },
+        { "subDistrictName": "মদন", "unions": [] },
+        { "subDistrictName": "মোহনগঞ্জ", "unions": [] },
+        { "subDistrictName": "নেত্রকোণা সদর", "unions": [] },
+        { "subDistrictName": "পূর্বধলা", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "শেরপুর",
+      "subDistricts": [
+        { "subDistrictName": "ঝিনাইগাতী", "unions": [] },
+        { "subDistrictName": "নকলা", "unions": [] },
+        { "subDistrictName": "নালিতাবাড়ী", "unions": [] },
+        { "subDistrictName": "শেরপুর সদর", "unions": [] },
+        { "subDistrictName": "শ্রীবরদী", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "বগুড়া",
+      "subDistricts": [
+        { "subDistrictName": "আদমদিঘী", "unions": [] },
+        { "subDistrictName": "বগুড়া সদর", "unions": [] },
+        { "subDistrictName": "ধুনট", "unions": [] },
+        { "subDistrictName": "দুপচাঁচিয়া", "unions": [] },
+        { "subDistrictName": "গাবতলী", "unions": [] },
+        { "subDistrictName": "কাহালু", "unions": [] },
+        { "subDistrictName": "নন্দীগ্রাম", "unions": [] },
+        { "subDistrictName": "সারিয়াকান্দি", "unions": [] },
+        { "subDistrictName": "শাহজাহানপুর", "unions": [] },
+        { "subDistrictName": "শেরপুর", "unions": [] },
+        { "subDistrictName": "শিবগঞ্জ", "unions": [] },
+        { "subDistrictName": "সোনাতলা", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "চাঁপাইনবাবগঞ্জ",
+      "subDistricts": [
+        { "subDistrictName": "ভোলাহাট", "unions": [] },
+        { "subDistrictName": "গোমস্তাপুর", "unions": [] },
+        { "subDistrictName": "নাচোল", "unions": [] },
+        { "subDistrictName": "চাঁপাইনবাবগঞ্জ সদর", "unions": [] },
+        { "subDistrictName": "শিবগঞ্জ", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "জয়পুরহাট",
+      "subDistricts": [
+        { "subDistrictName": "আক্কেলপুর", "unions": [] },
+        { "subDistrictName": "জয়পুরহাট সদর", "unions": [] },
+        { "subDistrictName": "কালাই", "unions": [] },
+        { "subDistrictName": "ক্ষেতলাল", "unions": [] },
+        { "subDistrictName": "পাঁচবিবি", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "নওগাঁ",
+      "subDistricts": [
+        { "subDistrictName": "আত্রাই", "unions": [] },
+        { "subDistrictName": "বদলগাছী", "unions": [] },
+        { "subDistrictName": "ধামইরহাট", "unions": [] },
+        { "subDistrictName": "মান্দা", "unions": [] },
+        { "subDistrictName": "মহাদেবপুর", "unions": [] },
+        { "subDistrictName": "নওগাঁ সদর", "unions": [] },
+        { "subDistrictName": "নিয়ামতপুর", "unions": [] },
+        { "subDistrictName": "পত্নীতলা", "unions": [] },
+        { "subDistrictName": "পোরশা", "unions": [] },
+        { "subDistrictName": "রাণীনগর", "unions": [] },
+        { "subDistrictName": "সাপাহার", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "নাটোর",
+      "subDistricts": [
+        { "subDistrictName": "বড়াইগ্রাম", "unions": [] },
+        { "subDistrictName": "বাগাতিপাড়া", "unions": [] },
+        { "subDistrictName": "গুরুদাসপুর", "unions": [] },
+        { "subDistrictName": "লালপুর", "unions": [] },
+        { "subDistrictName": "নাটোর সদর", "unions": [] },
+        { "subDistrictName": "সিংড়া", "unions": [] },
+        { "subDistrictName": "নলডাঙ্গা", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "পাবনা",
+      "subDistricts": [
+        { "subDistrictName": "আটঘরিয়া", "unions": [] },
+        { "subDistrictName": "বেড়া", "unions": [] },
+        { "subDistrictName": "ভাঙ্গুড়া", "unions": [] },
+        { "subDistrictName": "চাটমোহর", "unions": [] },
+        { "subDistrictName": "ফরিদপুর", "unions": [] },
+        { "subDistrictName": "ঈশ্বরদী", "unions": [] },
+        { "subDistrictName": "পাবনা সদর", "unions": [] },
+        { "subDistrictName": "সাঁথিয়া", "unions": [] },
+        { "subDistrictName": "সুজানগর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "রাজশাহী",
+      "subDistricts": [
+        { "subDistrictName": "বাঘা", "unions": [] },
+        { "subDistrictName": "বাগমারা", "unions": [] },
+        { "subDistrictName": "চারঘাট", "unions": [] },
+        { "subDistrictName": "দুর্গাপুর", "unions": [] },
+        { "subDistrictName": "গোদাগাড়ী", "unions": [] },
+        { "subDistrictName": "মোহনপুর", "unions": [] },
+        { "subDistrictName": "পবা", "unions": [] },
+        { "subDistrictName": "পুঠিয়া", "unions": [] },
+        { "subDistrictName": "তানোর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "সিরাজগঞ্জ",
+      "subDistricts": [
+        { "subDistrictName": "বেলকুচি", "unions": [] },
+        { "subDistrictName": "চৌহালি", "unions": [] },
+        { "subDistrictName": "কামারখন্দ", "unions": [] },
+        { "subDistrictName": "কাজীপুর", "unions": [] },
+        { "subDistrictName": "রায়গঞ্জ", "unions": [] },
+        { "subDistrictName": "শাহজাদপুর", "unions": [] },
+        { "subDistrictName": "সিরাজগঞ্জ সদর", "unions": [] },
+        { "subDistrictName": "তাড়াশ", "unions": [] },
+        { "subDistrictName": "উল্লাপাড়া", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "দিনাজপুর",
+      "subDistricts": [
+        { "subDistrictName": "বিরামপুর", "unions": [] },
+        { "subDistrictName": "বিরল", "unions": [] },
+        { "subDistrictName": "বোচাগঞ্জ", "unions": [] },
+        { "subDistrictName": "চিরিরবন্দর", "unions": [] },
+        { "subDistrictName": "ফুলবাড়ী", "unions": [] },
+        { "subDistrictName": "ঘোড়াঘাট", "unions": [] },
+        { "subDistrictName": "হাকিমপুর", "unions": [] },
+        { "subDistrictName": "খানসামা", "unions": [] },
+        { "subDistrictName": "দিনাজপুর সদর", "unions": [] },
+        { "subDistrictName": "নবাবগঞ্জ", "unions": [] },
+        { "subDistrictName": "পার্বতীপুর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "গাইবান্ধা",
+      "subDistricts": [
+        { "subDistrictName": "ফুলছড়ি", "unions": [] },
+        { "subDistrictName": "গাইবান্ধা সদর", "unions": [] },
+        { "subDistrictName": "গোবিন্দগঞ্জ", "unions": [] },
+        { "subDistrictName": "পলাশবাড়ী", "unions": [] },
+        { "subDistrictName": "সাঘাটা", "unions": [] },
+        { "subDistrictName": "সাদুল্যাপুর", "unions": [] },
+        { "subDistrictName": "সুন্দরগঞ্জ", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "কুড়িগ্রাম",
+      "subDistricts": [
+        { "subDistrictName": "ভূরুঙ্গামারী", "unions": [] },
+        { "subDistrictName": "চর রাজিবপুর", "unions": [] },
+        { "subDistrictName": "চিলমারী", "unions": [] },
+        { "subDistrictName": "ফুলবাড়ী", "unions": [] },
+        { "subDistrictName": "কুড়িগ্রাম সদর", "unions": [] },
+        { "subDistrictName": "নাগেশ্বরী", "unions": [] },
+        { "subDistrictName": "রাজারহাট", "unions": [] },
+        { "subDistrictName": "রৌমারী", "unions": [] },
+        { "subDistrictName": "উলিপুর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "লালমনিরহাট",
+      "subDistricts": [
+        { "subDistrictName": "আদিতমারী", "unions": [] },
+        { "subDistrictName": "হাতীবান্ধা", "unions": [] },
+        { "subDistrictName": "কালীগঞ্জ", "unions": [] },
+        { "subDistrictName": "লালমনিরহাট সদর", "unions": [] },
+        { "subDistrictName": "পাটগ্রাম", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "নীলফামারী",
+      "subDistricts": [
+        { "subDistrictName": "ডিমলা", "unions": [] },
+        { "subDistrictName": "ডোমার", "unions": [] },
+        { "subDistrictName": "জলঢাকা", "unions": [] },
+        { "subDistrictName": "কিশোরগঞ্জ", "unions": [] },
+        { "subDistrictName": "নীলফামারী সদর", "unions": [] },
+        { "subDistrictName": "সৈয়দপুর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "পঞ্চগড়",
+      "subDistricts": [
+        { "subDistrictName": "আটোয়ারী", "unions": [] },
+        { "subDistrictName": "বোদা", "unions": [] },
+        { "subDistrictName": "দেবীগঞ্জ", "unions": [] },
+        { "subDistrictName": "পঞ্চগড় সদর", "unions": [] },
+        { "subDistrictName": "তেঁতুলিয়া", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "রংপুর",
+      "subDistricts": [
+        { "subDistrictName": "বদরগঞ্জ", "unions": [] },
+        { "subDistrictName": "গঙ্গাচড়া", "unions": [] },
+        { "subDistrictName": "কাউনিয়া", "unions": [] },
+        { "subDistrictName": "মিঠাপুকুর", "unions": [] },
+        { "subDistrictName": "পীরগঞ্জ", "unions": [] },
+        { "subDistrictName": "পীরগাছা", "unions": [] },
+        { "subDistrictName": "রংপুর সদর", "unions": [] },
+        { "subDistrictName": "তারাগঞ্জ", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "ঠাকুরগাঁও",
+      "subDistricts": [
+        { "subDistrictName": "বালিয়াডাঙ্গী", "unions": [] },
+        { "subDistrictName": "হরিপুর", "unions": [] },
+        { "subDistrictName": "পীরগঞ্জ", "unions": [] },
+        { "subDistrictName": "রাণীশংকৈল", "unions": [] },
+        { "subDistrictName": "ঠাকুরগাঁও সদর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "হবিগঞ্জ",
+      "subDistricts": [
+        { "subDistrictName": "আজমিরীগঞ্জ", "unions": [] },
+        { "subDistrictName": "বানিয়াচং", "unions": [] },
+        { "subDistrictName": "বাহুবল", "unions": [] },
+        { "subDistrictName": "চুনারুঘাট", "unions": [] },
+        { "subDistrictName": "হবিগঞ্জ সদর", "unions": [] },
+        { "subDistrictName": "লাখাই", "unions": [] },
+        { "subDistrictName": "মাধবপুর", "unions": [] },
+        { "subDistrictName": "নবীগঞ্জ", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "মৌলভীবাজার",
+      "subDistricts": [
+        { "subDistrictName": "বড়লেখা", "unions": [] },
+        { "subDistrictName": "জুড়ী", "unions": [] },
+        { "subDistrictName": "কমলগঞ্জ", "unions": [] },
+        { "subDistrictName": "কুলাউড়া", "unions": [] },
+        { "subDistrictName": "মৌলভীবাজার সদর", "unions": [] },
+        { "subDistrictName": "রাজনগর", "unions": [] },
+        { "subDistrictName": "শ্রীমঙ্গল", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "সুনামগঞ্জ",
+      "subDistricts": [
+        { "subDistrictName": "বিশ্বম্ভরপুর", "unions": [] },
+        { "subDistrictName": "ছাতক", "unions": [] },
+        { "subDistrictName": "দক্ষিণ সুনামগঞ্জ", "unions": [] },
+        { "subDistrictName": "দোয়ারাবাজার", "unions": [] },
+        { "subDistrictName": "ধর্মপাশা", "unions": [] },
+        { "subDistrictName": "জগন্নাথপুর", "unions": [] },
+        { "subDistrictName": "জামালগঞ্জ", "unions": [] },
+        { "subDistrictName": "শাল্লা", "unions": [] },
+        { "subDistrictName": "সুনামগঞ্জ সদর", "unions": [] },
+        { "subDistrictName": "তাহিরপুর", "unions": [] }
+      ]
+    },
+    {
+      "districtName": "সিলেট",
+      "subDistricts": [
+        { "subDistrictName": "বালাগঞ্জ", "unions": [] },
+        { "subDistrictName": "বিয়ানীবাজার", "unions": [] },
+        { "subDistrictName": "বিশ্বনাথ", "unions": [] },
+        { "subDistrictName": "কানাইঘাট", "unions": [] },
+        { "subDistrictName": "কোম্পানীগঞ্জ", "unions": [] },
+        { "subDistrictName": "ফেঞ্চুগঞ্জ", "unions": [] },
+        { "subDistrictName": "গোয়াইনঘাট", "unions": [] },
+        { "subDistrictName": "গোলাপগঞ্জ", "unions": [] },
+        { "subDistrictName": "জকিগঞ্জ", "unions": [] },
+        { "subDistrictName": "জৈন্তাপুর", "unions": [] },
+        { "subDistrictName": "ওসমানীনগর", "unions": [] },
+        { "subDistrictName": "সিলেট সদর", "unions": [] },
+        { "subDistrictName": "দক্ষিণ সুরমা", "unions": [] }
+      ]
+    }
+  ]
+}

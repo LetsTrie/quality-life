@@ -1,4 +1,4 @@
-import { PrismaClient, ScoringMethod } from '@prisma/client';
+import { PrismaClient, ScoringMethod, QuestionType, OutcomeAction } from '@prisma/client';
 import crypto from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -22,6 +22,233 @@ function stableSlug(prefix: string, input: string) {
 async function readJson<T>(absPath: string): Promise<T> {
   const raw = await readFile(absPath, 'utf8');
   return JSON.parse(raw) as T;
+}
+
+// --- Instrument content sync ------------------------------------------------
+// InstrumentVersions are meant to be immutable once they have answered
+// assessments bound to them (see schema). The seed therefore can't blindly
+// delete+reinsert a version's questions/options/bands: existing
+// `assessment_answers` reference `answer_options` (and `questions`) via
+// onDelete: Restrict FKs, and `assessments.scoring_band_id` is SetNull, so
+// wiping a referenced version either throws or silently nulls score snapshots.
+//
+// Instead we fingerprint the desired content and:
+//   * no-op when the current published version already matches (idempotent —
+//     and crucially deletes nothing, so re-seeding a DB with completed
+//     assessments no longer hits assessment_answers_selected_option_id_fkey);
+//   * rewrite the current version in place when content changed but nothing
+//     references it yet (keeps version churn low on dev DBs);
+//   * publish a NEW version (versionNumber++) and retire the old one when the
+//     content changed and assessments are already bound to it.
+
+type DesiredOption = { label: string; value: number; weight: number };
+type DesiredQuestion = { prompt: string; type: QuestionType; options: DesiredOption[] };
+type DesiredBand = {
+  label: string;
+  severityRank: number;
+  minScore: number;
+  maxScore: number;
+  recommendedAction: OutcomeAction;
+  recommendedContentId?: string | null;
+};
+type DesiredVersion = {
+  scoringMethod: ScoringMethod;
+  normalizationMax: number | null;
+  attribution: string | null;
+  questions: DesiredQuestion[];
+  bands: DesiredBand[];
+};
+
+// Match the DB column precision (Decimal(_, 3)) so float noise / trailing-zero
+// formatting can't produce spurious fingerprint mismatches.
+const norm3 = (n: number) => Number(n).toFixed(3);
+
+function fingerprint(v: DesiredVersion): string {
+  const canonical = {
+    scoringMethod: v.scoringMethod,
+    normalizationMax: v.normalizationMax == null ? null : norm3(v.normalizationMax),
+    attribution: v.attribution ?? null,
+    questions: v.questions.map((q) => ({
+      prompt: q.prompt,
+      type: q.type,
+      options: q.options.map((o) => ({ label: o.label, value: o.value, weight: norm3(o.weight) })),
+    })),
+    bands: v.bands.map((b) => ({
+      label: b.label,
+      severityRank: b.severityRank,
+      minScore: norm3(b.minScore),
+      maxScore: norm3(b.maxScore),
+      recommendedAction: b.recommendedAction,
+      recommendedContentId: b.recommendedContentId ?? null,
+    })),
+  };
+  return crypto.createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+}
+
+type ExistingVersion = {
+  scoringMethod: ScoringMethod;
+  normalizationMax: { toString(): string } | null;
+  attribution: string | null;
+  questions: Array<{
+    position: number;
+    prompt: string;
+    type: QuestionType;
+    options: Array<{ position: number; label: string; value: number; weight: { toString(): string } }>;
+  }>;
+  scoringBands: Array<{
+    position: number;
+    label: string;
+    severityRank: number;
+    minScore: { toString(): string };
+    maxScore: { toString(): string };
+    recommendedAction: OutcomeAction;
+    recommendedContentId: string | null;
+  }>;
+};
+
+function describeExisting(version: ExistingVersion): DesiredVersion {
+  return {
+    scoringMethod: version.scoringMethod,
+    normalizationMax: version.normalizationMax == null ? null : Number(version.normalizationMax),
+    attribution: version.attribution ?? null,
+    questions: [...version.questions]
+      .sort((a, b) => a.position - b.position)
+      .map((q) => ({
+        prompt: q.prompt,
+        type: q.type,
+        options: [...q.options]
+          .sort((a, b) => a.position - b.position)
+          .map((o) => ({ label: o.label, value: o.value, weight: Number(o.weight) })),
+      })),
+    bands: [...version.scoringBands]
+      .sort((a, b) => a.position - b.position)
+      .map((b) => ({
+        label: b.label,
+        severityRank: b.severityRank,
+        minScore: Number(b.minScore),
+        maxScore: Number(b.maxScore),
+        recommendedAction: b.recommendedAction,
+        recommendedContentId: b.recommendedContentId ?? null,
+      })),
+  };
+}
+
+async function syncInstrumentVersion(
+  prisma: PrismaClient,
+  instrumentId: string,
+  locale: string,
+  desired: DesiredVersion,
+): Promise<void> {
+  const desiredHash = fingerprint(desired);
+
+  // The version clients currently answer: highest published version for this locale.
+  const current = await prisma.instrumentVersion.findFirst({
+    where: { instrumentId, locale, status: 'PUBLISHED' },
+    orderBy: { versionNumber: 'desc' },
+    include: { questions: { include: { options: true } }, scoringBands: true },
+  });
+
+  if (current && fingerprint(describeExisting(current)) === desiredHash) {
+    return; // Content unchanged — nothing to write, nothing to delete.
+  }
+
+  const referencingAssessments = current
+    ? await prisma.assessment.count({ where: { instrumentVersionId: current.id } })
+    : 0;
+
+  let targetVersionId: string;
+
+  if (current && referencingAssessments === 0) {
+    // No assessment references this version yet → safe to rewrite in place.
+    await prisma.instrumentVersion.update({
+      where: { id: current.id },
+      data: {
+        status: 'PUBLISHED',
+        scoringMethod: desired.scoringMethod,
+        normalizationMax: desired.normalizationMax,
+        attribution: desired.attribution,
+        publishedAt: new Date(),
+      },
+    });
+    targetVersionId = current.id;
+  } else {
+    // Fresh instrument, or the current version is locked by assessments →
+    // publish a new immutable version and retire the previous one.
+    const latest = await prisma.instrumentVersion.findFirst({
+      where: { instrumentId, locale },
+      orderBy: { versionNumber: 'desc' },
+      select: { versionNumber: true },
+    });
+    const created = await prisma.instrumentVersion.create({
+      data: {
+        instrumentId,
+        versionNumber: (latest?.versionNumber ?? 0) + 1,
+        locale,
+        status: 'PUBLISHED',
+        scoringMethod: desired.scoringMethod,
+        normalizationMax: desired.normalizationMax,
+        attribution: desired.attribution,
+        publishedAt: new Date(),
+      },
+    });
+    targetVersionId = created.id;
+
+    if (current) {
+      await prisma.instrumentVersion.update({
+        where: { id: current.id },
+        data: { status: 'RETIRED', retiredAt: new Date() },
+      });
+    }
+  }
+
+  // (Re)write questions/options/bands for the target version. For a brand-new
+  // version these deletes are no-ops; for an in-place rewrite the version has
+  // no referencing assessments, so the deletes can't violate the answer FKs.
+  await prisma.answerOption.deleteMany({ where: { question: { instrumentVersionId: targetVersionId } } });
+  await prisma.question.deleteMany({ where: { instrumentVersionId: targetVersionId } });
+  await prisma.scoringBand.deleteMany({ where: { instrumentVersionId: targetVersionId } });
+
+  for (let i = 0; i < desired.questions.length; i++) {
+    const q = desired.questions[i]!;
+    const question = await prisma.question.create({
+      data: {
+        instrumentVersionId: targetVersionId,
+        position: i + 1,
+        prompt: q.prompt,
+        type: q.type,
+        isRequired: true,
+      },
+    });
+
+    for (let j = 0; j < q.options.length; j++) {
+      const opt = q.options[j]!;
+      await prisma.answerOption.create({
+        data: {
+          questionId: question.id,
+          position: j + 1,
+          label: opt.label,
+          value: opt.value,
+          weight: String(opt.weight),
+        },
+      });
+    }
+  }
+
+  for (let i = 0; i < desired.bands.length; i++) {
+    const b = desired.bands[i]!;
+    await prisma.scoringBand.create({
+      data: {
+        instrumentVersionId: targetVersionId,
+        position: i + 1,
+        label: b.label,
+        severityRank: b.severityRank,
+        minScore: String(b.minScore),
+        maxScore: String(b.maxScore),
+        recommendedAction: b.recommendedAction,
+        recommendedContentId: b.recommendedContentId ?? null,
+      },
+    });
+  }
 }
 
 async function main() {
@@ -55,11 +282,13 @@ async function main() {
     });
   }
 
-  // --- Help center resources (legacy helpCenter.js) ---
+  // --- Help center resources ---
   const helpCenter = await readJson<
     Array<{
-      place: string;
-      location?: string;
+      slug: string;
+      nameEn: string;
+      nameBn: string;
+      locationNote?: string | null;
       keywords: string[];
       contacts: Array<{ number: string; time?: string; type: string; hasToll?: boolean }>;
     }>
@@ -77,21 +306,20 @@ async function main() {
   }
 
   for (const hc of helpCenter) {
-    const slug = stableSlug('hc', `${hc.place}|${hc.location ?? ''}`);
     const resource = await prisma.helpCenterResource.upsert({
-      where: { slug },
+      where: { slug: hc.slug },
       update: {
-        nameBn: hc.place,
-        nameEn: hc.location ?? null,
-        locationNote: hc.location ?? null,
+        nameBn: hc.nameBn,
+        nameEn: hc.nameEn ?? null,
+        locationNote: hc.locationNote ?? null,
         description: null,
         isActive: true,
       },
       create: {
-        slug,
-        nameBn: hc.place,
-        nameEn: hc.location ?? null,
-        locationNote: hc.location ?? null,
+        slug: hc.slug,
+        nameBn: hc.nameBn,
+        nameEn: hc.nameEn ?? null,
+        locationNote: hc.locationNote ?? null,
         description: null,
         displayOrder: 0,
         isActive: true,
@@ -207,78 +435,63 @@ async function main() {
     },
   ];
 
+  const INSTRUMENT_NAMES_BN: Record<string, string> = {
+    'ghq-12': 'সাধারণ মানসিক স্বাস্থ্য যাচাই (GHQ-12)',
+    'pss-10': 'মানসিক চাপ যাচাই (PSS-10)',
+    'anxiety-36': 'দুশ্চিন্তা যাচাই (৩৬টি প্রশ্ন)',
+    'wellbeing-5': 'মানসিক প্রশান্তি সূচক (WHO-5)',
+    'depression_scale': 'বিষণ্নতা যাচাই',
+    'dhaka_university_obsessive_compulsive_scale_(duocs)': 'অবসেসিভ-কম্পালসিভ যাচাই (DUOCS)',
+    'somatic_complaints_scale': 'শারীরিক অস্বস্তি যাচাই',
+    'dhaka_university_cognitive_distortion_scale_(ducds)': 'চিন্তার বিকৃতি যাচাই (DUCDS)',
+    'aggression_scale': 'রাগ ও আগ্রাসন যাচাই',
+    'satisfaction_with_life_scale': 'জীবনে সন্তুষ্টি যাচাই',
+    'hopelessness_scale_(beck)': 'হতাশা যাচাই (Beck)',
+    'social_interaction_anxiety_scale': 'সামাজিক মেলামেশায় উদ্বেগ যাচাই',
+    'nicotine_addiction_scale': 'নিকোটিন আসক্তি যাচাই',
+    'social_avoidance_and_distress_scale': 'সামাজিক এড়িয়ে চলা ও অস্বস্তি যাচাই',
+  };
+
+  // A general coping video surfaced as the follow-up for non-severe primary
+  // results (legacy SHOW_VIDEO → video list; we link one representative clip).
+  const copingContent = await prisma.educationalContent.findUnique({
+    where: { contentKey: 'mental_coping' },
+    select: { id: true },
+  });
+  const copingContentId = copingContent?.id ?? null;
+
   for (const scale of primary) {
     const instrument = await prisma.instrument.upsert({
       where: { slug: scale.slug },
-      update: { name: scale.name, category: scale.category, isActive: true },
-      create: { slug: scale.slug, name: scale.name, category: scale.category, isActive: true },
+      update: { name: scale.name, nameBn: INSTRUMENT_NAMES_BN[scale.slug] ?? null, category: scale.category, isActive: true, isSelfAssessable: true },
+      create: { slug: scale.slug, name: scale.name, nameBn: INSTRUMENT_NAMES_BN[scale.slug] ?? null, category: scale.category, isActive: true, isSelfAssessable: true },
     });
 
-    const version = await prisma.instrumentVersion.upsert({
-      where: { instrumentId_versionNumber_locale: { instrumentId: instrument.id, versionNumber: 1, locale: 'bn' } },
-      update: {
-        status: 'PUBLISHED',
-        scoringMethod: scale.scoring.method,
-        normalizationMax: scale.scoring.normalizationMax ? scale.scoring.normalizationMax : null,
-        publishedAt: new Date(),
-      },
-      create: {
-        instrumentId: instrument.id,
-        versionNumber: 1,
-        locale: 'bn',
-        status: 'PUBLISHED',
-        scoringMethod: scale.scoring.method,
-        normalizationMax: scale.scoring.normalizationMax ? scale.scoring.normalizationMax : null,
-        publishedAt: new Date(),
-      },
-    });
-
-    // Clear + reinsert questions/options/bands (seed is authoritative).
-    await prisma.answerOption.deleteMany({ where: { question: { instrumentVersionId: version.id } } });
-    await prisma.question.deleteMany({ where: { instrumentVersionId: version.id } });
-    await prisma.scoringBand.deleteMany({ where: { instrumentVersionId: version.id } });
-
-    for (let i = 0; i < scale.questions.length; i++) {
-      const q = scale.questions[i]!;
-      const question = await prisma.question.create({
-        data: {
-          instrumentVersionId: version.id,
-          position: i + 1,
-          prompt: q.question,
-          type: 'SINGLE_CHOICE',
-          isRequired: true,
-        },
-      });
-
-      for (let j = 0; j < q.options.length; j++) {
-        const opt = q.options[j]!;
-        await prisma.answerOption.create({
-          data: {
-            questionId: question.id,
-            position: j + 1,
-            label: opt.label,
-            value: opt.value,
-            weight: String(opt.weight),
-          },
-        });
-      }
-    }
-
-    for (let i = 0; i < scale.scoring.bands.length; i++) {
-      const b = scale.scoring.bands[i]!;
-      await prisma.scoringBand.create({
-        data: {
-          instrumentVersionId: version.id,
-          position: i + 1,
+    await syncInstrumentVersion(prisma, instrument.id, 'bn', {
+      scoringMethod: scale.scoring.method,
+      normalizationMax: scale.scoring.normalizationMax ? Number(scale.scoring.normalizationMax) : null,
+      attribution: null,
+      questions: scale.questions.map((q) => ({
+        prompt: q.question,
+        type: QuestionType.SINGLE_CHOICE,
+        options: q.options.map((opt) => ({ label: opt.label, value: opt.value, weight: opt.weight })),
+      })),
+      bands: scale.scoring.bands.map((b, i) => {
+        const action =
+          b.label === 'তীব্র মাত্রা'
+            ? OutcomeAction.SHOW_HELP_CENTER_URGENT
+            : OutcomeAction.RECOMMEND_CONTENT;
+        return {
           label: b.label,
           severityRank: i,
-          minScore: String(b.min),
-          maxScore: String(b.max),
-          recommendedAction:
-            b.label === 'তীব্র মাত্রা' ? 'SHOW_HELP_CENTER_URGENT' : 'RECOMMEND_CONTENT',
-        },
-      });
-    }
+          minScore: b.min,
+          maxScore: b.max,
+          recommendedAction: action,
+          recommendedContentId:
+            action === OutcomeAction.RECOMMEND_CONTENT ? copingContentId : null,
+        };
+      }),
+    });
   }
 
   // --- Professional scales (legacy profScales.js) ---
@@ -286,74 +499,80 @@ async function main() {
 
   for (const s of professionalScales) {
     const instrument = await prisma.instrument.upsert({
+      // `needToEvaluate` (legacy) means the scale must be evaluated by a
+      // professional → not self-assessable by the user.
       where: { slug: s.id },
-      update: { name: s.name, category: 'CLINICAL_ASSESSMENT', isActive: true },
-      create: { slug: s.id, name: s.name, category: 'CLINICAL_ASSESSMENT', isActive: true },
+      update: { name: s.name, nameBn: INSTRUMENT_NAMES_BN[s.id] ?? null, category: 'CLINICAL_ASSESSMENT', isActive: true, isSelfAssessable: !s.needToEvaluate },
+      create: { slug: s.id, name: s.name, nameBn: INSTRUMENT_NAMES_BN[s.id] ?? null, category: 'CLINICAL_ASSESSMENT', isActive: true, isSelfAssessable: !s.needToEvaluate },
     });
 
-    const version = await prisma.instrumentVersion.upsert({
-      where: { instrumentId_versionNumber_locale: { instrumentId: instrument.id, versionNumber: 1, locale: 'bn' } },
-      update: {
-        status: 'PUBLISHED',
-        scoringMethod: ScoringMethod.WEIGHTED_SUM,
-        attribution: s.copyright ?? null,
-        publishedAt: new Date(),
-      },
-      create: {
-        instrumentId: instrument.id,
-        versionNumber: 1,
-        locale: 'bn',
-        status: 'PUBLISHED',
-        scoringMethod: ScoringMethod.WEIGHTED_SUM,
-        attribution: s.copyright ?? null,
-        publishedAt: new Date(),
-      },
+    await syncInstrumentVersion(prisma, instrument.id, 'bn', {
+      scoringMethod: ScoringMethod.WEIGHTED_SUM,
+      normalizationMax: null,
+      attribution: s.copyright ?? null,
+      questions: s.ques.map((q) => ({
+        prompt: q.question,
+        type: QuestionType.SINGLE_CHOICE,
+        options: q.options.map((opt) => ({ label: opt.label, value: opt.value, weight: opt.weight })),
+      })),
+      bands: s.range.map((r, i) => ({
+        label: r.severity,
+        severityRank: i,
+        minScore: r.min,
+        maxScore: r.max,
+        recommendedAction: OutcomeAction.SHOW_RESULT,
+      })),
+    });
+  }
+
+  // --- Risk-profile self-screens (legacy profileScales) ---
+  // Short yes/no screens (corona / psychotic / suicide / domestic-violence /
+  // child-care). Legacy flagged risk on ANY "yes" answer (option value === 1),
+  // independent of the stored weight (all weights were 0). We remap each "yes"
+  // to weight 1 so the raw score = number of risk-positive answers, and band on
+  // that: 0 → nothing surfaced; ≥1 → a follow-up. Routing mirrors legacy
+  // `redirectTo`: suicidal ideation → URGENT help center; psychotic & domestic
+  // violence → help center; corona & child-care → supportive content (SHOW_VIDEO).
+  const riskProfiles: Array<{
+    slug: string;
+    file: string;
+    nameEn: string;
+    nameBn: string;
+    riskAction: OutcomeAction;
+    riskLabelBn: string;
+  }> = [
+    { slug: 'suicide-ideation', file: 'profile_suicide_ideation.json', nameEn: 'Suicidal ideation screen', nameBn: 'আত্মহত্যা পরিকল্পনা সম্পর্কিত তথ্য', riskAction: OutcomeAction.SHOW_HELP_CENTER_URGENT, riskLabelBn: 'অনুগ্রহ করে এখনই সহায়তা নিন' },
+    { slug: 'psychotic-profile', file: 'profile_psychotic.json', nameEn: 'Severe-symptoms screen', nameBn: 'গুরুতর সমস্যা সম্পর্কিত তথ্য', riskAction: OutcomeAction.SHOW_HELP_CENTER, riskLabelBn: 'সহায়তা নেওয়ার পরামর্শ দেওয়া হচ্ছে' },
+    { slug: 'domestic-violence', file: 'profile_domestic_violence.json', nameEn: 'Domestic violence screen', nameBn: 'পারিবারিক সহিংসতা সম্পর্কিত তথ্য', riskAction: OutcomeAction.SHOW_HELP_CENTER, riskLabelBn: 'সহায়তা নেওয়ার পরামর্শ দেওয়া হচ্ছে' },
+    { slug: 'corona-profile', file: 'profile_corona.json', nameEn: 'Coronavirus wellbeing screen', nameBn: 'করোনা সম্পর্কিত তথ্য', riskAction: OutcomeAction.RECOMMEND_CONTENT, riskLabelBn: 'কিছু তথ্য ও পরামর্শ দেখুন' },
+    { slug: 'child-care', file: 'profile_child_care.json', nameEn: 'Child-care screen', nameBn: 'সন্তান পালন সম্পর্কিত তথ্য', riskAction: OutcomeAction.RECOMMEND_CONTENT, riskLabelBn: 'কিছু তথ্য ও পরামর্শ দেখুন' },
+  ];
+
+  for (const rp of riskProfiles) {
+    const data = await readJson<{ questions: LegacyQuestion[] }>(path.join(seedRoot, rp.file));
+    const numQuestions = data.questions.length;
+
+    const instrument = await prisma.instrument.upsert({
+      where: { slug: rp.slug },
+      update: { name: rp.nameEn, nameBn: rp.nameBn, category: 'RISK_PROFILE', isActive: true, isSelfAssessable: true },
+      create: { slug: rp.slug, name: rp.nameEn, nameBn: rp.nameBn, category: 'RISK_PROFILE', isActive: true, isSelfAssessable: true },
     });
 
-    await prisma.answerOption.deleteMany({ where: { question: { instrumentVersionId: version.id } } });
-    await prisma.question.deleteMany({ where: { instrumentVersionId: version.id } });
-    await prisma.scoringBand.deleteMany({ where: { instrumentVersionId: version.id } });
-
-    for (let i = 0; i < s.ques.length; i++) {
-      const q = s.ques[i]!;
-      const question = await prisma.question.create({
-        data: {
-          instrumentVersionId: version.id,
-          position: i + 1,
-          prompt: q.question,
-          type: 'SINGLE_CHOICE',
-          isRequired: true,
-        },
-      });
-
-      for (let j = 0; j < q.options.length; j++) {
-        const opt = q.options[j]!;
-        await prisma.answerOption.create({
-          data: {
-            questionId: question.id,
-            position: j + 1,
-            label: opt.label,
-            value: opt.value,
-            weight: String(opt.weight),
-          },
-        });
-      }
-    }
-
-    for (let i = 0; i < s.range.length; i++) {
-      const r = s.range[i]!;
-      await prisma.scoringBand.create({
-        data: {
-          instrumentVersionId: version.id,
-          position: i + 1,
-          label: r.severity,
-          severityRank: i,
-          minScore: String(r.min),
-          maxScore: String(r.max),
-          recommendedAction: 'SHOW_RESULT',
-        },
-      });
-    }
+    await syncInstrumentVersion(prisma, instrument.id, 'bn', {
+      scoringMethod: ScoringMethod.SUM,
+      normalizationMax: null,
+      attribution: null,
+      questions: data.questions.map((q) => ({
+        prompt: q.question,
+        type: QuestionType.SINGLE_CHOICE,
+        // "yes" (value === 1) counts as 1; "no" as 0.
+        options: q.options.map((opt) => ({ label: opt.label, value: opt.value, weight: opt.value === 1 ? 1 : 0 })),
+      })),
+      bands: [
+        { label: 'উদ্বেগজনক কিছু পাওয়া যায়নি', severityRank: 0, minScore: 0, maxScore: 0, recommendedAction: OutcomeAction.SHOW_RESULT },
+        { label: rp.riskLabelBn, severityRank: 1, minScore: 1, maxScore: numQuestions, recommendedAction: rp.riskAction },
+      ],
+    });
   }
 
   // --- Geography reference data (legacy RegionInformation.json) ---
@@ -364,7 +583,7 @@ async function main() {
       districtName: string;
       subDistricts: Array<{ subDistrictName: string; unions: Array<{ unionName: string }> }>;
     }>;
-  }>(path.join(repoRoot, 'frontend', 'App', 'data', 'RegionInformation.json'));
+  }>(path.join(__dirname, 'seed-data', 'legacy', 'region_information.json'));
 
   const division = await prisma.division.upsert({
     where: { code: 'BD' },
@@ -417,6 +636,29 @@ async function main() {
         });
       }
     }
+  }
+
+  // --- Clinical specialization vocabulary (legacy specAreaLists) ---
+  // Extensible reference list selected during professional onboarding. The
+  // legacy "অন্যান্য" (Other) option is represented by the `other` row whose
+  // free-text detail is stored per-professional in `ProfessionalSpecialization.note`.
+  const specializations: Array<{ slug: string; nameEn: string; nameBn: string }> = [
+    { slug: 'cbt', nameEn: 'Cognitive Behavioural Therapy (CBT)', nameBn: 'কগনিটিভ বিহ্যাভিওরাল থেরাপি (সি বি টি)' },
+    { slug: 'psychoanalysis', nameEn: 'Psychoanalysis', nameBn: 'সাইকো অ্যানালাইস' },
+    { slug: 'transactional-analysis', nameEn: 'Transactional Analysis (TA)', nameBn: 'ট্রাঞ্জেকসনাল অ্যানালাইস (টি এ)' },
+    { slug: 'emdr', nameEn: 'EMDR', nameBn: 'ই এম ডি আর' },
+    { slug: 'couple-therapy', nameEn: 'Couple Therapy', nameBn: 'কাপল থেরাপি' },
+    { slug: 'family-therapy', nameEn: 'Family Therapy', nameBn: 'ফ্যামিলি থেরাপি' },
+    { slug: 'dbt', nameEn: 'Dialectical Behavioural Therapy (DBT)', nameBn: 'ডায়ালেকটিকাল বিহ্যাভিওরাল থেরাপি' },
+    { slug: 'medicinal-treatment', nameEn: 'Medicinal Treatment', nameBn: 'মেডিসিনাল ট্রিট্মেন্ট' },
+    { slug: 'other', nameEn: 'Other', nameBn: 'অন্যান্য' },
+  ];
+  for (const sp of specializations) {
+    await prisma.specialization.upsert({
+      where: { slug: sp.slug },
+      update: { nameEn: sp.nameEn, nameBn: sp.nameBn },
+      create: { slug: sp.slug, nameEn: sp.nameEn, nameBn: sp.nameBn },
+    });
   }
 
   await prisma.$disconnect();

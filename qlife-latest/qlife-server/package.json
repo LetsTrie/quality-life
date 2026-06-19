@@ -18,7 +18,7 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "seed:extract:legacy": "ts-node --transpile-only tools/extract-legacy-seed.ts",
-    "seed": "ts-node --transpile-only prisma/seed.ts",
+    "seed": "prisma db seed",
     "admin:verifications": "ts-node --transpile-only tools/admin-verifications.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down -v"
@@ -33,9 +33,11 @@
     "@nestjs/core": "^11.1.27",
     "@nestjs/platform-express": "^11.1.27",
     "@nestjs/testing": "^11.1.27",
+    "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^6.19.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "jwk-to-pem": "^2.0.7",
     "nodemailer": "^9.0.0",
@@ -62,5 +64,8 @@
     "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
+  },
+  "prisma": {
+    "seed": "ts-node --transpile-only prisma/seed.ts"
   }
 }

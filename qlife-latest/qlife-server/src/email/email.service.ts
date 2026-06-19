@@ -39,7 +39,7 @@ export class EmailService {
     });
   }
 
-  async sendText(args: { to: string; subject: string; text: string }) {
+  async sendText(args: { to: string; subject: string; text: string; html?: string }) {
     if (!args.to) return;
 
     if (this.kind === 'log') {
@@ -54,7 +54,29 @@ export class EmailService {
       to: args.to,
       subject: args.subject,
       text: args.text,
+      html: args.html,
     });
+  }
+
+  /// Bilingual (Bangla-first) branded email. `body*` are arrays of paragraphs.
+  /// Falls back to plain text for clients that don't render HTML.
+  async sendBilingual(args: {
+    to: string;
+    subjectBn: string;
+    bodyBn: string[];
+    bodyEn: string[];
+  }) {
+    const esc = (s: string) =>
+      s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] as string);
+    const para = (s: string) => `<p style="margin:0 0 12px;line-height:1.6">${esc(s)}</p>`;
+    const html = `<div style="font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1f2933">
+  <div style="font-size:18px;font-weight:700;color:#2A8C7D;margin-bottom:16px">QLife</div>
+  ${args.bodyBn.map(para).join('')}
+  <hr style="border:none;border-top:1px solid #e4e7eb;margin:16px 0"/>
+  <div style="color:#7b8794;font-size:13px">${args.bodyEn.map(para).join('')}</div>
+</div>`;
+    const text = [...args.bodyBn, '', ...args.bodyEn].join('\n');
+    await this.sendText({ to: args.to, subject: args.subjectBn, text, html });
   }
 }
 

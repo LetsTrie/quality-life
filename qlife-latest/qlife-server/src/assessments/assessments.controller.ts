@@ -15,6 +15,7 @@ export class AssessmentsController {
   async list(
     @Req() req: Request,
     @Query('status') status?: string,
+    @Query('instrumentSlug') instrumentSlug?: string,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
   ) {
     const role = req.auth!.account.role;
@@ -23,6 +24,7 @@ export class AssessmentsController {
       accountId: req.auth!.account.id,
       role,
       status,
+      instrumentSlug,
       page: page ?? 1,
     });
     return { data: result };

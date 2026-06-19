@@ -5,6 +5,7 @@ class ContentItem {
   final String? providerRef;
   final String? description;
   final int? durationSeconds;
+  final bool watched;
 
   const ContentItem({
     required this.contentKey,
@@ -13,6 +14,7 @@ class ContentItem {
     this.providerRef,
     this.description,
     this.durationSeconds,
+    this.watched = false,
   });
 
   factory ContentItem.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,7 @@ class ContentItem {
       providerRef: json['providerRef'] as String?,
       description: json['description'] as String?,
       durationSeconds: (json['durationSeconds'] as num?)?.toInt(),
+      watched: json['watched'] as bool? ?? false,
     );
   }
 }

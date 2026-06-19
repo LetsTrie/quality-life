@@ -1,0 +1,24 @@
+<svg viewBox="0 0 200 170" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="halo" cx="0.5" cy="0.45" r="0.6">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5FB3A4"/>
+      <stop offset="1" stop-color="#2A8C7D"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="78" r="70" fill="url(#halo)"/>
+  <!-- breathing rings -->
+  <circle cx="100" cy="80" r="62" fill="none" stroke="#8FB4DE" stroke-width="2" opacity="0.4"/>
+  <circle cx="100" cy="80" r="50" fill="none" stroke="#5FB3A4" stroke-width="2" opacity="0.5"/>
+  <g transform="translate(60 56)">
+    <ellipse cx="40" cy="92" rx="52" ry="11" fill="#1F6E62" opacity="0.15"/>
+    <path d="M2 86c0-14 17-24 38-24s38 10 38 24z" fill="url(#body)"/>
+    <path d="M-4 84c10-6 22-2 26 8M84 84c-10-6-22-2-26 8" stroke="#1F6E62" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <circle cx="40" cy="40" r="20" fill="#FFFFFF"/>
+    <circle cx="40" cy="40" r="16" fill="#5FB3A4"/>
+    <circle cx="40" cy="22" r="5" fill="#E9B949"/>
+  </g>
+</svg>

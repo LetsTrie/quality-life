@@ -136,7 +136,7 @@ paths:
                   user:
                     id: "p1b2c3d4-0000-0000-0000-000000000010"
                     displayName: "Rahim Uddin"
-                    ageYears: "28"
+                    dateOfBirth: "1998-06-15"
                     gender: "MALE"
                     marital: "SINGLE"
                     phone: "01711000000"
@@ -163,7 +163,7 @@ paths:
               $ref: '#/components/schemas/UpdateUserProfileRequest'
             example:
               displayName: "Rahim Uddin"
-              ageYears: "28"
+              dateOfBirth: "1998-06-15"
               gender: "MALE"
               marital: "SINGLE"
               phone: "01711000000"
@@ -180,7 +180,7 @@ paths:
                   user:
                     id: "p1b2c3d4-0000-0000-0000-000000000010"
                     displayName: "Rahim Uddin"
-                    ageYears: "28"
+                    dateOfBirth: "1998-06-15"
                     gender: "MALE"
                     marital: "SINGLE"
                     phone: "01711000000"
@@ -958,7 +958,7 @@ paths:
                       userId: "p1b2c3d4-0000-0000-0000-000000000010"
                       displayName: "Rahim Uddin"
                       gender: "MALE"
-                      ageYears: "28"
+                      dateOfBirth: "1998-06-15"
                       phone: "01711000000"
                       startedAt: "2025-05-20T00:00:00.000Z"
                   pagination:
@@ -1609,10 +1609,11 @@ components:
           type: string
           nullable: true
           example: "Rahim Uddin"
-        ageYears:
+        dateOfBirth:
           type: string
+          format: date
           nullable: true
-          example: "28"
+          example: "1998-06-15"
         gender:
           type: string
           nullable: true
@@ -1663,9 +1664,10 @@ components:
           minLength: 1
           maxLength: 120
           example: "Rahim Uddin"
-        ageYears:
+        dateOfBirth:
           type: string
-          example: "28"
+          format: date
+          example: "1998-06-15"
         gender:
           type: string
           enum: [MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY]
@@ -2091,10 +2093,11 @@ components:
           nullable: true
           enum: [MALE, FEMALE, OTHER, PREFER_NOT_TO_SAY]
           example: "MALE"
-        ageYears:
+        dateOfBirth:
           type: string
+          format: date
           nullable: true
-          example: "28"
+          example: "1998-06-15"
         phone:
           type: string
           nullable: true

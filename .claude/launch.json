@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "qlife-admin",
+      "cwd": "qlife-latest/qlife-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["exec", "--", "next", "dev"],
+      "autoPort": true
+    }
+  ]
+}

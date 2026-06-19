@@ -53,6 +53,15 @@ abstract final class AppTheme {
           color: scheme.onSurface,
         ),
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (_) => const TextStyle(
+            fontSize: 11,
+            height: 1.0,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ),
       cardTheme: CardThemeData(
         elevation: 0,
         color: scheme.surface,

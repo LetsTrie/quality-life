@@ -2,13 +2,19 @@ class InstrumentSummary {
   final String id;
   final String slug;
   final String name;
+  final String? nameBn;
   final String? category;
+  final String? categoryLabelEn;
+  final String? categoryLabelBn;
 
   const InstrumentSummary({
     required this.id,
     required this.slug,
     required this.name,
+    this.nameBn,
     this.category,
+    this.categoryLabelEn,
+    this.categoryLabelBn,
   });
 
   factory InstrumentSummary.fromJson(Map<String, dynamic> json) {
@@ -16,7 +22,10 @@ class InstrumentSummary {
       id: json['id'] as String,
       slug: json['slug'] as String,
       name: json['name'] as String? ?? '',
+      nameBn: json['nameBn'] as String?,
       category: json['category'] as String?,
+      categoryLabelEn: json['categoryLabelEn'] as String?,
+      categoryLabelBn: json['categoryLabelBn'] as String?,
     );
   }
 }
@@ -59,7 +68,10 @@ class InstrumentDetail {
   final String id;
   final String slug;
   final String name;
+  final String? nameBn;
   final String? category;
+  final String? categoryLabelEn;
+  final String? categoryLabelBn;
   final String versionId;
   final List<InstrumentQuestion> questions;
 
@@ -67,7 +79,10 @@ class InstrumentDetail {
     required this.id,
     required this.slug,
     required this.name,
+    this.nameBn,
     this.category,
+    this.categoryLabelEn,
+    this.categoryLabelBn,
     required this.versionId,
     required this.questions,
   });
@@ -79,7 +94,10 @@ class InstrumentDetail {
       id: instrument['id'] as String,
       slug: instrument['slug'] as String,
       name: instrument['name'] as String? ?? '',
+      nameBn: instrument['nameBn'] as String?,
       category: instrument['category'] as String?,
+      categoryLabelEn: instrument['categoryLabelEn'] as String?,
+      categoryLabelBn: instrument['categoryLabelBn'] as String?,
       versionId: version['id'] as String,
       questions: (version['questions'] as List<dynamic>)
           .map((q) => InstrumentQuestion.fromJson(q as Map<String, dynamic>))

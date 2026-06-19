@@ -1,0 +1,19 @@
+<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5FB3A4"/>
+      <stop offset="1" stop-color="#2A8C7D"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="100" cy="138" rx="62" ry="10" fill="#2A8C7D" opacity="0.12"/>
+  <!-- pot -->
+  <path d="M74 110h52l-7 26a6 6 0 0 1-6 5H87a6 6 0 0 1-6-5z" fill="#8FB4DE"/>
+  <rect x="70" y="100" width="60" height="14" rx="5" fill="#4F86C6"/>
+  <!-- sprout -->
+  <path d="M100 100c0-22 2-40 0-54" stroke="#2A8C7D" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <path d="M100 64c-6-16-22-18-30-14 2 16 16 22 30 14z" fill="url(#leaf)"/>
+  <path d="M100 76c6-14 20-16 28-12-2 14-15 20-28 12z" fill="url(#leaf)" opacity="0.85"/>
+  <circle cx="100" cy="40" r="6" fill="#E9B949"/>
+  <circle cx="150" cy="46" r="4" fill="#8C7BB8" opacity="0.6"/>
+  <circle cx="50" cy="54" r="3" fill="#4F86C6" opacity="0.6"/>
+</svg>

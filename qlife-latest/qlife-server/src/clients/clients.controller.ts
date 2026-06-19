@@ -21,4 +21,21 @@ export class ClientsController {
     const rel = await this.clients.getByIdForProfessional({ accountId: req.auth!.account.id, careRelationshipId: id });
     return { data: { client: rel } };
   }
+
+  // A client's assessments (assigned by this professional + the client's own
+  // self-initiated screens) so the clinician can review results.
+  @Get('/:id/assessments')
+  @Roles('PROFESSIONAL')
+  async assessments(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+  ) {
+    const result = await this.clients.listClientAssessments({
+      accountId: req.auth!.account.id,
+      careRelationshipId: id,
+      page: page ?? 1,
+    });
+    return { data: result };
+  }
 }

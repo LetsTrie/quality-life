@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 
 import { Gender, MaritalStatus } from '@prisma/client';
 
@@ -9,10 +9,9 @@ export class UpdateUserProfileDto {
   @MaxLength(120)
   displayName?: string;
 
-  // MVP: accept ageYears; server derives an approximate DOB (Jan 1).
   @IsOptional()
-  @IsString()
-  ageYears?: string;
+  @IsDateString()
+  dateOfBirth?: string;
 
   @IsOptional()
   @IsEnum(Gender)
@@ -39,5 +38,10 @@ export class UpdateUserProfileDto {
   @IsOptional()
   @IsUUID()
   unionId?: string;
+
+  // Onboarding guideline / privacy consent acceptance (legacy StartingGuideline).
+  @IsOptional()
+  @IsBoolean()
+  consentAccepted?: boolean;
 }
 

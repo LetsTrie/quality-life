@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { AppointmentStatus } from '@prisma/client';
+import type { AppointmentStatus, Prisma } from '@prisma/client';
 
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -17,18 +17,28 @@ export class AppointmentsService {
     private readonly email: EmailService,
   ) {}
 
-  async listForAccount(args: { accountId: string; role: 'USER' | 'PROFESSIONAL'; page: number }) {
+  async listForAccount(args: { accountId: string; role: 'USER' | 'PROFESSIONAL'; page: number; status?: string }) {
     const take = 10;
     const skip = Math.max(0, (args.page - 1) * take);
+
+    // Optional status filter. `PENDING` is a convenience bucket for the
+    // professional inbox = requests awaiting a response (legacy "client requests").
+    let statusWhere: Prisma.AppointmentWhereInput = {};
+    if (args.status === 'PENDING') {
+      statusWhere = { status: { in: ['REQUESTED', 'VIEWED'] } };
+    } else if (args.status) {
+      statusWhere = { status: args.status as AppointmentStatus };
+    }
 
     if (args.role === 'USER') {
       const userProfile = await this.prisma.userProfile.findUnique({ where: { accountId: args.accountId } });
       if (!userProfile) throw new BadRequestException('User profile missing');
 
+      const where = { userProfileId: userProfile.id, deletedAt: null, ...statusWhere };
       const [total, appointments] = await Promise.all([
-        this.prisma.appointment.count({ where: { userProfileId: userProfile.id, deletedAt: null } }),
+        this.prisma.appointment.count({ where }),
         this.prisma.appointment.findMany({
-          where: { userProfileId: userProfile.id, deletedAt: null },
+          where,
           orderBy: [{ createdAt: 'desc' }],
           skip,
           take,
@@ -43,10 +53,11 @@ export class AppointmentsService {
     const professionalProfile = await this.prisma.professionalProfile.findUnique({ where: { accountId: args.accountId } });
     if (!professionalProfile) throw new BadRequestException('Professional profile missing');
 
+    const where = { professionalProfileId: professionalProfile.id, deletedAt: null, ...statusWhere };
     const [total, appointments] = await Promise.all([
-      this.prisma.appointment.count({ where: { professionalProfileId: professionalProfile.id, deletedAt: null } }),
+      this.prisma.appointment.count({ where }),
       this.prisma.appointment.findMany({
-        where: { professionalProfileId: professionalProfile.id, deletedAt: null },
+        where,
         orderBy: [{ createdAt: 'desc' }],
         skip,
         take,
@@ -71,6 +82,7 @@ export class AppointmentsService {
         },
       });
       if (!appt) throw new NotFoundException('Appointment not found');
+      await this.markAppointmentNotificationsRead(appt.id, args.accountId);
       return appt;
     }
 
@@ -85,7 +97,15 @@ export class AppointmentsService {
       },
     });
     if (!appt) throw new NotFoundException('Appointment not found');
+    await this.markAppointmentNotificationsRead(appt.id, args.accountId);
     return appt;
+  }
+
+  private async markAppointmentNotificationsRead(appointmentId: string, accountId: string) {
+    await this.prisma.notification.updateMany({
+      where: { appointmentId, recipientAccountId: accountId, readAt: null },
+      data: { readAt: new Date() },
+    });
   }
 
   async requestAppointment(args: {
@@ -144,6 +164,8 @@ export class AppointmentsService {
         senderAccountId: args.accountId,
         type: 'APPOINTMENT_REQUESTED',
         channel: 'IN_APP',
+        title: 'New appointment request',
+        body: 'A client has requested an appointment with you.',
         appointmentId: appointment.id,
       },
     });
@@ -287,12 +309,23 @@ export class AppointmentsService {
           ? 'APPOINTMENT_DECLINED'
           : 'APPOINTMENT_RESCHEDULED';
 
+    const notifTitle =
+      type === 'APPOINTMENT_ACCEPTED' ? 'Appointment accepted' :
+      type === 'APPOINTMENT_DECLINED' ? 'Appointment declined' :
+      'Appointment rescheduled';
+    const notifBody =
+      type === 'APPOINTMENT_ACCEPTED' ? 'Your appointment has been confirmed.' :
+      type === 'APPOINTMENT_DECLINED' ? 'Your appointment request was declined.' :
+      'A new time has been proposed for your appointment.';
+
     await this.prisma.notification.create({
       data: {
         recipientAccountId: appt.user.accountId,
         senderAccountId: args.accountId,
         type,
         channel: 'IN_APP',
+        title: notifTitle,
+        body: notifBody,
         appointmentId: appt.id,
       },
     });
@@ -313,6 +346,102 @@ export class AppointmentsService {
     } catch (_) {}
 
     return updated;
+  }
+
+  /// Either party cancels. A user can cancel while the request/booking is still
+  /// open or accepted; a professional can cancel an accepted/open booking.
+  async cancel(args: { accountId: string; role: 'USER' | 'PROFESSIONAL'; appointmentId: string; reason?: string }) {
+    const cancellableFrom: AppointmentStatus[] = ['REQUESTED', 'VIEWED', 'ACCEPTED', 'RESCHEDULE_PROPOSED'];
+
+    if (args.role === 'USER') {
+      const userProfile = await this.prisma.userProfile.findUnique({ where: { accountId: args.accountId } });
+      if (!userProfile) throw new BadRequestException('User profile missing');
+      const appt = await this.prisma.appointment.findFirst({
+        where: { id: args.appointmentId, userProfileId: userProfile.id, deletedAt: null },
+        include: { professional: { select: { accountId: true } } },
+      });
+      if (!appt) throw new NotFoundException('Appointment not found');
+      if (!cancellableFrom.includes(appt.status)) throw new BadRequestException('Appointment not cancellable');
+      return this.applyCancellation(appt, 'CANCELLED_BY_USER', args.accountId, appt.professional.accountId, args.reason);
+    }
+
+    const professionalProfile = await this.prisma.professionalProfile.findUnique({ where: { accountId: args.accountId } });
+    if (!professionalProfile) throw new BadRequestException('Professional profile missing');
+    const appt = await this.prisma.appointment.findFirst({
+      where: { id: args.appointmentId, professionalProfileId: professionalProfile.id, deletedAt: null },
+      include: { user: { select: { accountId: true } } },
+    });
+    if (!appt) throw new NotFoundException('Appointment not found');
+    if (!cancellableFrom.includes(appt.status)) throw new BadRequestException('Appointment not cancellable');
+    return this.applyCancellation(appt, 'CANCELLED_BY_PROFESSIONAL', args.accountId, appt.user.accountId, args.reason);
+  }
+
+  private async applyCancellation(
+    appt: { id: string; status: AppointmentStatus },
+    toStatus: 'CANCELLED_BY_USER' | 'CANCELLED_BY_PROFESSIONAL',
+    actorAccountId: string,
+    counterpartyAccountId: string,
+    reason?: string,
+  ) {
+    const updated = await this.prisma.appointment.update({
+      where: { id: appt.id },
+      data: {
+        status: toStatus,
+        cancelledAt: new Date(),
+        cancellationReason: reason ?? null,
+        events: { create: { fromStatus: appt.status, toStatus, actorAccountId, note: reason ?? null } },
+      },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        recipientAccountId: counterpartyAccountId,
+        senderAccountId: actorAccountId,
+        type: 'APPOINTMENT_CANCELLED',
+        channel: 'IN_APP',
+        title: 'Appointment cancelled',
+        body: 'An appointment was cancelled.',
+        appointmentId: appt.id,
+      },
+    });
+
+    try {
+      const account = await this.prisma.account.findUnique({ where: { id: counterpartyAccountId }, select: { email: true } });
+      if (account?.email) {
+        await this.email.sendText({
+          to: account.email,
+          subject: 'Appointment cancelled',
+          text: `An appointment was cancelled.${reason ? `\n\nReason: ${reason}` : ''}`,
+        });
+      }
+    } catch (_) {}
+
+    return updated;
+  }
+
+  /// Professional marks an accepted appointment as completed or a no-show.
+  async finalizeByProfessional(args: {
+    accountId: string;
+    appointmentId: string;
+    outcome: 'COMPLETED' | 'NO_SHOW';
+  }) {
+    const professional = await this.prisma.professionalProfile.findUnique({ where: { accountId: args.accountId } });
+    if (!professional) throw new BadRequestException('Professional profile missing');
+
+    const appt = await this.prisma.appointment.findFirst({
+      where: { id: args.appointmentId, professionalProfileId: professional.id, deletedAt: null },
+    });
+    if (!appt) throw new NotFoundException('Appointment not found');
+    if (appt.status !== 'ACCEPTED') throw new BadRequestException('Only an accepted appointment can be finalized');
+
+    return this.prisma.appointment.update({
+      where: { id: appt.id },
+      data: {
+        status: args.outcome,
+        completedAt: args.outcome === 'COMPLETED' ? new Date() : null,
+        events: { create: { fromStatus: appt.status, toStatus: args.outcome, actorAccountId: args.accountId } },
+      },
+    });
   }
 }
 

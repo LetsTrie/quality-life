@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../../app/router.dart';
-import '../../../shared/widgets/async_state_views.dart';
+import '../../../shared/l10n/l10n_extension.dart';
+import '../../../shared/theme/app_decorations.dart';
+import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/app_illustration.dart';
 import '../../auth/state/auth_state.dart';
-import '../../account/data/account_repository.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -19,37 +19,53 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   void initState() {
     super.initState();
     Future<void>(() async {
-      await ref.read(authStateProvider.notifier).initialize();
-      final auth = ref.read(authStateProvider);
       if (!mounted) return;
-      if (!auth.isAuthenticated) {
-        context.go(const SignInRoute().location);
-        return;
-      }
-
-      // Route by backend role. Role-specific gating (profile completion,
-      // onboarding) is enforced centrally by the router's redirect.
-      try {
-        final me = await ref.read(accountRepositoryProvider).me();
-        if (!mounted) return;
-        final account = me['account'] as Map<String, dynamic>?;
-        final role = account?['role']?.toString();
-        if (!mounted) return;
-        context.go(
-          role == 'PROFESSIONAL'
-              ? const ProfessionalDashboardRoute().location
-              : const HomeRoute().location,
-        );
-      } catch (_) {
-        if (!mounted) return;
-        context.go(const HomeRoute().location);
-      }
+      await ref.read(authStateProvider.notifier).initialize();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: LoadingView());
+    final theme = Theme.of(context);
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppGradients.header(theme.brightness),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  shape: BoxShape.circle,
+                ),
+                child: const AppIllustration(AppArt.brandMark, height: 72),
+              ),
+              const Gap(AppSpacing.lg),
+              Text(
+                context.l10n.appTitle,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const Gap(AppSpacing.xxl),
+              const SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation(Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
-

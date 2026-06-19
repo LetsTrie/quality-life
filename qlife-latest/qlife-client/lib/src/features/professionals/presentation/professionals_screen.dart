@@ -1,229 +1,252 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/router.dart';
+import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/professional.dart';
 import '../../../shared/models/paged_result.dart';
 import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/app_components.dart';
+import '../../../shared/widgets/app_illustration.dart';
 import '../../../shared/widgets/async_state_views.dart';
-import '../../appointments/data/appointments_repository.dart';
+import '../../../shared/widgets/gradient_header.dart';
+import '../../../shared/widgets/prefetch.dart';
 import '../data/professionals_repository.dart';
 
-class ProfessionalsScreen extends ConsumerWidget {
+const _professionTypes = <String>[
+  'CLINICAL_PSYCHOLOGIST',
+  'ASSISTANT_CLINICAL_PSYCHOLOGIST',
+  'PSYCHIATRIST',
+  'COUNSELOR',
+  'OTHER',
+];
+
+class ProfessionalsScreen extends ConsumerStatefulWidget {
   const ProfessionalsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncProfessionals = ref.watch(_professionalsProvider);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Professionals'),
-        actions: [
-          IconButton(
-            onPressed: () => ref.invalidate(_professionalsProvider),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      body: asyncProfessionals.when(
-        loading: () => const LoadingView(),
-        error: (e, _) => const ErrorView(
-          message: 'Could not load professionals. Please try again.',
-        ),
-        data: (result) {
-          if (result.items.isEmpty) {
-            return const EmptyView(
-              message: 'No professionals available',
-              icon: Icons.people_outline,
-            );
-          }
-          return ListView.separated(
-            itemCount: result.items.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, idx) {
-              final p = result.items[idx];
-              return ListTile(
-                title: Text(p.fullName),
-                subtitle: Text(p.professionLabel),
-                trailing: const Icon(Icons.calendar_month),
-                onTap: () => _showRequestSheet(context, ref, p),
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  void _showRequestSheet(BuildContext context, WidgetRef ref, Professional professional) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => _AppointmentRequestSheet(
-        professional: professional,
-        onRequest: (requestedAt, message) async {
-          await ref.read(appointmentsRepositoryProvider).request(
-                professionalProfileId: professional.id,
-                requestedStartAt: requestedAt,
-                requestMessage: message,
-                profileShareGranted: false,
-              );
-        },
-      ),
-    );
-  }
+  ConsumerState<ProfessionalsScreen> createState() =>
+      _ProfessionalsScreenState();
 }
 
-class _AppointmentRequestSheet extends StatefulWidget {
-  final Professional professional;
-  final Future<void> Function(DateTime requestedAt, String? message) onRequest;
-
-  const _AppointmentRequestSheet({
-    required this.professional,
-    required this.onRequest,
-  });
+class _ProfessionalsScreenState extends ConsumerState<ProfessionalsScreen> {
+  final _searchCtrl = TextEditingController();
+  String? _professionType;
+  late Future<PagedResult<Professional>> _future;
 
   @override
-  State<_AppointmentRequestSheet> createState() => _AppointmentRequestSheetState();
-}
-
-class _AppointmentRequestSheetState extends State<_AppointmentRequestSheet> {
-  DateTime? _selectedDate;
-  TimeOfDay? _selectedTime;
-  final _messageCtrl = TextEditingController();
-  bool _submitting = false;
-  String? _error;
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
 
   @override
   void dispose() {
-    _messageCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _pickDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (date != null && mounted) {
-      setState(() => _selectedDate = date);
-    }
+  Future<PagedResult<Professional>> _load() {
+    return ref.read(professionalsRepositoryProvider).list(
+          q: _searchCtrl.text,
+          professionType: _professionType,
+        );
   }
 
-  Future<void> _pickTime() async {
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (time != null && mounted) {
-      setState(() => _selectedTime = time);
-    }
-  }
+  void _reload() => setState(() => _future = _load());
 
-  Future<void> _submit() async {
-    if (_selectedDate == null || _selectedTime == null) {
-      setState(() => _error = 'Please select a date and time.');
-      return;
-    }
-    setState(() {
-      _submitting = true;
-      _error = null;
-    });
+  Future<void> _refresh() async {
+    setState(() => _future = _load());
     try {
-      final dt = DateTime.utc(
-        _selectedDate!.year,
-        _selectedDate!.month,
-        _selectedDate!.day,
-        _selectedTime!.hour,
-        _selectedTime!.minute,
-      );
-      final msg = _messageCtrl.text.trim().isEmpty ? null : _messageCtrl.text.trim();
-      await widget.onRequest(dt, msg);
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment requested')),
-      );
-    } catch (e) {
-      if (mounted) {
-        setState(() => _error = 'Failed to request appointment. Please try again.');
-      }
-    } finally {
-      if (mounted) setState(() => _submitting = false);
+      await _future;
+    } catch (_) {
+      // FutureBuilder renders the error state; RefreshIndicator just needs to stop.
     }
+  }
+
+  String _professionLabel(BuildContext context, String v) {
+    final l = context.l10n;
+    return switch (v) {
+      'CLINICAL_PSYCHOLOGIST' => l.professionClinicalPsychologist,
+      'ASSISTANT_CLINICAL_PSYCHOLOGIST' =>
+        l.professionAssistantClinicalPsychologist,
+      'PSYCHIATRIST' => l.professionPsychiatrist,
+      'COUNSELOR' => l.professionCounselor,
+      _ => l.professionOther,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = _selectedDate == null
-        ? 'Select date'
-        : '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}';
-    final timeLabel = _selectedTime == null
-        ? 'Select time'
-        : '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}';
-
-    return Padding(
-      padding: EdgeInsets.only(
-        left: AppSpacing.lg,
-        right: AppSpacing.lg,
-        top: AppSpacing.xl,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.xl,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final l = context.l10n;
+    return Scaffold(
+      body: Column(
         children: [
-          Text(
-            'Request appointment with ${widget.professional.fullName}',
-            style: Theme.of(context).textTheme.titleMedium,
+          GradientHeader(
+            title: l.navProfessionals,
+            subtitle: l.navProfessionalsDesc,
           ),
-          const Gap(AppSpacing.lg),
-          if (_error != null) ...[
-            Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            const Gap(AppSpacing.sm),
-          ],
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _submitting ? null : _pickDate,
-                  icon: const Icon(Icons.calendar_today),
-                  label: Text(dateLabel),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page, AppSpacing.md, AppSpacing.page, 0),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _searchCtrl,
+                  decoration: InputDecoration(
+                    hintText: l.searchByName,
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    isDense: true,
+                  ),
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => _reload(),
                 ),
-              ),
-              const Gap.horizontal(AppSpacing.sm),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _submitting ? null : _pickTime,
-                  icon: const Icon(Icons.access_time),
-                  label: Text(timeLabel),
+                const Gap(AppSpacing.sm),
+                DropdownMenu<String?>(
+                  initialSelection: _professionType,
+                  label: Text(l.allProfessions),
+                  expandedInsets: EdgeInsets.zero,
+                  onSelected: (v) {
+                    _professionType = v;
+                    _reload();
+                  },
+                  dropdownMenuEntries: [
+                    DropdownMenuEntry(value: null, label: l.allProfessions),
+                    ..._professionTypes.map((p) => DropdownMenuEntry(
+                        value: p, label: _professionLabel(context, p))),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          const Gap(AppSpacing.md),
-          TextFormField(
-            controller: _messageCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Message (optional)',
-              border: OutlineInputBorder(),
+              ],
             ),
-            maxLines: 3,
-            maxLength: 500,
-            enabled: !_submitting,
           ),
-          const Gap(AppSpacing.lg),
-          FilledButton(
-            onPressed: _submitting ? null : _submit,
-            child: Text(_submitting ? 'Requesting...' : 'Confirm'),
+          Expanded(
+            child: FutureBuilder<PagedResult<Professional>>(
+              future: _future,
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const LoadingView();
+                }
+                if (snap.hasError) {
+                  return ErrorView(
+                    message: l.errLoadProfessionals,
+                    onRetry: _reload,
+                  );
+                }
+                final items = snap.data?.items ?? const [];
+                if (items.isEmpty) {
+                  final theme = Theme.of(context);
+                  return RefreshIndicator(
+                    onRefresh: _refresh,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(AppSpacing.xl),
+                      child: SizedBox(
+                        height: MediaQuery.sizeOf(context).height * 0.45,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const AppIllustration(AppArt.empty, height: 132),
+                            const Gap(AppSpacing.lg),
+                            Text(
+                              l.emptyProfessionals,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const Gap(AppSpacing.sm),
+                            Text(
+                              l.emptyProfessionalsHint,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            const Gap(AppSpacing.lg),
+                            OutlinedButton.icon(
+                              onPressed: _reload,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: Text(l.actionRetry),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 44),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.lg),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: _refresh,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(AppSpacing.page),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const Gap(AppSpacing.md),
+                    itemBuilder: (context, idx) {
+                      final p = items[idx];
+                      return AppCard(
+                        onTap: () => prefetchThenPush<Professional>(
+                          context,
+                          future: ref
+                              .read(professionalsRepositoryProvider)
+                              .get(p.id),
+                          location: ProfessionalDetailRoute(id: p.id).location,
+                          errorMessage: l.errLoadProfessionals,
+                        ),
+                        child: Row(
+                          children: [
+                            InitialAvatar(name: p.fullName, size: 52),
+                            const Gap.horizontal(AppSpacing.md),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    p.fullName,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(fontWeight: FontWeight.w600),
+                                  ),
+                                  const Gap(2),
+                                  Text(
+                                    p.professionLabel,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                  ),
+                                  if (p.feeAmount != null) ...[
+                                    const Gap(2),
+                                    Text(
+                                      '${context.l10n.labelFee}: ${p.feeAmount} ${p.feeCurrency ?? 'BDT'}',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const Gap.horizontal(AppSpacing.sm),
+                            const Icon(Icons.chevron_right_rounded),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-final _professionalsProvider = FutureProvider<PagedResult<Professional>>((ref) async {
-  return ref.read(professionalsRepositoryProvider).list(page: 1);
-});

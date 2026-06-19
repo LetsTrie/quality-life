@@ -1,25 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/router.dart';
+import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/assessment.dart';
 import '../../../shared/models/instrument.dart';
+import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/widgets/async_state_views.dart';
+import '../../../shared/widgets/gradient_header.dart';
 import '../../assessments/data/assessments_repository.dart';
+import '../../assessments/presentation/assessment_views.dart';
 import '../data/instruments_repository.dart';
+import '../scale_localization.dart';
 
 class InstrumentDetailScreen extends ConsumerStatefulWidget {
   final String slug;
-  const InstrumentDetailScreen({super.key, required this.slug});
+  // Prefetched instrument (load-then-navigate); null for deep links.
+  final InstrumentDetail? initial;
+  const InstrumentDetailScreen({super.key, required this.slug, this.initial});
 
   @override
-  ConsumerState<InstrumentDetailScreen> createState() => _InstrumentDetailScreenState();
+  ConsumerState<InstrumentDetailScreen> createState() =>
+      _InstrumentDetailScreenState();
 }
 
-class _InstrumentDetailScreenState extends ConsumerState<InstrumentDetailScreen> {
+class _InstrumentDetailScreenState
+    extends ConsumerState<InstrumentDetailScreen> {
   final Map<String, String> _selectedByQuestionId = {};
+  final ScrollController _scrollController = ScrollController();
   bool _submitting = false;
   AssessmentResult? _result;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   Future<void> _submit(InstrumentDetail instrument) async {
     setState(() {
@@ -31,20 +49,33 @@ class _InstrumentDetailScreenState extends ConsumerState<InstrumentDetailScreen>
           .read(assessmentsRepositoryProvider)
           .createAssessment(instrumentSlug: widget.slug);
 
+      if (!mounted) return;
+
       final answers = _selectedByQuestionId.entries
           .map((e) => {'questionId': e.key, 'selectedOptionId': e.value})
           .toList();
 
-      final result = await ref.read(assessmentsRepositoryProvider).submitAnswers(
-            assessmentId: assessmentId,
-            answers: answers,
-          );
+      final result = await ref
+          .read(assessmentsRepositoryProvider)
+          .submitAnswers(assessmentId: assessmentId, answers: answers);
 
-      if (mounted) setState(() => _result = result);
+      if (mounted) {
+        setState(() => _result = result);
+        // Bring the freshly-rendered result into view so the user doesn't have
+        // to discover it by scrolling.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_scrollController.hasClients) return;
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.easeOut,
+          );
+        });
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Submission failed. Please try again.')),
+        SnackBar(content: Text(context.l10n.submissionFailed)),
       );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -53,78 +84,148 @@ class _InstrumentDetailScreenState extends ConsumerState<InstrumentDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final asyncInstrument = ref.watch(_instrumentProvider(widget.slug));
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.slug)),
-      body: asyncInstrument.when(
-        loading: () => const LoadingView(),
-        error: (e, _) => const ErrorView(
-          message: 'Could not load this scale. Please go back and try again.',
-        ),
-        data: (instrument) => ListView(
-          padding: const EdgeInsets.all(AppSpacing.page),
+    final seed = widget.initial;
+    final asyncInstrument = seed != null
+        ? AsyncValue<InstrumentDetail>.data(seed)
+        : ref.watch(_instrumentProvider(widget.slug));
+    final l = context.l10n;
+    return asyncInstrument.when(
+      loading: () => Scaffold(
+        body: Column(
           children: [
-            Text(instrument.name, style: Theme.of(context).textTheme.titleLarge),
-            const Gap(AppSpacing.md),
-            for (final question in instrument.questions) ...[
-              Text(question.prompt, style: Theme.of(context).textTheme.titleMedium),
-              const Gap(AppSpacing.sm),
-              RadioGroup<String>(
-                groupValue: _selectedByQuestionId[question.id],
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() => _selectedByQuestionId[question.id] = value);
-                },
-                child: Column(
-                  children: question.options
-                      .map(
-                        (option) => RadioListTile<String>(
-                          value: option.id,
-                          title: Text(option.label),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-              const Divider(height: 24),
-            ],
-            FilledButton(
-              onPressed: _submitting ? null : () => _submit(instrument),
-              child: Text(_submitting ? 'Submitting...' : 'Submit'),
-            ),
-            if (_result != null) ...[
-              const Gap(AppSpacing.lg),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Result', style: Theme.of(context).textTheme.titleMedium),
-                      const Gap(AppSpacing.sm),
-                      if (_result!.severityLabel != null)
-                        Text('Severity: ${_result!.severityLabel}'),
-                      if (_result!.rawScore != null)
-                        Text('Score: ${_result!.rawScore}${_result!.maxScore != null ? ' / ${_result!.maxScore}' : ''}'),
-                      if (_result!.recommendedAction != null) ...[
-                        const Gap(AppSpacing.sm),
-                        Text(
-                          'Recommendation: ${_result!.recommendedAction}',
-                          style: const TextStyle(fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            GradientHeader(title: l.scalesTitle, showBack: true, compact: true),
+            const Expanded(child: LoadingView()),
           ],
         ),
       ),
+      error: (e, _) => Scaffold(
+        body: Column(
+          children: [
+            GradientHeader(title: l.scalesTitle, showBack: true, compact: true),
+            Expanded(
+              child: ErrorView(
+                message: l.errLoadScaleDetail,
+                onRetry: () => ref.invalidate(_instrumentProvider(widget.slug)),
+              ),
+            ),
+          ],
+        ),
+      ),
+      data: (instrument) {
+        final theme = Theme.of(context);
+        final total = instrument.questions.length;
+        final answered = _selectedByQuestionId.length;
+        final localizedName = localizedScaleName(
+          context,
+          slug: instrument.slug,
+          fallback: instrument.name,
+          serverNameBn: instrument.nameBn,
+        );
+        return Scaffold(
+          body: Column(
+            children: [
+              GradientHeader(
+                title: localizedName,
+                subtitle: localizedScaleCategory(
+                  context,
+                  instrument.category,
+                  serverLabelEn: instrument.categoryLabelEn,
+                  serverLabelBn: instrument.categoryLabelBn,
+                ),
+                showBack: true,
+                compact: true,
+                actions: [
+                  IconButton(
+                    tooltip: l.viewHistory,
+                    onPressed: () => context.push(
+                      AssessmentHistoryRoute(slug: instrument.slug, title: localizedName)
+                          .location,
+                    ),
+                    icon: const Icon(Icons.history_rounded),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: ListView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.page,
+                    AppSpacing.lg,
+                    AppSpacing.page,
+                    AppSpacing.xxl,
+                  ),
+                  children: [
+                    // Gentle, reassuring intro.
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.favorite_border_rounded,
+                              size: 20, color: AppColors.secondary),
+                          const Gap.horizontal(AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              l.assessmentIntro,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Gap(AppSpacing.xl),
+                    for (var i = 0; i < total; i++) ...[
+                      AssessmentQuestionCard(
+                        index: i + 1,
+                        question: instrument.questions[i],
+                        groupValue:
+                            _selectedByQuestionId[instrument.questions[i].id],
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => _selectedByQuestionId[
+                              instrument.questions[i].id] = value);
+                        },
+                      ),
+                      const Gap(AppSpacing.lg),
+                    ],
+                    const Gap(AppSpacing.xs),
+                    FilledButton(
+                      onPressed: _submitting ? null : () => _submit(instrument),
+                      child: Text(
+                          _submitting ? l.actionSubmitting : l.actionSubmit),
+                    ),
+                    if (total > 0) ...[
+                      const Gap(AppSpacing.sm),
+                      Center(
+                        child: Text(
+                          '$answered / $total',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (_result != null) ...[
+                      const Gap(AppSpacing.lg),
+                      AssessmentResultCard(result: _result!, slug: widget.slug),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
-
-final _instrumentProvider = FutureProvider.family<InstrumentDetail, String>((ref, slug) async {
+final _instrumentProvider =
+    FutureProvider.family<InstrumentDetail, String>((ref, slug) async {
   return ref.read(instrumentsRepositoryProvider).getInstrument(slug);
 });

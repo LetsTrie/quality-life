@@ -1,11 +1,28 @@
 locals {
   assets_bucket_name = "${var.name_prefix}-assets"
+  db_subnet_ids      = length(var.private_subnet_ids) > 0 ? var.private_subnet_ids : var.public_subnet_ids
+  db_password_param_name = (
+    var.db_password_ssm_parameter_name != null
+    ? var.db_password_ssm_parameter_name
+    : "/qlife/${var.name_prefix}/db_password"
+  )
+}
+
+data "aws_ssm_parameter" "db_password" {
+  count           = var.db_password == null ? 1 : 0
+  name            = local.db_password_param_name
+  with_decryption = true
+}
+
+locals {
+  db_password_effective = var.db_password != null ? var.db_password : data.aws_ssm_parameter.db_password[0].value
 }
 
 # --- S3: assets/legal docs ---
 resource "aws_s3_bucket" "assets" {
   bucket        = local.assets_bucket_name
   force_destroy = var.assets_bucket_force_destroy
+  tags          = { Name = local.assets_bucket_name }
 }
 
 resource "aws_s3_bucket_public_access_block" "assets" {
@@ -35,7 +52,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "assets" {
 # --- RDS: Postgres ---
 resource "aws_db_subnet_group" "db" {
   name       = "${var.name_prefix}-db-subnets"
-  subnet_ids = var.private_subnet_ids
+  subnet_ids = local.db_subnet_ids
+  tags       = { Name = "${var.name_prefix}-db-subnets" }
 }
 
 resource "aws_security_group" "db" {
@@ -50,24 +68,28 @@ resource "aws_security_group" "db" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = { Name = "${var.name_prefix}-db" }
 }
 
 resource "aws_db_instance" "postgres" {
-  identifier              = "${var.name_prefix}-postgres"
-  engine                  = "postgres"
-  engine_version          = "15.7"
-  instance_class          = var.db_instance_class
-  allocated_storage       = var.db_allocated_storage_gb
-  storage_encrypted       = true
-  db_name                 = var.db_name
-  username                = var.db_username
-  password                = var.db_password
-  db_subnet_group_name    = aws_db_subnet_group.db.name
-  vpc_security_group_ids  = [aws_security_group.db.id]
-  publicly_accessible     = false
-  skip_final_snapshot     = true
-  deletion_protection     = false
-  backup_retention_period = 7
+  identifier                = "${var.name_prefix}-postgres"
+  engine                    = "postgres"
+  engine_version            = "15.18"
+  instance_class            = var.db_instance_class
+  allocated_storage         = var.db_allocated_storage_gb
+  storage_encrypted         = true
+  db_name                   = var.db_name
+  username                  = var.db_username
+  password                  = local.db_password_effective
+  db_subnet_group_name      = aws_db_subnet_group.db.name
+  vpc_security_group_ids    = [aws_security_group.db.id]
+  publicly_accessible       = false
+  skip_final_snapshot       = false
+  final_snapshot_identifier = "${var.name_prefix}-postgres-final"
+  deletion_protection       = true
+  backup_retention_period   = 7
+  tags                      = { Name = "${var.name_prefix}-postgres" }
 }
 
 # --- Cognito (Hosted UI auth baseline) ---
@@ -84,6 +106,8 @@ resource "aws_cognito_user_pool" "users" {
     require_symbols   = true
     require_uppercase = true
   }
+
+  tags = { Name = "${var.name_prefix}-users" }
 }
 
 resource "aws_cognito_user_pool_client" "mobile" {
@@ -92,6 +116,20 @@ resource "aws_cognito_user_pool_client" "mobile" {
 
   generate_secret = false
 
+  # SDK auth (amazon_cognito_identity_dart_2): the app talks to the Cognito
+  # user-pool API directly instead of the hosted UI.
+  #  - USER_SRP_AUTH      → sign-in (the SDK's authenticateUser uses SRP)
+  #  - REFRESH_TOKEN_AUTH → silent token refresh
+  #  - USER_PASSWORD_AUTH → plain username/password fallback
+  explicit_auth_flows = [
+    "ALLOW_USER_SRP_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH",
+    "ALLOW_USER_PASSWORD_AUTH",
+  ]
+
+  # Hosted-UI OAuth flows are retained for now as a fallback / transition aid;
+  # the client no longer uses them. Safe to remove once SDK auth is fully
+  # rolled out (also drop the aws_cognito_user_pool_domain below).
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
   allowed_oauth_scopes                 = ["email", "openid", "profile"]
@@ -119,6 +157,7 @@ resource "aws_iam_role" "eb_ec2" {
       Principal = { Service = "ec2.amazonaws.com" }
     }]
   })
+  tags = { Name = "${var.name_prefix}-eb-ec2" }
 }
 
 resource "aws_iam_role_policy_attachment" "eb_ec2_web_tier" {
@@ -129,6 +168,7 @@ resource "aws_iam_role_policy_attachment" "eb_ec2_web_tier" {
 resource "aws_iam_instance_profile" "eb_ec2" {
   name = "${var.name_prefix}-eb-ec2-profile"
   role = aws_iam_role.eb_ec2.name
+  tags = { Name = "${var.name_prefix}-eb-ec2-profile" }
 }
 
 # --- Security Group: Elastic Beanstalk → RDS ---
@@ -153,19 +193,32 @@ resource "aws_security_group" "eb" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = { Name = "${var.name_prefix}-eb" }
 }
 
 # --- Elastic Beanstalk Application ---
 resource "aws_elastic_beanstalk_application" "server" {
   name        = "${var.name_prefix}-server"
   description = "QLife NestJS API server"
+  tags        = { Name = "${var.name_prefix}-server" }
 }
 
 # --- Elastic Beanstalk Environment ---
+# Single-instance mode: no ALB (saves ~$18/mo), no NAT gateway needed
+# (instance runs in a public subnet with a public IP). TLS can be terminated
+# by CloudFront in front of the EB CNAME, or by adding Nginx+cert on the box.
 resource "aws_elastic_beanstalk_environment" "server" {
   name                = "${var.name_prefix}-server-env"
   application         = aws_elastic_beanstalk_application.server.name
   solution_stack_name = var.eb_solution_stack
+
+  # Single-instance: one EC2 with an Elastic IP, no load balancer.
+  setting {
+    namespace = "aws:elasticbeanstalk:environment"
+    name      = "EnvironmentType"
+    value     = "SingleInstance"
+  }
 
   # Instance profile
   setting {
@@ -181,7 +234,7 @@ resource "aws_elastic_beanstalk_environment" "server" {
     value     = var.eb_instance_type
   }
 
-  # VPC placement
+  # Public subnet so traffic reaches the instance without a NAT gateway.
   setting {
     namespace = "aws:ec2:vpc"
     name      = "VPCId"
@@ -191,20 +244,7 @@ resource "aws_elastic_beanstalk_environment" "server" {
   setting {
     namespace = "aws:ec2:vpc"
     name      = "Subnets"
-    value     = join(",", var.private_subnet_ids)
-  }
-
-  setting {
-    namespace = "aws:ec2:vpc"
-    name      = "ELBSubnets"
     value     = join(",", var.public_subnet_ids)
-  }
-
-  # Use Application load balancer for HTTPS support
-  setting {
-    namespace = "aws:elasticbeanstalk:environment"
-    name      = "LoadBalancerType"
-    value     = "application"
   }
 
   # Security group for EC2 instances
@@ -214,7 +254,7 @@ resource "aws_elastic_beanstalk_environment" "server" {
     value     = aws_security_group.eb.id
   }
 
-  # Auto Scaling
+  # Auto Scaling — min=max=1 prevents accidental scale-out cost.
   setting {
     namespace = "aws:autoscaling:asg"
     name      = "MinSize"
@@ -264,33 +304,44 @@ resource "aws_elastic_beanstalk_environment" "server" {
     value     = aws_cognito_user_pool_client.mobile.id
   }
 
-  # Health check path
+  # Health check path (used by EB internal checks, not an ALB target group).
   setting {
     namespace = "aws:elasticbeanstalk:environment:process:default"
     name      = "HealthCheckPath"
     value     = "/v1/health"
   }
 
-  # Deployment policy
+  # Single-instance deploys replace in-place; AllAtOnce is the only option.
   setting {
     namespace = "aws:elasticbeanstalk:command"
     name      = "DeploymentPolicy"
-    value     = "RollingWithAdditionalBatch"
+    value     = "AllAtOnce"
   }
 
-  setting {
-    namespace = "aws:elasticbeanstalk:command"
-    name      = "BatchSizeType"
-    value     = "Percentage"
+  tags = { Name = "${var.name_prefix}-server-env" }
+}
+
+# --- Budgets: monthly cost cap with email alerts ---
+resource "aws_budgets_budget" "monthly" {
+  name         = "${var.name_prefix}-monthly-budget"
+  budget_type  = "COST"
+  limit_amount = tostring(var.budget_monthly_usd)
+  limit_unit   = "USD"
+  time_unit    = "MONTHLY"
+
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 80
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "FORECASTED"
+    subscriber_email_addresses = [var.budget_alert_email]
   }
 
-  setting {
-    namespace = "aws:elasticbeanstalk:command"
-    name      = "BatchSize"
-    value     = "30"
-  }
-
-  tags = {
-    Environment = var.name_prefix
+  notification {
+    comparison_operator        = "GREATER_THAN"
+    threshold                  = 100
+    threshold_type             = "PERCENTAGE"
+    notification_type          = "ACTUAL"
+    subscriber_email_addresses = [var.budget_alert_email]
   }
 }

@@ -1,72 +1,45 @@
 [
   {
-    "place": "জাতীয় মানসিক স্বাস্থ্য ইনস্টিউট ও হাসপাতাল",
-    "keywords": [
-      "psychoticProfile",
-      "suicideIdeation"
-    ],
+    "slug": "hc-nimh",
+    "nameEn": "National Institute of Mental Health & Hospital",
+    "nameBn": "জাতীয় মানসিক স্বাস্থ্য ইনস্টিটিউট ও হাসপাতাল",
+    "locationNote": null,
+    "keywords": ["general", "depression_scale", "hopelessness_scale_(beck)", "suicide-ideation", "psychotic-profile"],
     "contacts": [
-      {
-        "number": "01404000080",
-        "time": "সকাল ৮ টা থেকে ১০ টা",
-        "type": "phone"
-      },
-      {
-        "number": "01404000081",
-        "time": "সকাল ৮ টা থেকে ১০ টা",
-        "type": "phone"
-      },
-      {
-        "number": "01404000082",
-        "time": "সকাল ৮ টা থেকে ১০ টা (WhatsApp)",
-        "type": "whatsapp"
-      },
-      {
-        "number": "01404000083",
-        "time": "সকাল ৮ টা থেকে ১০ টা (WhatsApp)",
-        "type": "whatsapp"
-      }
+      { "number": "01404000080", "time": "সকাল ৮টা – রাত ১০টা", "type": "phone" },
+      { "number": "01404000081", "time": "সকাল ৮টা – রাত ১০টা", "type": "phone" },
+      { "number": "01404000082", "time": "সকাল ৮টা – রাত ১০টা", "type": "whatsapp" },
+      { "number": "01404000083", "time": "সকাল ৮টা – রাত ১০টা", "type": "whatsapp" }
     ]
   },
   {
-    "place": "নাসিরুল্লাহ সাইকথেরাপি ইউনিট",
-    "location": "ঢাকা বিশ্ববিদ্যালয়",
-    "keywords": [
-      "psychoticProfile",
-      "suicideIdeation"
-    ],
+    "slug": "hc-nasirullah",
+    "nameEn": "Nasirullah Psychotherapy Unit",
+    "nameBn": "নাসিরউল্লাহ সাইকোথেরাপি ইউনিট",
+    "locationNote": "ঢাকা বিশ্ববিদ্যালয়",
+    "keywords": ["general", "depression_scale", "hopelessness_scale_(beck)", "suicide-ideation", "psychotic-profile"],
     "contacts": [
-      {
-        "number": "01715654538",
-        "type": "phone"
-      }
+      { "number": "01715654538", "type": "phone" }
     ]
   },
   {
-    "place": "আইন ও সালিশ কেন্দ্র হেল্পলাইন নাম্বার",
-    "keywords": [
-      "domesticViolence"
-    ],
+    "slug": "hc-ask",
+    "nameEn": "Ain o Salish Kendra (ASK) Helpline",
+    "nameBn": "আইন ও সালিশ কেন্দ্র (ASK) হেল্পলাইন",
+    "locationNote": null,
+    "keywords": ["domestic-violence"],
     "contacts": [
-      {
-        "number": "01724415677",
-        "type": "phone",
-        "time": "সকাল ৯ টা থেকে ৫ টা",
-        "hasToll": false
-      }
+      { "number": "01724415677", "time": "সকাল ৯টা – বিকাল ৫টা", "type": "phone" }
     ]
   },
   {
-    "place": "মহিলা ও শিশু বিষয়ক মন্ত্রণালয়",
-    "keywords": [
-      "domesticViolence"
-    ],
+    "slug": "hc-mowca",
+    "nameEn": "Ministry of Women & Children Affairs",
+    "nameBn": "মহিলা ও শিশু বিষয়ক মন্ত্রণালয়",
+    "locationNote": null,
+    "keywords": ["domestic-violence"],
     "contacts": [
-      {
-        "number": "109",
-        "type": "phone",
-        "hasToll": true
-      }
+      { "number": "109", "type": "phone", "hasToll": true }
     ]
   }
 ]

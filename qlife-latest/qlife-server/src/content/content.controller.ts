@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 
 import { Roles } from '../auth/roles.decorator';
@@ -12,8 +12,14 @@ export class ContentController {
 
   @Get()
   @Roles('USER')
-  async list() {
-    return { data: { content: await this.content.list() } };
+  async list(@Req() req: Request) {
+    return { data: { content: await this.content.list(req.auth!.account.id) } };
+  }
+
+  @Get('tips')
+  async tips(@Query('type') type?: string) {
+    const tipType = type === 'professional' ? 'professional' : 'user';
+    return { data: { tips: this.content.getTips(tipType) } };
   }
 
   @Post('/:contentKey/viewed')

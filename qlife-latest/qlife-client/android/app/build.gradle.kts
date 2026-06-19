@@ -20,10 +20,13 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         // Keep broad Android compatibility (Android 5.0+).
-        minSdk = 21
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // flutter_appauth OAuth redirect (qlife://auth/callback)
+        manifestPlaceholders["appAuthRedirectScheme"] = "qlife"
     }
 
     buildTypes {

@@ -13,14 +13,28 @@ export class UsersController {
   @Roles('USER')
   async me(@Req() req: Request) {
     const profile = await this.users.me(req.auth!.account.id);
-    return { data: { user: profile, isProfileComplete: this.users.isProfileComplete(profile) } };
+    return {
+      data: {
+        user: profile,
+        isProfileComplete: this.users.isProfileComplete(profile),
+        hasAcceptedConsent: this.users.hasAcceptedConsent(profile),
+        hasCompletedIntroScreening: this.users.hasCompletedIntroScreening(profile),
+      },
+    };
   }
 
   @Patch('/me')
   @Roles('USER')
   async update(@Req() req: Request, @Body() body: UpdateUserProfileDto) {
     const profile = await this.users.updateMe(req.auth!.account.id, body);
-    return { data: { user: profile, isProfileComplete: this.users.isProfileComplete(profile) } };
+    return {
+      data: {
+        user: profile,
+        isProfileComplete: this.users.isProfileComplete(profile),
+        hasAcceptedConsent: this.users.hasAcceptedConsent(profile),
+        hasCompletedIntroScreening: this.users.hasCompletedIntroScreening(profile),
+      },
+    };
   }
 }
 

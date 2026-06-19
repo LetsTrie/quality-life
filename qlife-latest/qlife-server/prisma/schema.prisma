@@ -486,6 +486,15 @@ model UserProfile {
   upazilaId  String? @map("upazila_id") @db.Uuid
   unionId    String? @map("union_id") @db.Uuid
 
+  // When the user accepted the onboarding guideline / privacy notice (legacy
+  // StartingGuideline gate). Null = not yet accepted; gates entry to the app.
+  consentAcceptedAt DateTime? @map("consent_accepted_at") @db.Timestamptz(6)
+
+  // When the user first completed the intro well-being self-check (legacy
+  // `lastIntroTestDate` / mentalHealthProfile). Null = not yet taken; the
+  // onboarding flow prompts for it until it is completed.
+  introScreeningCompletedAt DateTime? @map("intro_screening_completed_at") @db.Timestamptz(6)
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
@@ -528,6 +537,10 @@ model ProfessionalProfile {
   // Self-reported weekly client capacity (replaces legacy stringly buckets).
   maxWeeklyClients Int? @map("max_weekly_clients")
   avgWeeklyClients Int? @map("avg_weekly_clients")
+
+  // Where the clinician's current clients are typically referred from
+  // (legacy `reference` free-text in registration step 4).
+  referralSource String? @map("referral_source")
 
   // IANA tz for interpreting availability (e.g. "Asia/Dhaka").
   timezone String @default("Asia/Dhaka")
@@ -747,14 +760,18 @@ model AppointmentEvent {
 /// A logical instrument (e.g. "GHQ-12", "Perceived Stress Scale"). Wording and
 /// scoring live in versions; this row is the stable identity.
 model Instrument {
-  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug        String             @unique // stable key used by clients & assignments
-  name        String
-  category    InstrumentCategory
-  description String?
-  isActive    Boolean            @default(true) @map("is_active")
-  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug             String             @unique // stable key used by clients & assignments
+  name             String
+  nameBn           String?            @map("name_bn")
+  category         InstrumentCategory
+  description      String?
+  isActive         Boolean            @default(true) @map("is_active")
+  // When false, the scale is professional-assign-only: a user cannot self-start
+  // it; it must be assigned by a professional (legacy `needToEvaluate` flag).
+  isSelfAssessable Boolean            @default(true) @map("is_self_assessable")
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   versions InstrumentVersion[]
 

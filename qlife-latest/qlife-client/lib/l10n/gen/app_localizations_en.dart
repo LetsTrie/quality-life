@@ -18,7 +18,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navProfile => 'My profile';
 
   @override
-  String get navScales => 'Scales';
+  String get navScales => 'Self-checks';
 
   @override
   String get navProfessionals => 'Professionals';
@@ -30,7 +30,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navNotifications => 'Notifications';
 
   @override
-  String get navContent => 'Content';
+  String get navContent => 'Resources';
+
+  @override
+  String get navMore => 'More';
 
   @override
   String get navBecomeProfessional => 'Become a professional';
@@ -39,19 +42,252 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionSignOut => 'Sign out';
 
   @override
-  String get signInTitle => 'Sign in';
+  String get actionRetry => 'Try again';
 
   @override
-  String get signInContinue => 'Continue with Cognito';
+  String get welcomeHeadline => 'A calmer mind starts here';
+
+  @override
+  String get welcomeSubtitle =>
+      'Private, gentle support for your mental wellbeing — whenever you need it.';
+
+  @override
+  String get signInTitle => 'Welcome';
+
+  @override
+  String get signInContinue => 'Continue securely';
+
+  @override
+  String get authSignInTitle => 'Welcome back';
+
+  @override
+  String get authSignInSubtitle => 'Sign in to continue your wellbeing journey';
+
+  @override
+  String get authSignUpTitle => 'Create your account';
+
+  @override
+  String get authSignUpSubtitle => 'A few details to get you started';
+
+  @override
+  String get authRoleQuestion => 'How would you like to continue?';
+
+  @override
+  String get authRoleUser => 'Seeking support';
+
+  @override
+  String get authRoleUserDesc => 'For your own wellbeing';
+
+  @override
+  String get authRoleProfessional => 'I\'m a professional';
+
+  @override
+  String get authRoleProfessionalDesc => 'Offer care to clients';
+
+  @override
+  String get authEmail => 'Email';
+
+  @override
+  String get authPassword => 'Password';
+
+  @override
+  String get authConfirmPassword => 'Confirm password';
+
+  @override
+  String get authPasswordHint => 'At least 6 characters';
+
+  @override
+  String get authSignInAction => 'Sign in';
+
+  @override
+  String get authSignUpAction => 'Create account';
+
+  @override
+  String get authForgotPassword => 'Forgot password?';
+
+  @override
+  String get authNoAccount => 'New here? Create an account';
+
+  @override
+  String get authHaveAccount => 'Already have an account? Sign in';
+
+  @override
+  String get authProfessionalSignInTitle => 'Professional sign in';
+
+  @override
+  String get authProfessionalSignUpTitle => 'Professional registration';
+
+  @override
+  String get authSignInAsProfessional => 'Sign in as a professional';
+
+  @override
+  String get authSignInAsUser => 'Sign in as a user';
+
+  @override
+  String get authSignUpAsProfessional => 'Register as a professional';
+
+  @override
+  String get authSignUpAsUser => 'Register as a user';
+
+  @override
+  String get authVerifyTitle => 'Verify your email';
+
+  @override
+  String authVerifySubtitle(String email) {
+    return 'Enter the code we sent to $email. Check your spam or junk folder if you don\'t see it.';
+  }
+
+  @override
+  String get authVerifyCode => 'Verification code';
+
+  @override
+  String get authVerifyAction => 'Verify & continue';
+
+  @override
+  String get authResendCode => 'Resend code';
+
+  @override
+  String get authCodeResent => 'A new code is on its way';
+
+  @override
+  String get authForgotTitle => 'Reset your password';
+
+  @override
+  String get authForgotSubtitle =>
+      'Enter your email and we\'ll send you a reset code';
+
+  @override
+  String get authSendCode => 'Send reset code';
+
+  @override
+  String get authNewPassword => 'New password';
+
+  @override
+  String get authResetAction => 'Reset password';
+
+  @override
+  String get authResetDone => 'Password updated. Please sign in.';
+
+  @override
+  String get authBackToSignIn => 'Back to sign in';
+
+  @override
+  String get authErrEmailRequired => 'Enter your email';
+
+  @override
+  String get authErrEmailInvalid => 'Enter a valid email address';
+
+  @override
+  String get authErrPasswordRequired => 'Enter your password';
+
+  @override
+  String get authErrPasswordShort => 'Use at least 6 characters';
+
+  @override
+  String get authErrPasswordsMismatch => 'Passwords don\'t match';
+
+  @override
+  String get authErrCodeRequired => 'Enter the verification code';
+
+  @override
+  String get authErrGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get homeWelcome => 'Welcome back';
+
+  @override
+  String get homeGreeting => 'How are you feeling today?';
+
+  @override
+  String get homeTagline => 'Take a quiet moment for yourself.';
+
+  @override
+  String get sectionQuickActions => 'Quick actions';
+
+  @override
+  String get homeTipTitle => 'A gentle reminder';
+
+  @override
+  String get homeTip1 =>
+      'Take three slow breaths before your next task — it helps settle the mind.';
+
+  @override
+  String get homeTip2 =>
+      'Naming a feeling makes it easier to hold. What are you feeling right now?';
+
+  @override
+  String get homeTip3 =>
+      'Small steps count. One kind act toward yourself today is enough.';
+
+  @override
+  String get homeTip4 =>
+      'Rest is productive too. Give yourself permission to pause.';
+
+  @override
+  String get proTipTitle => 'Today\'s focus';
+
+  @override
+  String get proTip1 =>
+      'Reply to pending requests early — a timely response reassures clients.';
+
+  @override
+  String get proTip2 =>
+      'A short check-in between sessions can help a client feel supported.';
+
+  @override
+  String get proTip3 =>
+      'Assign a follow-up self-check to track a client\'s progress over time.';
+
+  @override
+  String get sectionExplore => 'Explore';
+
+  @override
+  String get accountTitle => 'Account';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get navScalesDesc => 'A short, private check-in on how you\'re doing';
+
+  @override
+  String get navProfessionalsDesc => 'Find a counselor or psychologist';
+
+  @override
+  String get navAppointmentsDesc => 'View and manage your sessions';
+
+  @override
+  String get navContentDesc => 'Articles and videos for your wellbeing';
+
+  @override
+  String get navProfileDesc => 'Update your personal details';
+
+  @override
+  String get navBecomeProfessionalDesc => 'Offer care to others on QLife';
+
+  @override
+  String get navNotificationsDesc => 'Stay up to date';
 
   @override
   String get professionalTitle => 'Professional';
 
   @override
+  String get proDashTitle => 'Your practice';
+
+  @override
+  String get proDashGreeting => 'Welcome back';
+
+  @override
   String get proAppointmentRequests => 'Appointment requests';
 
   @override
+  String get proAppointmentRequestsDesc => 'Review and respond to new requests';
+
+  @override
   String get proMyClients => 'My clients';
+
+  @override
+  String get proMyClientsDesc => 'See the people in your care';
 
   @override
   String get actionCancel => 'Cancel';
@@ -99,7 +335,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not load client details. Please go back and try again.';
 
   @override
-  String get errLoadContent => 'Could not load content. Please try again.';
+  String get errLoadContent => 'Could not load resources. Please try again.';
 
   @override
   String get errLoadNotifications =>
@@ -110,14 +346,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not load professionals. Please try again.';
 
   @override
-  String get errLoadScales => 'Could not load scales. Please try again.';
+  String get errLoadScales => 'Could not load self-checks. Please try again.';
 
   @override
-  String get errLoadScalesRefresh => 'Could not load scales. Please refresh.';
+  String get errLoadScalesRefresh =>
+      'Could not load self-checks. Please refresh.';
 
   @override
   String get errLoadScaleDetail =>
-      'Could not load this scale. Please go back and try again.';
+      'Could not load this self-check. Please go back and try again.';
+
+  @override
+  String get errLoadUpazilas => 'Could not load upazilas. Please try again.';
+
+  @override
+  String get errLoadUnions => 'Could not load unions. Please try again.';
 
   @override
   String get errLoadProfile => 'Could not load profile. Please try again.';
@@ -129,16 +372,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emptyClients => 'No clients yet';
 
   @override
-  String get emptyContent => 'No content available yet';
+  String get emptyContent => 'No resources available yet';
 
   @override
   String get emptyProfessionals => 'No professionals available';
 
   @override
-  String get emptyScales => 'No scales available';
+  String get emptyProfessionalsHint =>
+      'If you just approved a professional, they may still need to finish onboarding, enable visibility, and turn on “Accepting clients”. Pull to refresh, or try again in a moment.';
 
   @override
-  String get emptyNotifications => 'You have no notifications';
+  String get emptyScales => 'No self-checks available yet';
+
+  @override
+  String get emptyNotifications => 'You\'re all caught up';
 
   @override
   String get appointmentTitle => 'Appointment';
@@ -210,16 +457,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Failed to request appointment. Please try again.';
 
   @override
-  String get contentTitle => 'Content';
+  String get contentTitle => 'Resources';
 
   @override
-  String get rateThisContent => 'Rate this content';
+  String get rateThisContent => 'Rate this resource';
 
   @override
   String get commentOptional => 'Comment (optional)';
 
   @override
   String get ratingSubmitFailed => 'Failed to submit rating. Please try again.';
+
+  @override
+  String get watchTrackingNote =>
+      'We\'ll mark this as watched once you reach the end.';
+
+  @override
+  String get watchCompleted => 'Watched — nicely done.';
 
   @override
   String ratedStars(int count) {
@@ -239,7 +493,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get clientTitle => 'Client';
 
   @override
-  String get assignMultipleScales => 'Assign multiple scales';
+  String get assignMultipleScales => 'Assign self-checks';
 
   @override
   String get assignSelected => 'Assign selected';
@@ -248,13 +502,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assigning => 'Assigning…';
 
   @override
-  String get assignedScales => 'Assigned scales';
+  String get assignedScales => 'Assigned self-checks';
 
   @override
-  String get selectAtLeastOneScale => 'Select at least one scale';
+  String get selectAtLeastOneScale => 'Select at least one self-check';
 
   @override
-  String get assignFailed => 'Failed to assign scales. Please try again.';
+  String get assignFailed => 'Couldn\'t assign self-checks. Please try again.';
+
+  @override
+  String get assignedTitle => 'Assigned to you';
+
+  @override
+  String get assignedSubtitle =>
+      'Self-checks your professional asked you to complete';
+
+  @override
+  String get assignedHomeDesc => 'Self-checks from your professional';
+
+  @override
+  String get assignedByProfessional => 'Assigned by your professional';
+
+  @override
+  String get assignedEmpty => 'Nothing assigned right now';
+
+  @override
+  String get errLoadAssigned =>
+      'Could not load assigned self-checks. Please try again.';
 
   @override
   String get notificationsTitle => 'Notifications';
@@ -269,7 +543,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statusRead => 'Read';
 
   @override
-  String get scalesTitle => 'Scales';
+  String get scalesTitle => 'Self-checks';
+
+  @override
+  String get assessmentIntro =>
+      'Take your time. There are no right or wrong answers — just answer honestly.';
+
+  @override
+  String get resultTitle => 'Your result';
+
+  @override
+  String get resultIntro =>
+      'This is a guide to reflect on, not a diagnosis. Consider sharing it with a professional.';
 
   @override
   String get resultLabel => 'Result';
@@ -291,6 +576,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get submissionFailed => 'Submission failed. Please try again.';
+
+  @override
+  String get followUpTitle => 'Your next step';
+
+  @override
+  String get followUpWatchResource => 'View the recommended resource';
+
+  @override
+  String get followUpExploreResources => 'Explore resources';
+
+  @override
+  String get followUpTalkToProfessional => 'Talk to a professional';
+
+  @override
+  String get followUpHelpCenter => 'Get support now';
+
+  @override
+  String get followUpReassurance =>
+      'This is a snapshot, not a diagnosis. Support is here whenever you need it.';
+
+  @override
+  String get helpCenterTitle => 'You\'re not alone';
+
+  @override
+  String get helpCenterSubtitle => 'Support is available';
+
+  @override
+  String get helpCenterBody =>
+      'If your feelings are becoming hard to manage, reaching out can help. You can talk to a mental health professional through QLife, or confide in someone you trust.';
+
+  @override
+  String get helpCenterUrgentTitle => 'If you\'re in immediate danger';
+
+  @override
+  String get helpCenterUrgentBody =>
+      'If you are thinking about harming yourself, please reach out right away — contact your local emergency services or someone you trust. You deserve support.';
+
+  @override
+  String get helpCenterFindProfessional => 'Find a professional';
+
+  @override
+  String get helpCenterExploreResources => 'Calming resources';
+
+  @override
+  String get helpCenterHotlinesTitle => 'Crisis helplines';
+
+  @override
+  String get helpCenterTollFree => 'Toll-free';
+
+  @override
+  String get helpCenterCallError =>
+      'Couldn\'t open the dialer. Please try again.';
 
   @override
   String get becomeProfessionalTitle => 'Become a professional';
@@ -372,7 +709,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completeProfileTitle => 'Complete profile';
 
   @override
+  String get completeProfileSubtitle =>
+      'This helps us tailor your experience. Your details stay private.';
+
+  @override
   String get fieldName => 'Name';
+
+  @override
+  String get fieldDateOfBirth => 'Date of birth';
 
   @override
   String get fieldAgeYears => 'Age (years)';
@@ -412,7 +756,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ageRange => 'Age must be 5–150';
 
   @override
-  String get proOnboardingTitle => 'Professional onboarding';
+  String get dobRequired => 'Date of birth required';
+
+  @override
+  String get dobRange => 'Age must be 5–150';
+
+  @override
+  String labelAgeYears(int years) {
+    return 'Age: $years years';
+  }
+
+  @override
+  String get proOnboardingTitle => 'Set up your profile';
+
+  @override
+  String get proOnboardingSubtitle =>
+      'Tell clients a little about your practice.';
 
   @override
   String get fieldWorkplaceOptional => 'Workplace (optional)';
@@ -421,22 +780,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldYearsOptional => 'Years of experience (optional)';
 
   @override
-  String get fieldBioOptional => 'Bio (optional)';
+  String get fieldBioOptional => 'About you (optional)';
 
   @override
   String get acceptingNewClients => 'Accepting new clients';
 
   @override
-  String get showInDirectory => 'Show in directory';
+  String get showInDirectory => 'Let clients find me';
 
   @override
   String get visibleAfterApproval => 'Visible only after admin approval';
 
   @override
-  String get finishOnboarding => 'Finish onboarding';
+  String get finishOnboarding => 'Finish setup';
 
   @override
-  String get onboardingCompleted => 'Onboarding completed';
+  String get onboardingCompleted => 'You\'re all set';
 
   @override
   String get onboardingSaveFailed => 'Failed to save. Please try again.';
@@ -448,4 +807,344 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nonNegativeInteger => 'Enter a non-negative integer';
+
+  @override
+  String get onboardingRequiredHint =>
+      'Complete the required fields (marked *) before finishing.';
+
+  @override
+  String get sectionCredentials => 'Credentials';
+
+  @override
+  String get sectionPractice => 'Your practice';
+
+  @override
+  String get sectionFees => 'Consultation fee';
+
+  @override
+  String get sectionLocation => 'Location';
+
+  @override
+  String get sectionSpecializations => 'Specializations';
+
+  @override
+  String get sectionAvailability => 'Weekly availability';
+
+  @override
+  String get sectionCaseload => 'Current caseload (optional)';
+
+  @override
+  String get sectionVisibility => 'Visibility';
+
+  @override
+  String get fieldBmdcOptional => 'BMDC registration no. (optional)';
+
+  @override
+  String get fieldGraduationBatchOptional => 'Graduation batch (optional)';
+
+  @override
+  String get fieldEducation => 'Education & qualifications *';
+
+  @override
+  String get fieldFeeAmount => 'Fee amount (BDT) *';
+
+  @override
+  String get fieldMaxWeeklyClients => 'Max clients per week (optional)';
+
+  @override
+  String get fieldAvgWeeklyClients => 'Average clients per week now (optional)';
+
+  @override
+  String get fieldOtherSpecialization =>
+      'Other specialization (please specify)';
+
+  @override
+  String get fieldCaseloadLocation => 'Location';
+
+  @override
+  String get fieldCaseloadCount => 'Clients';
+
+  @override
+  String get fieldWeekday => 'Day';
+
+  @override
+  String get fieldStartTime => 'From';
+
+  @override
+  String get fieldEndTime => 'To';
+
+  @override
+  String get addAvailabilityWindow => 'Add time slot';
+
+  @override
+  String get addCaseloadRow => 'Add location';
+
+  @override
+  String get specializationsRequiredHint => 'Select at least one *';
+
+  @override
+  String get feeRequired => 'Enter a valid consultation fee';
+
+  @override
+  String get educationRequired => 'Enter your education & qualifications';
+
+  @override
+  String get selectAtLeastOneSpecialization =>
+      'Select at least one specialization';
+
+  @override
+  String get addAtLeastOneAvailability =>
+      'Add at least one availability window';
+
+  @override
+  String get availabilityStartBeforeEnd =>
+      'Each slot\'s start time must be before its end time';
+
+  @override
+  String get otherSpecializationRequired =>
+      'Please specify your other specialization';
+
+  @override
+  String get weekdaySunday => 'Sunday';
+
+  @override
+  String get weekdayMonday => 'Monday';
+
+  @override
+  String get weekdayTuesday => 'Tuesday';
+
+  @override
+  String get weekdayWednesday => 'Wednesday';
+
+  @override
+  String get weekdayThursday => 'Thursday';
+
+  @override
+  String get weekdayFriday => 'Friday';
+
+  @override
+  String get weekdaySaturday => 'Saturday';
+
+  @override
+  String get consentTitle => 'Before you begin';
+
+  @override
+  String get consentSubtitle => 'How we handle your information';
+
+  @override
+  String get consentBody =>
+      'QLife helps you understand your mental wellbeing through validated self-checks and connects you with qualified professionals. Your responses are private and are used only to give you relevant guidance and, when you choose, to share with a professional you connect with. The self-checks are for screening and support — they are not a medical diagnosis. By continuing you agree to our handling of your information for these purposes.';
+
+  @override
+  String get consentAgree => 'I understand and agree';
+
+  @override
+  String get consentMustAgree => 'Please accept to continue';
+
+  @override
+  String get consentSaveFailed =>
+      'Could not save your consent. Please try again.';
+
+  @override
+  String get fieldReferralSource => 'Referral source (optional)';
+
+  @override
+  String get fieldYearsRequired => 'Years of experience *';
+
+  @override
+  String get fieldPhoneRequired => 'Phone *';
+
+  @override
+  String get fieldMaxWeeklyClientsRequired => 'Max clients per week *';
+
+  @override
+  String get fieldAvgWeeklyClientsRequired => 'Average clients per week now *';
+
+  @override
+  String get requiredField => 'This field is required';
+
+  @override
+  String get addAtLeastOneCaseload =>
+      'Add at least one location with your current clients';
+
+  @override
+  String get caseloadRequiredHint => 'Add at least one location *';
+
+  @override
+  String get introTitle => 'Quick well-being check';
+
+  @override
+  String get introSubtitle => 'A short 5-question self-check';
+
+  @override
+  String get introBody =>
+      'Take a quick well-being self-check so we can tailor guidance and content to you. It takes about a minute, your answers stay private, and it is not a diagnosis. You can do it now or come back to it later.';
+
+  @override
+  String get introStart => 'Start the self-check';
+
+  @override
+  String get introLater => 'Maybe later';
+
+  @override
+  String get clientAssessmentsTitle => 'Client results';
+
+  @override
+  String get clientAssessmentsSubtitle =>
+      'Assigned & self-administered self-checks';
+
+  @override
+  String get viewClientResults => 'View results';
+
+  @override
+  String get noClientAssessments => 'No assessments yet';
+
+  @override
+  String get resultAnswersTitle => 'Responses';
+
+  @override
+  String get resultNotCompleted => 'Not completed yet';
+
+  @override
+  String get sourceSelf => 'Self-administered';
+
+  @override
+  String get sourceAssigned => 'Assigned by you';
+
+  @override
+  String scoreOutOf100(Object value) {
+    return '$value out of 100';
+  }
+
+  @override
+  String get errLoadResult => 'Could not load this result. Please try again.';
+
+  @override
+  String get actionBack => 'Back';
+
+  @override
+  String get actionCancelAppointment => 'Cancel appointment';
+
+  @override
+  String get confirmCancelAppointment =>
+      'Are you sure you want to cancel this appointment?';
+
+  @override
+  String get actionMarkComplete => 'Mark completed';
+
+  @override
+  String get actionMarkNoShow => 'Mark no-show';
+
+  @override
+  String get historyTitle => 'Your history';
+
+  @override
+  String get historySubtitle => 'Your past results, newest first';
+
+  @override
+  String get noHistory => 'No past results yet';
+
+  @override
+  String get viewHistory => 'View history';
+
+  @override
+  String get searchByName => 'Search by name';
+
+  @override
+  String get allProfessions => 'All professions';
+
+  @override
+  String get labelFee => 'Fee';
+
+  @override
+  String get labelAvailability => 'Weekly availability';
+
+  @override
+  String get labelAbout => 'About';
+
+  @override
+  String get labelEducation => 'Education';
+
+  @override
+  String get noScheduleSet => 'No schedule shared yet';
+
+  @override
+  String get shareProfileWithPro => 'Share my profile';
+
+  @override
+  String get shareProfileHint =>
+      'Let this professional see your self-check results';
+
+  @override
+  String get actionRequestAppointment => 'Request appointment';
+
+  @override
+  String get notAcceptingClients => 'Not accepting new clients right now';
+
+  @override
+  String get navChangePassword => 'Change password';
+
+  @override
+  String get navChangePasswordDesc => 'Update your account password';
+
+  @override
+  String get fieldCurrentPassword => 'Current password';
+
+  @override
+  String get fieldNewPassword => 'New password';
+
+  @override
+  String get fieldConfirmPassword => 'Confirm new password';
+
+  @override
+  String get passwordMismatch => 'Passwords do not match';
+
+  @override
+  String get passwordTooShort => 'Use at least 8 characters';
+
+  @override
+  String get passwordChanged => 'Password changed';
+
+  @override
+  String get changePasswordFailed =>
+      'Could not change password. Check your current password.';
+
+  @override
+  String get deactivateAccount => 'Deactivate account';
+
+  @override
+  String get deactivateConfirm =>
+      'Deactivate your account? You can reactivate by signing in again.';
+
+  @override
+  String get deactivated => 'Your account has been deactivated';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteConfirm =>
+      'Permanently delete your account? Your identifying data is anonymized and this cannot be undone.';
+
+  @override
+  String get deleted => 'Your account has been deleted';
+
+  @override
+  String get accountActionFailed => 'Action failed. Please try again.';
+
+  @override
+  String homeUnreadNotifications(Object count) {
+    return '$count new notifications';
+  }
+
+  @override
+  String get introNudgeTitle => 'Take your quick well-being check';
+
+  @override
+  String get introNudgeDesc =>
+      'A 1-minute self-check to personalize your guidance';
+
+  @override
+  String get fieldAgreeTerms =>
+      'I agree to the Terms & Conditions and Privacy Policy';
 }

@@ -77,7 +77,7 @@ class ShellScaffold extends ConsumerWidget {
           tabs[i].branch,
           initialLocation: tabs[i].branch == navigationShell.currentIndex,
         ),
-        height: 80,
+        height: 84,
         destinations: [
           for (final t in tabs)
             NavigationDestination(

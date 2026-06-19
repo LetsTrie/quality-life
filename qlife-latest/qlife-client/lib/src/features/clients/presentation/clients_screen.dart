@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
+import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/client.dart';
 import '../../../shared/models/paged_result.dart';
+import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/app_components.dart';
 import '../../../shared/widgets/async_state_views.dart';
+import '../../../shared/widgets/gradient_header.dart';
+import '../../../shared/widgets/prefetch.dart';
 import '../data/clients_repository.dart';
 
 class ClientsScreen extends ConsumerWidget {
@@ -14,44 +18,87 @@ class ClientsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncClients = ref.watch(_clientsProvider);
+    final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Clients'),
-        actions: [
-          IconButton(
-            onPressed: () => ref.invalidate(_clientsProvider),
-            icon: const Icon(Icons.refresh),
+      body: Column(
+        children: [
+          GradientHeader(
+            title: l.clientsTitle,
+            subtitle: l.proMyClientsDesc,
+          ),
+          Expanded(
+            child: asyncClients.when(
+              loading: () => const LoadingView(),
+              error: (e, _) => ErrorView(
+                message: l.errLoadClients,
+                onRetry: () => ref.invalidate(_clientsProvider),
+              ),
+              data: (result) {
+                if (result.items.isEmpty) {
+                  return EmptyView(message: l.emptyClients);
+                }
+                return ListView.separated(
+                  padding: const EdgeInsets.all(AppSpacing.page),
+                  itemCount: result.items.length,
+                  separatorBuilder: (_, __) => const Gap(AppSpacing.md),
+                  itemBuilder: (context, idx) {
+                    final client = result.items[idx];
+                    final name = client.user.displayName ?? l.clientTitle;
+                    final refCode = client.referenceCode ?? '';
+                    return AppCard(
+                      onTap: () => prefetchThenPush<Client>(
+                        context,
+                        future:
+                            ref.read(clientsRepositoryProvider).get(client.id),
+                        location: ClientDetailRoute(id: client.id).location,
+                        errorMessage: l.errLoadClientDetail,
+                        useGo: true,
+                      ),
+                      child: Row(
+                        children: [
+                          InitialAvatar(name: name, size: 48),
+                          const Gap.horizontal(AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                if (refCode.isNotEmpty) ...[
+                                  const Gap(2),
+                                  Text(
+                                    refCode,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
         ],
-      ),
-      body: asyncClients.when(
-        loading: () => const LoadingView(),
-        error: (e, _) => const ErrorView(
-          message: 'Could not load clients. Please try again.',
-        ),
-        data: (result) {
-          if (result.items.isEmpty) {
-            return const EmptyView(
-              message: 'No clients yet',
-              icon: Icons.folder_shared_outlined,
-            );
-          }
-          return ListView.separated(
-            itemCount: result.items.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, idx) {
-              final client = result.items[idx];
-              final name = client.user.displayName ?? 'Client';
-              final refCode = client.referenceCode ?? '';
-              return ListTile(
-                title: Text(name),
-                subtitle: Text(refCode),
-                trailing: const Icon(Icons.assignment),
-                onTap: () => context.go(ClientDetailRoute(id: client.id).location),
-              );
-            },
-          );
-        },
       ),
     );
   }

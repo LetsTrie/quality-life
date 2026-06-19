@@ -1,6 +1,7 @@
 class AppNotification {
   final String id;
   final String type;
+  final String? title;
   final String? readAt;
   final String createdAt;
   final Map<String, dynamic>? appointment;
@@ -9,6 +10,7 @@ class AppNotification {
   const AppNotification({
     required this.id,
     required this.type,
+    this.title,
     this.readAt,
     required this.createdAt,
     this.appointment,
@@ -21,6 +23,7 @@ class AppNotification {
     return AppNotification(
       id: json['id'] as String,
       type: json['type'] as String? ?? '',
+      title: json['title'] as String?,
       readAt: json['readAt'] as String?,
       createdAt: json['createdAt'] as String? ?? '',
       appointment: json['appointment'] as Map<String, dynamic>?,
@@ -28,22 +31,18 @@ class AppNotification {
     );
   }
 
+  /// Prefers the server-supplied [title]; falls back to a client-side mapping
+  /// for notifications created before the server populated the title field.
   String get displayTitle {
-    switch (type) {
-      case 'APPOINTMENT_REQUESTED':
-        return 'New appointment request';
-      case 'APPOINTMENT_ACCEPTED':
-        return 'Appointment accepted';
-      case 'APPOINTMENT_DECLINED':
-        return 'Appointment declined';
-      case 'APPOINTMENT_RESCHEDULED':
-        return 'Appointment rescheduled';
-      case 'ASSESSMENT_ASSIGNED':
-        return 'New assessment assigned';
-      case 'ASSESSMENT_COMPLETED':
-        return 'Assessment completed';
-      default:
-        return type.replaceAll('_', ' ').toLowerCase();
-    }
+    if (title != null && title!.isNotEmpty) return title!;
+    return switch (type) {
+      'APPOINTMENT_REQUESTED' => 'New appointment request',
+      'APPOINTMENT_ACCEPTED' => 'Appointment accepted',
+      'APPOINTMENT_DECLINED' => 'Appointment declined',
+      'APPOINTMENT_RESCHEDULED' => 'Appointment rescheduled',
+      'ASSESSMENT_ASSIGNED' => 'New self-check assigned',
+      'ASSESSMENT_COMPLETED' => 'Self-check completed',
+      _ => type.replaceAll('_', ' ').toLowerCase(),
+    };
   }
 }

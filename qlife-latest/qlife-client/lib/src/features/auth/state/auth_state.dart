@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../account/data/account_repository.dart';
 import '../data/auth_repository.dart';
 import 'auth_controller.dart';
 
@@ -18,9 +17,10 @@ class AuthState {
 
 final authStateProvider =
     StateNotifierProvider<AuthController, AuthState>((ref) {
-  return AuthController(
-    ref.watch(authRepositoryProvider),
-    ref.watch(accountRepositoryProvider),
-  );
+  // The account repository is read lazily (via `ref`) inside the controller
+  // rather than watched here — that would create a provider cycle
+  // (authState → account → apiClient → authState) since the API client now
+  // signs out through authState on an unrecoverable 401.
+  return AuthController(ref.watch(authRepositoryProvider), ref);
 });
 

@@ -4,4 +4,9 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Dev-only: allow plain http:// so the app can reach a local backend
+         (e.g. http://<dev-machine-LAN-IP>:3000) during development. Android 9+
+         blocks cleartext by default. This lives in the DEBUG manifest only, so
+         release builds stay HTTPS-only. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>

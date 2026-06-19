@@ -37,5 +37,19 @@ class ProfessionalRepository {
     final res = await _dio.patch('/v1/professionals/me', data: patch);
     return res.data as Map<String, dynamic>;
   }
+
+  /// Reference vocabulary of clinical specializations for onboarding.
+  Future<List<Map<String, dynamic>>> listSpecializations() async {
+    final res = await _dio.get('/v1/specializations');
+    final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    return (data['specializations'] as List<dynamic>).cast<Map<String, dynamic>>();
+  }
+
+  /// Reference list of profession types for registration (served from server).
+  Future<List<Map<String, dynamic>>> listProfessionTypes() async {
+    final res = await _dio.get('/v1/professionals/profession-types');
+    final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    return (data['professionTypes'] as List<dynamic>).cast<Map<String, dynamic>>();
+  }
 }
 

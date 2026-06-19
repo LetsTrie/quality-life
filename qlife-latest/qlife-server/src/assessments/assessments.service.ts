@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -60,6 +60,8 @@ export class AssessmentsService {
             senderAccountId: args.professionalAccountId,
             type: 'ASSESSMENT_ASSIGNED',
             channel: 'IN_APP',
+            title: 'New self-check assigned',
+            body: 'Your professional has assigned you a self-check to complete.',
             assessmentId: assessment.id,
           },
         });
@@ -87,9 +89,14 @@ export class AssessmentsService {
     return created;
   }
 
-  async listForAccount(args: { accountId: string; role: 'USER' | 'PROFESSIONAL'; status?: string; page: number }) {
+  async listForAccount(args: { accountId: string; role: 'USER' | 'PROFESSIONAL'; status?: string; instrumentSlug?: string; page: number }) {
     const take = 10;
     const skip = Math.max(0, (args.page - 1) * take);
+
+    // Optional per-instrument filter powers the result-history / trend view.
+    const instrumentWhere = args.instrumentSlug
+      ? { instrumentVersion: { instrument: { slug: args.instrumentSlug } } }
+      : {};
 
     if (args.role === 'USER') {
       const userProfile = await this.prisma.userProfile.findUnique({ where: { accountId: args.accountId } });
@@ -97,6 +104,7 @@ export class AssessmentsService {
       const where = {
         subjectUserProfileId: userProfile.id,
         ...(args.status ? { status: args.status as any } : {}),
+        ...instrumentWhere,
       };
       const [total, assessments] = await Promise.all([
         this.prisma.assessment.count({ where }),
@@ -118,6 +126,7 @@ export class AssessmentsService {
     const where = {
       assignedByProfessionalId: professionalProfile.id,
       ...(args.status ? { status: args.status as any } : {}),
+      ...instrumentWhere,
     };
     const [total, assessments] = await Promise.all([
       this.prisma.assessment.count({ where }),
@@ -143,7 +152,22 @@ export class AssessmentsService {
           select: {
             id: true,
             versionNumber: true,
-            instrument: { select: { slug: true, name: true, category: true } },
+            instrument: { select: { slug: true, name: true, nameBn: true, category: true } },
+            // The blank question set so a user can complete an ASSIGNED
+            // assessment against the exact version that was assigned.
+            questions: {
+              orderBy: [{ position: 'asc' }],
+              select: {
+                id: true,
+                position: true,
+                prompt: true,
+                type: true,
+                options: {
+                  orderBy: [{ position: 'asc' }],
+                  select: { id: true, position: true, label: true, value: true },
+                },
+              },
+            },
           },
         },
         answers: {
@@ -167,10 +191,29 @@ export class AssessmentsService {
         where: { accountId: args.accountId },
         select: { id: true },
       });
-      if (!professional || assessment.assignedByProfessionalId !== professional.id) {
-        throw new NotFoundException('Assessment not found');
-      }
+      if (!professional) throw new NotFoundException('Assessment not found');
+      // A professional may read an assessment they assigned, OR any assessment
+      // of a client they have an ACTIVE care relationship with (so they can
+      // review the client's self-administered screens too).
+      const allowed =
+        assessment.assignedByProfessionalId === professional.id ||
+        (await this.prisma.careRelationship.count({
+          where: {
+            professionalProfileId: professional.id,
+            userProfileId: assessment.subjectUserProfileId,
+            status: 'ACTIVE',
+          },
+        })) > 0;
+      if (!allowed) throw new NotFoundException('Assessment not found');
     }
+
+    // Opening an assessment clears its related notification (legacy
+    // seenAssessmentNotification on open).
+    await this.prisma.notification.updateMany({
+      where: { assessmentId: assessment.id, recipientAccountId: args.accountId, readAt: null },
+      data: { readAt: new Date() },
+    });
+
     return assessment;
   }
 
@@ -178,7 +221,13 @@ export class AssessmentsService {
     accountId: string;
     instrumentSlug: string;
   }) {
-    const { version } = await this.instruments.getPublishedVersionBySlug(args.instrumentSlug);
+    const { instrument, version } = await this.instruments.getPublishedVersionBySlug(args.instrumentSlug);
+
+    // Clinical/assign-only scales cannot be self-started — a professional must
+    // assign them (the user completes them from their assigned worklist).
+    if (!instrument.isSelfAssessable) {
+      throw new ForbiddenException('This scale can only be assigned by a professional');
+    }
 
     const userProfile = await this.prisma.userProfile.findUnique({
       where: { accountId: args.accountId },
@@ -210,6 +259,7 @@ export class AssessmentsService {
             id: true,
             scoringMethod: true,
             normalizationMax: true,
+            instrument: { select: { category: true } },
             questions: {
               select: {
                 id: true,
@@ -279,8 +329,13 @@ export class AssessmentsService {
       normalizedScore = denom > 0 ? (rawScore / denom) * 100 : null;
     }
 
+    // Percent-normalized instruments (e.g. wellbeing-5) define their bands on the
+    // 0–100 scale, so the band must be selected against the normalized score, not
+    // the raw sum. All other methods band on the raw score.
+    const bandScore =
+      version.scoringMethod === 'NORMALIZED_PERCENT' && normalizedScore != null ? normalizedScore : rawScore;
     const band =
-      version.scoringBands.find((b) => rawScore >= Number(b.minScore) && rawScore <= Number(b.maxScore)) ??
+      version.scoringBands.find((b) => bandScore >= Number(b.minScore) && bandScore <= Number(b.maxScore)) ??
       null;
 
     const updated = await this.prisma.assessment.update({
@@ -296,9 +351,39 @@ export class AssessmentsService {
         completedAt: new Date(),
       },
       include: {
-        scoringBand: { select: { label: true, recommendedAction: true } },
+        scoringBand: {
+          select: {
+            label: true,
+            advice: true,
+            severityRank: true,
+            recommendedAction: true,
+            // Content to surface as a follow-up for this band (e.g. a coping
+            // video or reading) so the client can offer a real next step.
+            recommendedContent: {
+              select: {
+                contentKey: true,
+                type: true,
+                provider: true,
+                providerRef: true,
+                title: true,
+                thumbnailUrl: true,
+                durationSeconds: true,
+              },
+            },
+          },
+        },
       },
     });
+
+    // Record the intro well-being screening (legacy lastIntroTestDate) the
+    // first time the user completes a WELLBEING_INDEX self-check, so the
+    // onboarding prompt stops surfacing.
+    if (version.instrument.category === 'WELLBEING_INDEX') {
+      await this.prisma.userProfile.updateMany({
+        where: { id: assessment.subjectUserProfileId, introScreeningCompletedAt: null },
+        data: { introScreeningCompletedAt: new Date() },
+      });
+    }
 
     // Notify professional if it was assigned by one.
     if (assessment.assignedByProfessionalId) {
@@ -313,6 +398,8 @@ export class AssessmentsService {
             senderAccountId: args.accountId,
             type: 'ASSESSMENT_COMPLETED',
             channel: 'IN_APP',
+            title: 'Self-check completed',
+            body: 'A client has completed an assigned self-check.',
             assessmentId: assessment.id,
           },
         });
@@ -334,6 +421,8 @@ export class AssessmentsService {
       }
     }
 
+    const recommendedContent = updated.scoringBand?.recommendedContent ?? null;
+
     return {
       assessment: {
         id: updated.id,
@@ -343,6 +432,21 @@ export class AssessmentsService {
         normalizedScore: updated.normalizedScore,
         severityLabel: updated.severityLabel,
         recommendedAction: updated.scoringBand?.recommendedAction ?? 'SHOW_RESULT',
+        // Follow-up payload so the client can route the user to a real next
+        // step (coping content, help center, or a professional).
+        advice: updated.scoringBand?.advice ?? null,
+        severityRank: updated.scoringBand?.severityRank ?? null,
+        recommendedContent: recommendedContent
+          ? {
+              contentKey: recommendedContent.contentKey,
+              type: recommendedContent.type,
+              provider: recommendedContent.provider,
+              providerRef: recommendedContent.providerRef,
+              title: recommendedContent.title,
+              thumbnailUrl: recommendedContent.thumbnailUrl,
+              durationSeconds: recommendedContent.durationSeconds,
+            }
+          : null,
       },
     };
   }

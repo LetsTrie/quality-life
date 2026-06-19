@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { AccountsModule } from './accounts/accounts.module';
+import { AdminModule } from './admin/admin.module';
 import { AuthGuard } from './auth/auth.guard';
 import { AuthModule } from './auth/auth.module';
 import { RolesGuard } from './auth/roles.guard';
@@ -16,6 +18,8 @@ import { InstrumentsModule } from './instruments/instruments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SpecializationsModule } from './specializations/specializations.module';
+import { SupportModule } from './support/support.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -23,6 +27,9 @@ import { UsersModule } from './users/users.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    // Global rate limit: 120 requests per minute per IP.
+    // Tighten per-endpoint with @Throttle() where needed.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     PrismaModule,
     AccountsModule,
     AuthModule,
@@ -33,11 +40,15 @@ import { UsersModule } from './users/users.module';
     NotificationsModule,
     AppointmentsModule,
     ProfessionalsModule,
+    SpecializationsModule,
+    SupportModule,
     ContentModule,
     ClientsModule,
     UsersModule,
+    AdminModule,
   ],
   providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

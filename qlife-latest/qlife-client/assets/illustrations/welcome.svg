@@ -1,0 +1,35 @@
+<svg viewBox="0 0 320 220" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EAF4F1"/>
+      <stop offset="1" stop-color="#F6F8F7"/>
+    </linearGradient>
+    <linearGradient id="hill1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8FB4DE"/>
+      <stop offset="1" stop-color="#4F86C6"/>
+    </linearGradient>
+    <linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5FB3A4"/>
+      <stop offset="1" stop-color="#2A8C7D"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="220" rx="20" fill="url(#sky)"/>
+  <!-- gentle sun -->
+  <circle cx="232" cy="64" r="30" fill="#E9B949" opacity="0.85"/>
+  <circle cx="232" cy="64" r="44" fill="#E9B949" opacity="0.18"/>
+  <!-- soft hills -->
+  <path d="M0 168c46-30 92-30 150 0s124 18 170-6v58H0z" fill="url(#hill1)" opacity="0.55"/>
+  <path d="M0 186c54-26 104-22 160 2s116 8 160-16v48H0z" fill="url(#hill2)"/>
+  <!-- meditating figure -->
+  <g transform="translate(96 116)">
+    <ellipse cx="32" cy="74" rx="46" ry="10" fill="#1F6E62" opacity="0.18"/>
+    <path d="M2 70c0-12 14-20 30-20s30 8 30 20z" fill="#2A8C7D"/>
+    <path d="M-2 70c8-6 18-2 22 6M66 70c-8-6-18-2-22 6" stroke="#1F6E62" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <circle cx="32" cy="34" r="16" fill="#5FB3A4"/>
+    <circle cx="32" cy="20" r="4" fill="#E9B949"/>
+  </g>
+  <!-- floating calm dots -->
+  <circle cx="60" cy="54" r="5" fill="#8C7BB8" opacity="0.6"/>
+  <circle cx="86" cy="34" r="3" fill="#4F86C6" opacity="0.6"/>
+  <circle cx="270" cy="120" r="4" fill="#5FB3A4" opacity="0.7"/>
+</svg>

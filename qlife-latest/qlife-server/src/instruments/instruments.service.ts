@@ -2,19 +2,33 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 
+const CATEGORY_LABELS: Record<string, { en: string; bn: string }> = {
+  WELLBEING_INDEX: { en: 'Wellbeing index', bn: 'প্রশান্তি সূচক' },
+  PRIMARY_SCREENING: { en: 'Primary screening', bn: 'প্রাথমিক যাচাই' },
+  CLINICAL_ASSESSMENT: { en: 'Clinical assessment', bn: 'ক্লিনিক্যাল যাচাই' },
+  RISK_PROFILE: { en: 'Risk profile', bn: 'ঝুঁকি প্রোফাইল' },
+};
+
 @Injectable()
 export class InstrumentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list() {
+  async list(opts?: { selfAssessableOnly?: boolean }) {
     const instruments = await this.prisma.instrument.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        // Users only see scales they can take themselves; professionals/admins
+        // see all (so they can assign the clinical, assign-only ones).
+        ...(opts?.selfAssessableOnly ? { isSelfAssessable: true } : {}),
+      },
       orderBy: [{ category: 'asc' }, { name: 'asc' }],
       select: {
         id: true,
         slug: true,
         name: true,
+        nameBn: true,
         category: true,
+        isSelfAssessable: true,
         versions: {
           where: { status: 'PUBLISHED' },
           orderBy: [{ versionNumber: 'desc' }],
@@ -28,7 +42,11 @@ export class InstrumentsService {
       id: i.id,
       slug: i.slug,
       name: i.name,
+      nameBn: i.nameBn ?? null,
       category: i.category,
+      categoryLabelEn: CATEGORY_LABELS[i.category]?.en ?? i.category,
+      categoryLabelBn: CATEGORY_LABELS[i.category]?.bn ?? i.category,
+      isSelfAssessable: i.isSelfAssessable,
       latestVersion: i.versions[0] ?? null,
     }));
   }
@@ -40,7 +58,9 @@ export class InstrumentsService {
         id: true,
         slug: true,
         name: true,
+        nameBn: true,
         category: true,
+        isSelfAssessable: true,
         versions: {
           where: { status: 'PUBLISHED' },
           orderBy: [{ versionNumber: 'desc' }],
@@ -78,7 +98,11 @@ export class InstrumentsService {
         id: instrument.id,
         slug: instrument.slug,
         name: instrument.name,
+        nameBn: instrument.nameBn ?? null,
         category: instrument.category,
+        categoryLabelEn: CATEGORY_LABELS[instrument.category]?.en ?? instrument.category,
+        categoryLabelBn: CATEGORY_LABELS[instrument.category]?.bn ?? instrument.category,
+        isSelfAssessable: instrument.isSelfAssessable,
       },
       version: {
         id: version.id,

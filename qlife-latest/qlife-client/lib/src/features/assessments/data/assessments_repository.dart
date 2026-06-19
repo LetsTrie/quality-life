@@ -45,10 +45,11 @@ class AssessmentsRepository {
         .toList();
   }
 
-  Future<PagedResult<AssessmentSummary>> list({String? status, int page = 1}) async {
+  Future<PagedResult<AssessmentSummary>> list({String? status, String? instrumentSlug, int page = 1}) async {
     final res = await _dio.get('/v1/assessments', queryParameters: {
       'page': page,
       if (status != null) 'status': status,
+      if (instrumentSlug != null) 'instrumentSlug': instrumentSlug,
     });
     final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
     final items = (data['assessments'] as List<dynamic>)
@@ -62,5 +63,13 @@ class AssessmentsRepository {
     final res = await _dio.get('/v1/assessments/$id');
     final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
     return data;
+  }
+
+  /// Load an assigned assessment's blank question set so the user can complete it.
+  Future<AssessmentTakeDetail> getForTaking(String id) async {
+    final data = await getById(id);
+    return AssessmentTakeDetail.fromAssessmentJson(
+      data['assessment'] as Map<String, dynamic>,
+    );
   }
 }

@@ -5,8 +5,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import jwt from 'jsonwebtoken';
 
 import { AccountsService } from '../accounts/accounts.service';
+import { AdminTokenService } from './admin-token.service';
 import { CognitoJwtService } from './cognito-jwt.service';
 import { IS_PUBLIC_KEY } from './public.decorator';
 
@@ -15,6 +17,7 @@ export class AuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly cognitoJwt: CognitoJwtService,
+    private readonly adminToken: AdminTokenService,
     private readonly accounts: AccountsService,
   ) {}
 
@@ -33,6 +36,21 @@ export class AuthGuard implements CanActivate {
 
     const token = authHeader.slice('Bearer '.length).trim();
     if (!token) throw new UnauthorizedException('Missing bearer token');
+
+    // Self-issued admin tokens are HS256; Cognito tokens are RS256. Branch on
+    // the alg header so the hardcoded admin session bypasses Cognito entirely.
+    const header = jwt.decode(token, { complete: true }) as
+      | { header?: { alg?: string } }
+      | null;
+    if (header?.header?.alg === 'HS256') {
+      const admin = this.adminToken.verify(token);
+      if (!admin) throw new UnauthorizedException('Invalid token');
+      (req as any).auth = {
+        cognito: null,
+        account: { id: admin.accountId, role: 'ADMIN', status: 'ACTIVE' },
+      };
+      return true;
+    }
 
     const claims = await this.cognitoJwt.verifyBearerToken(token);
 

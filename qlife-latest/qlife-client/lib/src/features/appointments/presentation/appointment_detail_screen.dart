@@ -1,32 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/appointment.dart';
 import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/app_components.dart';
 import '../../../shared/widgets/async_state_views.dart';
+import '../../../shared/widgets/gradient_header.dart';
 import '../data/appointments_repository.dart';
+
+/// Strips a trailing "label: {value}" colon so a templated l10n string can be
+/// reused as a standalone field label (works for both English ":" and the
+/// Bangla full-width variant).
+String _label(String templated) =>
+    templated.replaceAll(RegExp(r'[:：]\s*$'), '').trim();
 
 class AppointmentDetailScreen extends ConsumerStatefulWidget {
   final String appointmentId;
-  const AppointmentDetailScreen({super.key, required this.appointmentId});
+  // Prefetched detail passed via the load-then-navigate flow (null for deep links).
+  final AppointmentDetail? initial;
+  const AppointmentDetailScreen(
+      {super.key, required this.appointmentId, this.initial});
 
   @override
-  ConsumerState<AppointmentDetailScreen> createState() => _AppointmentDetailScreenState();
+  ConsumerState<AppointmentDetailScreen> createState() =>
+      _AppointmentDetailScreenState();
 }
 
-class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScreen> {
+class _AppointmentDetailScreenState
+    extends ConsumerState<AppointmentDetailScreen> {
   bool _acting = false;
-  AppointmentDetail? _mutated; // holds locally mutated state after action
+  AppointmentDetail? _mutated;
 
   Future<void> _markSeen() async {
     setState(() => _acting = true);
     try {
-      final a = await ref.read(appointmentsRepositoryProvider).markSeen(widget.appointmentId);
+      final a = await ref
+          .read(appointmentsRepositoryProvider)
+          .markSeen(widget.appointmentId);
       if (mounted) setState(() => _mutated = a);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to mark as seen. Please try again.')),
+        SnackBar(content: Text(context.l10n.apptMarkSeenFailed)),
       );
     } finally {
       if (mounted) setState(() => _acting = false);
@@ -40,7 +56,6 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
     final link = TextEditingController();
 
     try {
-      // For non-decline actions, show date+time picker first
       if (action != 'DECLINED') {
         pickedDate = await showDatePicker(
           context: context,
@@ -57,44 +72,58 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
         if (pickedTime == null || !mounted) return;
       }
 
+      final l = context.l10n;
+      final dialogTitle = action == 'DECLINED'
+          ? l.actionDecline
+          : action == 'ACCEPTED'
+              ? l.actionAccept
+              : l.actionProposeReschedule;
+
       final ok = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(action == 'DECLINED'
-              ? 'Decline'
-              : action == 'ACCEPTED'
-                  ? 'Accept'
-                  : 'Propose reschedule'),
+          title: Text(dialogTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (pickedDate != null && pickedTime != null)
                 Text(
-                  'Scheduled: ${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')} '
-                  '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')} UTC',
+                  context.l10n.fieldScheduled(
+                      '${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')} ${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')} UTC'),
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               if (pickedDate != null) const Gap(AppSpacing.md),
               TextField(
                 controller: link,
-                decoration: const InputDecoration(labelText: 'Meeting link / address (optional)'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.fieldMeetingLinkInput,
+                ),
               ),
               const Gap(AppSpacing.sm),
               TextField(
                 controller: message,
-                decoration: const InputDecoration(labelText: 'Message (optional)'),
+                decoration: InputDecoration(
+                  labelText: context.l10n.fieldMessageOptional,
+                ),
                 minLines: 2,
                 maxLines: 4,
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Submit')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(context.l10n.actionCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(context.l10n.actionSubmit),
+            ),
           ],
         ),
       );
       if (ok != true) return;
+      if (!mounted) return;
 
       String? scheduledIso;
       if (pickedDate != null && pickedTime != null) {
@@ -113,14 +142,15 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
             appointmentId: widget.appointmentId,
             action: action,
             scheduledStartAtIso: scheduledIso,
-            professionalMessage: message.text.trim().isEmpty ? null : message.text.trim(),
+            professionalMessage:
+                message.text.trim().isEmpty ? null : message.text.trim(),
             meetingLink: link.text.trim().isEmpty ? null : link.text.trim(),
           );
       if (mounted) setState(() => _mutated = a);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Action failed. Please try again.')),
+        SnackBar(content: Text(context.l10n.apptActionFailed)),
       );
     } finally {
       message.dispose();
@@ -129,21 +159,89 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
     }
   }
 
+  static const _activeStatuses = {
+    'REQUESTED',
+    'VIEWED',
+    'ACCEPTED',
+    'RESCHEDULE_PROPOSED',
+  };
+
+  Future<void> _runAction(Future<AppointmentDetail> Function() op) async {
+    setState(() => _acting = true);
+    try {
+      final a = await op();
+      if (mounted) setState(() => _mutated = a);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.apptActionFailed)),
+      );
+    } finally {
+      if (mounted) setState(() => _acting = false);
+    }
+  }
+
+  Future<void> _cancel() async {
+    final l = context.l10n;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l.actionCancelAppointment),
+        content: Text(l.confirmCancelAppointment),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l.actionBack),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l.actionCancelAppointment),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await _runAction(() =>
+        ref.read(appointmentsRepositoryProvider).cancel(widget.appointmentId));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final asyncAppointment = ref.watch(_appointmentDetailProvider(widget.appointmentId));
+    // Prefer a local mutation, then the prefetched seed — only fall back to the
+    // network when neither is available (deep links).
+    final seed = _mutated ?? widget.initial;
+    if (seed != null) return _buildDetail(context, seed);
 
-    // If we have a locally mutated version (after action), show it directly
-    if (_mutated != null) {
-      return _buildDetail(context, _mutated!);
-    }
-
+    final asyncAppointment =
+        ref.watch(_appointmentDetailProvider(widget.appointmentId));
     return asyncAppointment.when(
-      loading: () => const Scaffold(body: LoadingView()),
+      loading: () => Scaffold(
+        body: Column(
+          children: [
+            GradientHeader(
+                title: context.l10n.appointmentTitle,
+                showBack: true,
+                compact: true),
+            const Expanded(child: LoadingView()),
+          ],
+        ),
+      ),
       error: (e, _) => Scaffold(
-        appBar: AppBar(title: const Text('Appointment')),
-        body: const ErrorView(
-          message: 'Could not load appointment details. Please go back and try again.',
+        body: Column(
+          children: [
+            GradientHeader(
+              title: context.l10n.appointmentTitle,
+              showBack: true,
+              compact: true,
+            ),
+            Expanded(
+              child: ErrorView(
+                message: context.l10n.errLoadAppointmentDetail,
+                onRetry: () => ref.invalidate(
+                    _appointmentDetailProvider(widget.appointmentId)),
+              ),
+            ),
+          ],
         ),
       ),
       data: (appointment) => _buildDetail(context, appointment),
@@ -151,62 +249,135 @@ class _AppointmentDetailScreenState extends ConsumerState<AppointmentDetailScree
   }
 
   Widget _buildDetail(BuildContext context, AppointmentDetail a) {
+    final l = context.l10n;
+    final dash = l.valueDash;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(a.counterpartName),
-        actions: [
-          IconButton(
-            onPressed: _acting
-                ? null
-                : () {
-                    setState(() => _mutated = null);
-                    ref.invalidate(_appointmentDetailProvider(widget.appointmentId));
-                  },
-            icon: const Icon(Icons.refresh),
+      body: Column(
+        children: [
+          GradientHeader(
+            title: a.counterpartName.isNotEmpty
+                ? a.counterpartName
+                : l.appointmentTitle,
+            showBack: true,
+            compact: true,
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.page),
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: StatusBadge(
+                    humanizeStatus(a.status),
+                    color: statusTone(context, a.status),
+                  ),
+                ),
+                const Gap(AppSpacing.md),
+                AppCard(
+                  child: Column(
+                    children: [
+                      InfoRow(
+                        icon: Icons.schedule_rounded,
+                        label: _label(l.fieldRequested('')),
+                        value: a.requestedStartAt ?? dash,
+                      ),
+                      InfoRow(
+                        icon: Icons.event_available_rounded,
+                        label: _label(l.fieldScheduled('')),
+                        value: a.scheduledStartAt ?? dash,
+                      ),
+                      InfoRow(
+                        icon: Icons.link_rounded,
+                        label: _label(l.fieldMeetingLinkValue('')),
+                        value: a.meetingLink ?? dash,
+                      ),
+                    ],
+                  ),
+                ),
+                const Gap(AppSpacing.md),
+                AppCard(
+                  child: Column(
+                    children: [
+                      InfoRow(
+                        icon: Icons.message_outlined,
+                        label: _label(l.fieldClientMessage('')),
+                        value: a.requestMessage ?? dash,
+                      ),
+                      InfoRow(
+                        icon: Icons.support_agent_rounded,
+                        label: _label(l.fieldProfessionalMessage('')),
+                        value: a.professionalMessage ?? dash,
+                      ),
+                    ],
+                  ),
+                ),
+                if (a.isProfessionalView) ...[
+                  const Gap(AppSpacing.xl),
+                  FilledButton.icon(
+                    onPressed: _acting ? null : () => _respond('ACCEPTED'),
+                    icon: const Icon(Icons.check_rounded),
+                    label: Text(l.actionAccept),
+                  ),
+                  const Gap(AppSpacing.md),
+                  OutlinedButton.icon(
+                    onPressed:
+                        _acting ? null : () => _respond('RESCHEDULE_PROPOSED'),
+                    icon: const Icon(Icons.edit_calendar_rounded),
+                    label: Text(l.actionProposeReschedule),
+                  ),
+                  const Gap(AppSpacing.md),
+                  OutlinedButton.icon(
+                    onPressed: _acting ? null : _markSeen,
+                    icon: const Icon(Icons.visibility_outlined),
+                    label: Text(l.actionMarkSeen),
+                  ),
+                  const Gap(AppSpacing.md),
+                  TextButton.icon(
+                    onPressed: _acting ? null : () => _respond('DECLINED'),
+                    icon: const Icon(Icons.close_rounded),
+                    label: Text(l.actionDecline),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+                if (a.isProfessionalView && a.status == 'ACCEPTED') ...[
+                  const Gap(AppSpacing.xl),
+                  FilledButton.icon(
+                    onPressed: _acting
+                        ? null
+                        : () => _runAction(() => ref
+                            .read(appointmentsRepositoryProvider)
+                            .complete(widget.appointmentId)),
+                    icon: const Icon(Icons.task_alt_rounded),
+                    label: Text(l.actionMarkComplete),
+                  ),
+                  const Gap(AppSpacing.md),
+                  OutlinedButton.icon(
+                    onPressed: _acting
+                        ? null
+                        : () => _runAction(() => ref
+                            .read(appointmentsRepositoryProvider)
+                            .noShow(widget.appointmentId)),
+                    icon: const Icon(Icons.person_off_outlined),
+                    label: Text(l.actionMarkNoShow),
+                  ),
+                ],
+                if (_activeStatuses.contains(a.status)) ...[
+                  const Gap(AppSpacing.md),
+                  TextButton.icon(
+                    onPressed: _acting ? null : _cancel,
+                    icon: const Icon(Icons.event_busy_outlined),
+                    label: Text(l.actionCancelAppointment),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.page),
-          child: ListView(
-            children: [
-              Text('Status: ${a.status}'),
-              const Gap(AppSpacing.sm),
-              Text('Requested: ${a.requestedStartAt ?? '—'}'),
-              const Gap(AppSpacing.sm),
-              Text('Scheduled: ${a.scheduledStartAt ?? '—'}'),
-              const Gap(AppSpacing.sm),
-              Text('Meeting link: ${a.meetingLink ?? '—'}'),
-              const Gap(AppSpacing.sm),
-              Text('Client message: ${a.requestMessage ?? '—'}'),
-              const Gap(AppSpacing.sm),
-              Text('Professional message: ${a.professionalMessage ?? '—'}'),
-              const Gap(AppSpacing.lg),
-              if (a.isProfessionalView) ...[
-                FilledButton(
-                  onPressed: _acting ? null : _markSeen,
-                  child: const Text('Mark seen'),
-                ),
-                const Gap(AppSpacing.md),
-                FilledButton(
-                  onPressed: _acting ? null : () => _respond('ACCEPTED'),
-                  child: const Text('Accept'),
-                ),
-                const Gap(AppSpacing.md),
-                FilledButton(
-                  onPressed: _acting ? null : () => _respond('RESCHEDULE_PROPOSED'),
-                  child: const Text('Propose reschedule'),
-                ),
-                const Gap(AppSpacing.md),
-                OutlinedButton(
-                  onPressed: _acting ? null : () => _respond('DECLINED'),
-                  child: const Text('Decline'),
-                ),
-              ],
-            ],
-          ),
-        ),
       ),
     );
   }

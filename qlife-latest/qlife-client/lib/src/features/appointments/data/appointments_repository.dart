@@ -68,4 +68,27 @@ class AppointmentsRepository {
     final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
     return AppointmentDetail.fromJson(data['appointment'] as Map<String, dynamic>);
   }
+
+  /// Either party cancels the appointment.
+  Future<AppointmentDetail> cancel(String appointmentId, {String? reason}) async {
+    final res = await _dio.post('/v1/appointments/$appointmentId/cancel', data: {
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    });
+    final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    return AppointmentDetail.fromJson(data['appointment'] as Map<String, dynamic>);
+  }
+
+  /// Professional marks an accepted appointment as completed.
+  Future<AppointmentDetail> complete(String appointmentId) async {
+    final res = await _dio.post('/v1/appointments/$appointmentId/complete');
+    final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    return AppointmentDetail.fromJson(data['appointment'] as Map<String, dynamic>);
+  }
+
+  /// Professional marks an accepted appointment as a no-show.
+  Future<AppointmentDetail> noShow(String appointmentId) async {
+    final res = await _dio.post('/v1/appointments/$appointmentId/no-show');
+    final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    return AppointmentDetail.fromJson(data['appointment'] as Map<String, dynamic>);
+  }
 }

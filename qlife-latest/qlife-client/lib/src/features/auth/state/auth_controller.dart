@@ -6,9 +6,9 @@ import 'auth_state.dart';
 
 class AuthController extends StateNotifier<AuthState> {
   final AuthRepository _repo;
-  final AccountRepository _accountRepo;
+  final Ref _ref;
 
-  AuthController(this._repo, this._accountRepo) : super(const AuthState.initial());
+  AuthController(this._repo, this._ref) : super(const AuthState.initial());
 
   Future<void> initialize() async {
     final tokens = await _repo.loadTokens();
@@ -18,12 +18,12 @@ class AuthController extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> signIn() async {
-    final tokens = await _repo.signInInteractive();
+  Future<void> signInWithPassword(String email, String password) async {
+    final tokens = await _repo.signIn(email: email, password: password);
     await _repo.saveTokens(tokens);
     // Best-effort: hit backend so it can link/create local account from Cognito claims.
     try {
-      await _accountRepo.me();
+      await _ref.read(accountRepositoryProvider).me();
     } catch (_) {}
     state = const AuthState(isInitialized: true, isAuthenticated: true);
   }
@@ -33,4 +33,3 @@ class AuthController extends StateNotifier<AuthState> {
     state = const AuthState(isInitialized: true, isAuthenticated: false);
   }
 }
-

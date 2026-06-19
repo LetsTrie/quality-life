@@ -9,6 +9,12 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
 
 abstract class AccountRepository {
   Future<Map<String, dynamic>> me();
+
+  /// Recoverable self-deactivation.
+  Future<void> deactivate();
+
+  /// Soft-delete + anonymize the account.
+  Future<void> deleteAccount();
 }
 
 class HttpAccountRepository implements AccountRepository {
@@ -19,6 +25,16 @@ class HttpAccountRepository implements AccountRepository {
   Future<Map<String, dynamic>> me() async {
     final res = await _dio.get('/v1/me');
     return (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+  }
+
+  @override
+  Future<void> deactivate() async {
+    await _dio.post('/v1/me/deactivate');
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    await _dio.delete('/v1/me');
   }
 }
 

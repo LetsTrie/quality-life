@@ -2,10 +2,13 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 
 import { PrismaService } from '../prisma/prisma.service';
 
-function dobFromAgeYears(ageYears: number) {
-  const now = new Date();
-  const year = now.getUTCFullYear() - ageYears;
-  return new Date(Date.UTC(year, 0, 1));
+function ageFromDob(dob: Date, now = new Date()) {
+  let age = now.getUTCFullYear() - dob.getUTCFullYear();
+  const m = now.getUTCMonth() - dob.getUTCMonth();
+  if (m < 0 || (m === 0 && now.getUTCDate() < dob.getUTCDate())) {
+    age -= 1;
+  }
+  return age;
 }
 
 @Injectable()
@@ -25,10 +28,16 @@ export class UsersService {
     if (!profile) throw new NotFoundException('User profile not found');
 
     let dateOfBirth = undefined as Date | undefined;
-    if (dto.ageYears != null) {
-      const age = Number(dto.ageYears);
-      if (!Number.isFinite(age) || age < 5 || age > 150) throw new BadRequestException('Invalid ageYears');
-      dateOfBirth = dobFromAgeYears(age);
+    if (dto.dateOfBirth != null) {
+      const parsed = new Date(dto.dateOfBirth);
+      if (Number.isNaN(parsed.getTime())) {
+        throw new BadRequestException('Invalid dateOfBirth');
+      }
+      const age = ageFromDob(parsed);
+      if (!Number.isFinite(age) || age < 5 || age > 150) {
+        throw new BadRequestException('Invalid dateOfBirth');
+      }
+      dateOfBirth = parsed;
     }
 
     // Location normalization: allow sending unionId OR upazilaId OR districtId.
@@ -68,6 +77,10 @@ export class UsersService {
       districtId = d.id;
     }
 
+    // Onboarding guideline / privacy consent (legacy StartingGuideline). Once
+    // accepted we stamp it; it is never cleared back to null here.
+    const consentAcceptedAt = dto.consentAccepted === true && !profile.consentAcceptedAt ? new Date() : undefined;
+
     return this.prisma.userProfile.update({
       where: { id: profile.id },
       data: {
@@ -79,6 +92,7 @@ export class UsersService {
         districtId,
         upazilaId,
         unionId,
+        consentAcceptedAt,
       },
     });
   }
@@ -91,6 +105,14 @@ export class UsersService {
     districtId?: string | null;
   }) {
     return Boolean(profile.displayName && profile.dateOfBirth && profile.gender && profile.marital && profile.districtId);
+  }
+
+  hasAcceptedConsent(profile: { consentAcceptedAt?: Date | null }) {
+    return Boolean(profile.consentAcceptedAt);
+  }
+
+  hasCompletedIntroScreening(profile: { introScreeningCompletedAt?: Date | null }) {
+    return Boolean(profile.introScreeningCompletedAt);
   }
 }
 
