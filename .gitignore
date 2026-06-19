@@ -111,6 +111,9 @@ dist
 package-lock.json
 yarn.lock
 
+# Allow lockfile for Render builds (npm ci requires it)
+!qlife-latest/qlife-server/package-lock.json
+
 .expo
 
 *.pem
