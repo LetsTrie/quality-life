@@ -5,7 +5,9 @@ services:
     region: singapore
     plan: starter
     rootDir: qlife-latest/qlife-server
-    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy && npm run build
+    # `npm ci` requires package-lock.json to be committed. This repo git-ignores
+    # package-lock.json, so use `npm install` for Render builds.
+    buildCommand: npm install --include=dev && npx prisma generate && npx prisma migrate deploy && npm run build
     startCommand: npm run start
     healthCheckPath: /v1/health
     autoDeploy: true
