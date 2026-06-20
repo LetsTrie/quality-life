@@ -14,8 +14,11 @@ class AppointmentsRepository {
   final Dio _dio;
   AppointmentsRepository(this._dio);
 
-  Future<PagedResult<AppointmentSummary>> list({int page = 1}) async {
-    final res = await _dio.get('/v1/appointments', queryParameters: {'page': page});
+  Future<PagedResult<AppointmentSummary>> list({int page = 1, String? status}) async {
+    final res = await _dio.get('/v1/appointments', queryParameters: {
+      'page': page,
+      if (status != null && status.isNotEmpty) 'status': status,
+    });
     final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
     final items = (data['appointments'] as List<dynamic>)
         .map((e) => AppointmentSummary.fromJson(e as Map<String, dynamic>))

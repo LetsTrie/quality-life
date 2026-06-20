@@ -1,6 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/router.dart';
+import '../../../app/tab_refresh.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/professional.dart';
 import '../../../shared/theme/app_spacing.dart';
@@ -9,6 +13,22 @@ import '../../../shared/widgets/async_state_views.dart';
 import '../../../shared/widgets/gradient_header.dart';
 import '../../appointments/data/appointments_repository.dart';
 import '../data/professionals_repository.dart';
+
+/// Resolves whether the signed-in user already has an *active* appointment with
+/// this professional, so we never let them request a duplicate. Returns the
+/// existing appointment id, or null when they're free to request a new one.
+final _activeAppointmentProvider =
+    FutureProvider.family.autoDispose<String?, String>((ref, professionalId) async {
+  final res = await ref.read(appointmentsRepositoryProvider).list(page: 1);
+  for (final a in res.items) {
+    final isActive = a.status == 'REQUESTED' ||
+        a.status == 'VIEWED' ||
+        a.status == 'ACCEPTED' ||
+        a.status == 'RESCHEDULE_PROPOSED';
+    if (isActive && a.professional?['id'] == professionalId) return a.id;
+  }
+  return null;
+});
 
 String weekdayLabel(BuildContext context, String w) {
   final l = context.l10n;
@@ -150,17 +170,48 @@ class ProfessionalDetailScreen extends ConsumerWidget {
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.page),
-                  child: FilledButton.icon(
-                    onPressed: p.acceptingNewClients == false
-                        ? null
-                        : () => _showRequestSheet(context, ref, p),
-                    icon: const Icon(Icons.calendar_month_rounded),
-                    label: Text(l.actionRequestAppointment),
-                  ),
+                  child: _bookingButton(context, ref, p),
                 ),
               ),
             ],
           );
+  }
+
+  Widget _bookingButton(BuildContext context, WidgetRef ref, Professional p) {
+    final l = context.l10n;
+    final activeAppt = ref.watch(_activeAppointmentProvider(p.id)).valueOrNull;
+
+    // Already has an open/active appointment → can't request again; offer to
+    // view it instead.
+    if (activeAppt != null) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l.alreadyRequestedAppointment,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          const Gap(AppSpacing.sm),
+          OutlinedButton.icon(
+            onPressed: () => context.go(const AppointmentsRoute().location),
+            icon: const Icon(Icons.event_available_rounded),
+            label: Text(l.actionViewAppointment),
+          ),
+        ],
+      );
+    }
+
+    return FilledButton.icon(
+      onPressed: p.acceptingNewClients == false
+          ? null
+          : () => _showRequestSheet(context, ref, p),
+      icon: const Icon(Icons.calendar_month_rounded),
+      label: Text(l.actionRequestAppointment),
+    );
   }
 
   void _showRequestSheet(BuildContext context, WidgetRef ref, Professional p) {
@@ -171,12 +222,19 @@ class ProfessionalDetailScreen extends ConsumerWidget {
       builder: (ctx) => _AppointmentRequestSheet(
         professional: p,
         onRequest: (requestedAt, message, shareProfile) async {
-          await ref.read(appointmentsRepositoryProvider).request(
-                professionalProfileId: p.id,
-                requestedStartAt: requestedAt,
-                requestMessage: message,
-                profileShareGranted: shareProfile,
-              );
+          try {
+            await ref.read(appointmentsRepositoryProvider).request(
+                  professionalProfileId: p.id,
+                  requestedStartAt: requestedAt,
+                  requestMessage: message,
+                  profileShareGranted: shareProfile,
+                );
+          } finally {
+            // Whether it succeeded or hit the "already exists" guard, refresh so
+            // the booking button and appointment lists reflect reality.
+            ref.read(tabRefreshProvider.notifier).state++;
+            ref.invalidate(_activeAppointmentProvider(p.id));
+          }
         },
       ),
     );
@@ -250,7 +308,11 @@ class _AppointmentRequestSheetState extends State<_AppointmentRequestSheet> {
           .showSnackBar(SnackBar(content: Text(l.apptRequested)));
     } catch (e) {
       if (mounted) {
-        setState(() => _error = context.l10n.requestAppointmentFailed);
+        final isDuplicate =
+            e is DioException && e.response?.statusCode == 400;
+        setState(() => _error = isDuplicate
+            ? context.l10n.alreadyRequestedAppointment
+            : context.l10n.requestAppointmentFailed);
       }
     } finally {
       if (mounted) setState(() => _submitting = false);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/router.dart';
+import '../../../app/tab_refresh.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/appointment.dart';
 import '../../../shared/models/paged_result.dart';
@@ -132,5 +133,6 @@ class AppointmentsScreen extends ConsumerWidget {
 
 final _appointmentsProvider =
     FutureProvider<PagedResult<AppointmentSummary>>((ref) async {
+  ref.watch(tabRefreshProvider);
   return ref.read(appointmentsRepositoryProvider).list(page: 1);
 });

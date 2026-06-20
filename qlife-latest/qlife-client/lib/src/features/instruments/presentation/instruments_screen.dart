@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/router.dart';
+import '../../../app/tab_refresh.dart';
 import '../../../shared/widgets/prefetch.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/instrument.dart';
@@ -94,5 +95,6 @@ class InstrumentsScreen extends ConsumerWidget {
 
 final _instrumentsProvider =
     FutureProvider<List<InstrumentSummary>>((ref) async {
+  ref.watch(tabRefreshProvider);
   return ref.read(instrumentsRepositoryProvider).listInstruments();
 });

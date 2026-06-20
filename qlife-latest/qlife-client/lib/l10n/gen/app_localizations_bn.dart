@@ -356,6 +356,10 @@ class AppLocalizationsBn extends AppLocalizations {
       'এই যাচাইটি লোড করা যায়নি। ফিরে গিয়ে আবার চেষ্টা করুন।';
 
   @override
+  String get errLoadDistricts =>
+      'জেলার তালিকা লোড করা যায়নি। আবার চেষ্টা করুন।';
+
+  @override
   String get errLoadUpazilas =>
       'উপজেলার তালিকা লোড করা যায়নি। আবার চেষ্টা করুন।';
 
@@ -376,11 +380,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get emptyContent => 'এখনও কোনো কন্টেন্ট নেই';
 
   @override
-  String get emptyProfessionals => 'এই মুহূর্তে কোনো বিশেষজ্ঞ পাওয়া যাচ্ছে না';
-
-  @override
-  String get emptyProfessionalsHint =>
-      'আপনি যদি একজন বিশেষজ্ঞকে অনুমোদন করে থাকেন, তবে তিনি অনবোর্ডিং শেষ করা, দৃশ্যমানতা চালু করা এবং “ক্লায়েন্ট গ্রহণ” চালু করা বাকি থাকতে পারে। রিফ্রেশ করে দেখুন বা কিছুক্ষণ পর আবার চেষ্টা করুন।';
+  String get emptyProfessionals => 'এই মুহূর্তে দেখানোর মতো কোনো বিশেষজ্ঞ নেই';
 
   @override
   String get emptyScales => 'এখনও কোনো মানসিক যাচাই নেই';
@@ -532,6 +532,14 @@ class AppLocalizationsBn extends AppLocalizations {
       'নির্ধারিত যাচাই লোড করা যায়নি। আবার চেষ্টা করুন।';
 
   @override
+  String assignedPending(Object count) {
+    return '$countটি সম্পূর্ণ করা বাকি';
+  }
+
+  @override
+  String get actionNeeded => 'পদক্ষেপ প্রয়োজন';
+
+  @override
   String get notificationsTitle => 'বিজ্ঞপ্তি';
 
   @override
@@ -543,6 +551,24 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get statusRead => 'পঠিত';
+
+  @override
+  String get timeJustNow => 'এইমাত্র';
+
+  @override
+  String timeMinutesAgo(Object minutes) {
+    return '$minutes মিনিট আগে';
+  }
+
+  @override
+  String timeHoursAgo(Object hours) {
+    return '$hours ঘণ্টা আগে';
+  }
+
+  @override
+  String timeDaysAgo(Object days) {
+    return '$days দিন আগে';
+  }
 
   @override
   String get scalesTitle => 'মানসিক যাচাই';
@@ -788,7 +814,15 @@ class AppLocalizationsBn extends AppLocalizations {
   String get acceptingNewClients => 'নতুন ক্লায়েন্ট নিচ্ছি';
 
   @override
+  String get acceptingNewClientsDesc =>
+      'ক্লায়েন্টরা আপনাকে নতুন বুকিং অনুরোধ পাঠাতে পারবে। শিডিউল পূর্ণ থাকলে এটি বন্ধ রাখুন — আপনি ডিরেক্টরিতে থাকবেন তবে কেউ বুক করতে পারবে না।';
+
+  @override
   String get showInDirectory => 'ক্লায়েন্টরা আমাকে খুঁজে পাক';
+
+  @override
+  String get showInDirectoryDesc =>
+      'পাবলিক ডিরেক্টরিতে আপনার প্রোফাইল দেখান যাতে ক্লায়েন্টরা আপনাকে খুঁজে ও দেখতে পারে। অ্যাডমিন আপনার অ্যাকাউন্ট অনুমোদন করার পরেই আপনি দৃশ্যমান হবেন।';
 
   @override
   String get visibleAfterApproval => 'অ্যাডমিন অনুমোদনের পরেই দৃশ্যমান হবে';
@@ -803,12 +837,80 @@ class AppLocalizationsBn extends AppLocalizations {
   String get onboardingSaveFailed => 'সংরক্ষণ হয়নি। আবার চেষ্টা করুন।';
 
   @override
+  String saveFailedReason(Object reason) {
+    return 'সংরক্ষণ করা যায়নি: $reason';
+  }
+
+  @override
   String verificationStatus(Object status) {
     return 'যাচাই: $status';
   }
 
   @override
+  String get verificationPendingTitle => 'অ্যাকাউন্ট পর্যালোচনাধীন';
+
+  @override
+  String get verificationPendingNote =>
+      'আমাদের টিম আপনার প্রোফাইল পর্যালোচনা করছে। এখনও আপনি ক্লায়েন্টদের কাছে দৃশ্যমান হবেন না — অ্যাডমিন আপনার অ্যাকাউন্ট অনুমোদন করার পর আপনি ডিরেক্টরিতে তালিকাভুক্ত হবেন এবং ক্লায়েন্টরা আপনাকে খুঁজে ও বুক করতে পারবে।';
+
+  @override
+  String get verificationApprovedTitle => 'আপনি অনুমোদিত';
+
+  @override
+  String get verificationApprovedNote =>
+      'আপনার প্রোফাইল এখন সক্রিয়। ক্লায়েন্টরা ডিরেক্টরিতে আপনাকে খুঁজে পেয়ে সেশনের অনুরোধ পাঠাতে পারবে।';
+
+  @override
+  String get exitAppTitle => 'অ্যাপ বন্ধ করবেন?';
+
+  @override
+  String get exitAppMessage => 'আপনি কি নিশ্চিত QLife থেকে বের হতে চান?';
+
+  @override
+  String get actionExit => 'বের হন';
+
+  @override
+  String get proRejectedTitle => 'আবেদন পর্যালোচিত';
+
+  @override
+  String get proRejectedHeadline => 'QLife-এ আগ্রহের জন্য ধন্যবাদ';
+
+  @override
+  String get proRejectedBody =>
+      'পেশাদার হিসেবে QLife-এ যোগ দেওয়ার আপনার আবেদনটি যত্নসহকারে পর্যালোচনা করা হয়েছে। বিবেচনার পর, এই মুহূর্তে আমরা আপনার অ্যাকাউন্ট অনুমোদন করতে পারছি না। আপনার সময় ও প্রচেষ্টার জন্য আমরা আন্তরিকভাবে কৃতজ্ঞ।';
+
+  @override
+  String get proRejectedContact =>
+      'কোনো প্রশ্ন থাকলে বা এই সিদ্ধান্ত ভুল মনে হলে, অনুগ্রহ করে আমাদের সাপোর্ট টিমের সাথে যোগাযোগ করুন।';
+
+  @override
   String get nonNegativeInteger => 'শূন্য বা তার বেশি সংখ্যা লিখুন';
+
+  @override
+  String get yearsOutOfRange => 'বাস্তবসম্মত বছরের সংখ্যা লিখুন (০–৮০)';
+
+  @override
+  String get weeklyOutOfRange => 'বাস্তবসম্মত সংখ্যা লিখুন (০–৫০০)';
+
+  @override
+  String get avgExceedsMax =>
+      'সপ্তাহে গড় ক্লায়েন্ট সর্বোচ্চ সীমার বেশি হতে পারবে না';
+
+  @override
+  String get bmdcHint => 'আপনার BMDC সনদে যেভাবে আছে';
+
+  @override
+  String get fieldCountryCode => 'দেশ';
+
+  @override
+  String get phoneHintBd => 'যেমন ০১৭১২৩৪৫৬৭৮';
+
+  @override
+  String get phoneInvalidBd =>
+      'একটি সঠিক বাংলাদেশি মোবাইল নম্বর দিন (যেমন ০১৭১২৩৪৫৬৭৮)';
+
+  @override
+  String get phoneInvalid => 'একটি সঠিক ফোন নম্বর দিন';
 
   @override
   String get onboardingRequiredHint =>
@@ -1056,6 +1158,9 @@ class AppLocalizationsBn extends AppLocalizations {
   String get allProfessions => 'সব পেশা';
 
   @override
+  String get professionFilterLabel => 'পেশা';
+
+  @override
   String get labelFee => 'ফি';
 
   @override
@@ -1149,4 +1254,26 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get fieldAgreeTerms => 'আমি শর্তাবলী ও গোপনীয়তা নীতিতে সম্মত';
+
+  @override
+  String get fieldAgreeTermsPrefix => 'আমি সম্মত ';
+
+  @override
+  String get fieldAgreeTermsLink => 'শর্তাবলী ও গোপনীয়তা নীতিতে';
+
+  @override
+  String get serverUnavailable =>
+      'সার্ভার বর্তমানে অনুপলব্ধ। কিছুক্ষণ পরে আবার চেষ্টা করুন।';
+
+  @override
+  String get alreadyRequestedAppointment =>
+      'এই পেশাদারের সাথে আপনার ইতিমধ্যে একটি অ্যাপয়েন্টমেন্ট রয়েছে।';
+
+  @override
+  String get actionViewAppointment => 'অ্যাপয়েন্টমেন্ট দেখুন';
+
+  @override
+  String clientAssessmentCompletedOn(Object date) {
+    return 'সম্পন্ন $date';
+  }
 }

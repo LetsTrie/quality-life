@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/tab_refresh.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/assessment.dart';
 import '../../../shared/theme/app_colors.dart';
@@ -46,6 +47,9 @@ class _AssignedAssessmentScreenState
             assessmentId: widget.assessmentId,
             answers: answers,
           );
+      // Completing this assessment drops the home "Assigned to you" count and
+      // any unread badge — nudge everything watching the refresh signal.
+      ref.read(tabRefreshProvider.notifier).state++;
       if (mounted) setState(() => _result = result);
     } catch (_) {
       if (!mounted) return;

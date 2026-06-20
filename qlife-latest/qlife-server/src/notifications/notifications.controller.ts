@@ -1,6 +1,8 @@
-import { Controller, Get, Param, ParseIntPipe, Patch, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Put, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
 
+import { RegisterDeviceTokenDto } from './dto/register-device-token.dto';
+import { UnregisterDeviceTokenDto } from './dto/unregister-device-token.dto';
 import { NotificationsService } from './notifications.service';
 
 @Controller('/v1/notifications')
@@ -27,5 +29,16 @@ export class NotificationsController {
     await this.notifications.markSeen(id, recipientAccountId);
     return { data: {} };
   }
-}
 
+  @Put('/device-token')
+  async registerDeviceToken(@Req() req: Request, @Body() body: RegisterDeviceTokenDto) {
+    await this.notifications.upsertDeviceToken(req.auth!.account.id, body.token, body.platform);
+    return { data: {} };
+  }
+
+  @Delete('/device-token')
+  async unregisterDeviceToken(@Req() req: Request, @Body() body: UnregisterDeviceTokenDto) {
+    await this.notifications.removeDeviceToken(req.auth!.account.id, body.token);
+    return { data: {} };
+  }
+}

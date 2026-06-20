@@ -3,20 +3,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
+import '../../../app/tab_refresh.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_decorations.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/widgets/app_components.dart';
 import '../../../shared/widgets/app_illustration.dart';
-import '../../../shared/providers/tips_provider.dart';
-import '../../../shared/widgets/daily_tip_card.dart';
 import '../../../shared/widgets/gradient_header.dart';
+import '../../assessments/data/assessments_repository.dart';
 import '../../notifications/data/notifications_repository.dart';
 
 /// Unread notification count for the home banner.
 final _homeUnreadProvider = FutureProvider.autoDispose<int>((ref) async {
+  ref.watch(tabRefreshProvider);
   return ref.read(notificationsRepositoryProvider).unreadCount();
+});
+
+/// Count of assigned-but-incomplete self-checks, driving the home "Assigned to
+/// you" attention alert. Re-fetches whenever a realtime event bumps the signal.
+final _homeAssignedPendingProvider =
+    FutureProvider.autoDispose<int>((ref) async {
+  ref.watch(tabRefreshProvider);
+  final result =
+      await ref.read(assessmentsRepositoryProvider).list(status: 'ASSIGNED');
+  return result.pagination.total;
 });
 
 /// The home dashboard for people seeking care: a warm greeting, a prominent
@@ -83,28 +94,7 @@ class HomeScreen extends ConsumerWidget {
                   onTap: () => context.go(const InstrumentsRoute().location),
                 ),
                 const Gap(AppSpacing.md),
-                FeatureCard(
-                  icon: Icons.assignment_outlined,
-                  title: l.assignedTitle,
-                  subtitle: l.assignedHomeDesc,
-                  tint: AppColors.secondary,
-                  onTap: () =>
-                      context.push(const AssignedAssessmentsRoute().location),
-                ),
-                const Gap(AppSpacing.md),
-                Builder(builder: (context) {
-                  final isBn = Localizations.localeOf(context).languageCode == 'bn';
-                  final serverTips = ref.watch(tipsProvider('user'));
-                  final tips = serverTips.maybeWhen(
-                    data: (list) => list.map((t) => isBn ? t.bn : t.en).toList(),
-                    orElse: () => [l.homeTip1, l.homeTip2, l.homeTip3, l.homeTip4],
-                  );
-                  return DailyTipCard(
-                    title: l.homeTipTitle,
-                    icon: Icons.spa_outlined,
-                    tips: tips,
-                  );
-                }),
+                const _AssignedSection(),
                 SectionHeader(l.sectionExplore),
                 FeatureCard(
                   icon: Icons.psychology_outlined,
@@ -134,6 +124,147 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Assigned to you" entry point. When the user has assigned-but-incomplete
+/// self-checks it switches to a warning-toned, pulsing alert with a live count;
+/// otherwise it's a calm neutral card. Mirrors the unread-notifications pattern.
+class _AssignedSection extends ConsumerWidget {
+  const _AssignedSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final pending = ref.watch(_homeAssignedPendingProvider).valueOrNull ?? 0;
+    void open() => context.push(const AssignedAssessmentsRoute().location);
+
+    if (pending == 0) {
+      return FeatureCard(
+        icon: Icons.assignment_outlined,
+        title: l.assignedTitle,
+        subtitle: l.assignedHomeDesc,
+        tint: AppColors.secondary,
+        onTap: open,
+      );
+    }
+
+    final theme = Theme.of(context);
+    final warning = AppSemanticColors.of(context).warning;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: open,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: warning.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: warning.withValues(alpha: 0.55)),
+          ),
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            children: [
+              _PulsingCountBadge(count: pending, color: warning),
+              const Gap.horizontal(AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            l.assignedTitle,
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        const Gap.horizontal(AppSpacing.sm),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: warning,
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Text(
+                            l.actionNeeded,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(AppSpacing.xs),
+                    Text(
+                      l.assignedPending('$pending'),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A round count chip that gently pulses to draw the eye, used by the assigned
+/// alert. Caps the displayed value at "9+".
+class _PulsingCountBadge extends StatefulWidget {
+  const _PulsingCountBadge({required this.count, required this.color});
+
+  final int count;
+  final Color color;
+
+  @override
+  State<_PulsingCountBadge> createState() => _PulsingCountBadgeState();
+}
+
+class _PulsingCountBadgeState extends State<_PulsingCountBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
+
+  late final Animation<double> _scale = Tween<double>(begin: 1.0, end: 1.12)
+      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scale,
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+        child: Text(
+          widget.count > 9 ? '9+' : '${widget.count}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+          ),
+        ),
       ),
     );
   }

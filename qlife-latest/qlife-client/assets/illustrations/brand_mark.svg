@@ -12,10 +12,10 @@
     "breath" wave through its centre (calm, mindfulness). Deliberately not a
     flower/petal mark.
   -->
-  <path d="M32 55C16 42 10 31 10 22.5 10 15.5 15.4 10 22 10c4.4 0 8.2 2.4 10 6 1.8-3.6 5.6-6 10-6 6.6 0 12 5.5 12 12.5C64 31 48 42 32 55Z"
+  <path d="M32 55C16 42 10 31 10 22.5 10 15.5 15.4 10 22 10c4.4 0 8.2 2.4 10 6 1.8-3.6 5.6-6 10-6 6.6 0 12 5.5 12 12.5C54 31 48 42 32 55Z"
         fill="url(#bm)"/>
   <!-- calming breath wave across the heart -->
-  <path d="M15 31c4.5-5.5 9-5.5 12.5 0 3.2 5 7.8 5 11 0 2.6-4 6-4 8.5-1.4"
+  <path d="M14 32 C18 26 24 26 28 31 C32 36 38 36 42 30 C45 26.5 49 27 51 29.5"
         fill="none" stroke="#FFFFFF" stroke-width="3.4"
         stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>
 </svg>

@@ -23,7 +23,6 @@ class _ProfessionalRegisterScreenState
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _designationCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
 
   String? _professionType;
   String? _gender;
@@ -59,7 +58,6 @@ class _ProfessionalRegisterScreenState
   void dispose() {
     _nameCtrl.dispose();
     _designationCtrl.dispose();
-    _phoneCtrl.dispose();
     super.dispose();
   }
 
@@ -91,9 +89,6 @@ class _ProfessionalRegisterScreenState
             designation: _designationCtrl.text.trim().isEmpty
                 ? null
                 : _designationCtrl.text.trim(),
-            phone: _phoneCtrl.text.trim().isEmpty
-                ? null
-                : _phoneCtrl.text.trim(),
           );
 
       // The account is now PROFESSIONAL: clear the pending-pro intent and drop
@@ -182,12 +177,6 @@ class _ProfessionalRegisterScreenState
                   controller: _designationCtrl,
                   decoration:
                       InputDecoration(labelText: l.fieldDesignationOptional),
-                ),
-                const Gap(AppSpacing.md),
-                TextFormField(
-                  controller: _phoneCtrl,
-                  decoration:
-                      InputDecoration(labelText: l.fieldPhoneOptional),
                 ),
                   if (_error != null) ...[
                     const Gap(AppSpacing.lg),

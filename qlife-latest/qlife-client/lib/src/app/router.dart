@@ -36,6 +36,7 @@ import '../shared/models/assessment.dart';
 import '../features/professional/presentation/professional_home_screen.dart';
 import '../features/professional/presentation/professional_onboarding_screen.dart';
 import '../features/professional/presentation/professional_register_screen.dart';
+import '../features/professional/presentation/professional_rejected_screen.dart';
 import '../features/users/presentation/user_profile_completion_screen.dart';
 import '../features/account/presentation/account_screen.dart';
 import '../shared/api/api_client.dart';
@@ -48,12 +49,17 @@ class AppSession {
   final bool? hasCompletedIntroScreening;
   final bool? isProfessionalOnboardingComplete;
 
+  /// Latest professional verification status (PENDING/APPROVED/REJECTED/…).
+  /// Drives the rejected-professional gate.
+  final String? professionalVerificationStatus;
+
   const AppSession({
     required this.role,
     this.isUserProfileComplete,
     this.hasAcceptedConsent,
     this.hasCompletedIntroScreening,
     this.isProfessionalOnboardingComplete,
+    this.professionalVerificationStatus,
   });
 }
 
@@ -86,7 +92,16 @@ final appSessionProvider = FutureProvider<AppSession?>((ref) async {
     final data = (proRes.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
     final professional = data['professional'] as Map<String, dynamic>;
     final complete = (professional['isOnboardingComplete'] as bool?) ?? false;
-    return AppSession(role: role, isProfessionalOnboardingComplete: complete);
+    final verifications =
+        (professional['verifications'] as List<dynamic>?) ?? const [];
+    final verificationStatus = verifications.isEmpty
+        ? null
+        : (verifications.first as Map<String, dynamic>)['status']?.toString();
+    return AppSession(
+      role: role,
+      isProfessionalOnboardingComplete: complete,
+      professionalVerificationStatus: verificationStatus,
+    );
   }
 
   return AppSession(role: role);
@@ -130,8 +145,10 @@ class _RouterNotifier extends ChangeNotifier {
     // Authenticated but the session could not be resolved — e.g. expired/invalid
     // tokens or an unreachable backend. Land on sign-in so the user can
     // re-authenticate, and STAY there. Returning splash here instead would
-    // bounce splash ↔ sign-in forever (the redirect loop).
-    if (s == null) return isSignIn ? null : const SignInRoute().location;
+    // bounce splash ↔ sign-in forever (the redirect loop). Still allow the
+    // other unauthenticated auth screens (sign-up, forgot password, verify)
+    // so those links work from the sign-in page.
+    if (s == null) return isAuthRoute ? null : const SignInRoute().location;
 
     // True when the user chose the "professional" path on sign-in/up but their
     // account is still a plain USER — they go through registration first.
@@ -146,6 +163,9 @@ class _RouterNotifier extends ChangeNotifier {
         return const HomeRoute().location;
       }
       if (s.role == 'PROFESSIONAL') {
+        if (s.professionalVerificationStatus == 'REJECTED') {
+          return const ProfessionalRejectedRoute().location;
+        }
         return s.isProfessionalOnboardingComplete == false
             ? const ProfessionalOnboardingRoute().location
             : const ProfessionalDashboardRoute().location;
@@ -173,13 +193,21 @@ class _RouterNotifier extends ChangeNotifier {
     }
 
     if (s.role == 'PROFESSIONAL') {
+      // A rejected professional never reaches the dashboard — they're held on a
+      // dedicated, polite screen until they sign out.
+      if (s.professionalVerificationStatus == 'REJECTED') {
+        return loc == const ProfessionalRejectedRoute().location
+            ? null
+            : const ProfessionalRejectedRoute().location;
+      }
       if (s.isProfessionalOnboardingComplete == false &&
           loc != const ProfessionalOnboardingRoute().location) {
         return const ProfessionalOnboardingRoute().location;
       }
       if (loc == const HomeRoute().location ||
           loc == const ProfileRoute().location ||
-          loc == const ProfessionalsDirectoryRoute().location) {
+          loc == const ProfessionalsDirectoryRoute().location ||
+          loc == const ProfessionalRejectedRoute().location) {
         return const ProfessionalDashboardRoute().location;
       }
       return null;
@@ -272,6 +300,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: const ProfessionalOnboardingRoute().location,
         builder: (context, state) => const ProfessionalOnboardingScreen(),
+      ),
+      GoRoute(
+        path: const ProfessionalRejectedRoute().location,
+        builder: (context, state) => const ProfessionalRejectedScreen(),
       ),
       GoRoute(
         path: const NotificationsRoute().location,
@@ -397,6 +429,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
+/// Maps a notification (its [type] plus any linked entity) to the most useful
+/// destination. An *assigned* scale opens the take-flow so the user can complete
+/// it; a *completed* one opens its result; appointment notifications open the
+/// appointment. Shared by the in-app list and push taps so both behave alike.
+String notificationRouteLocation({
+  required String type,
+  String? appointmentId,
+  String? assessmentId,
+}) {
+  if (assessmentId != null && assessmentId.isNotEmpty) {
+    return type == 'ASSESSMENT_ASSIGNED'
+        ? AssignedAssessmentRoute(id: assessmentId).location
+        : AssessmentResultRoute(id: assessmentId).location;
+  }
+  if (appointmentId != null && appointmentId.isNotEmpty) {
+    return AppointmentDetailRoute(id: appointmentId).location;
+  }
+  return const NotificationsRoute().location;
+}
+
 class SplashRoute {
   const SplashRoute();
   String get location => '/';
@@ -459,6 +511,11 @@ class ProfessionalRegisterRoute {
 class ProfessionalOnboardingRoute {
   const ProfessionalOnboardingRoute();
   String get location => '/professional/onboarding';
+}
+
+class ProfessionalRejectedRoute {
+  const ProfessionalRejectedRoute();
+  String get location => '/professional/rejected';
 }
 
 class InstrumentsRoute {

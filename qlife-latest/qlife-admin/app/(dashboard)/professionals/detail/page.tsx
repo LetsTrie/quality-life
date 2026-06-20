@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   BadgeCheck,
   CalendarCheck,
+  Check,
   ChevronRight,
   ClipboardList,
   Mail,
   Phone,
   Users as UsersIcon,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,9 +21,20 @@ import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -50,26 +63,57 @@ export default function ProfessionalDetailPage() {
 
   const [data, setData] = useState<ProfessionalDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [acting, setActing] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!id) {
       setLoading(false);
       setData(null);
       return;
     }
-
-    (async () => {
-      try {
-        setLoading(true);
-        setData(await api<ProfessionalDetail>(`/v1/admin/professionals/${id}`));
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Failed to load");
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    })();
+    try {
+      setLoading(true);
+      setData(await api<ProfessionalDetail>(`/v1/admin/professionals/${id}`));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to load");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // The verification awaiting a decision, if any.
+  const pendingVerification = data?.verifications.find(
+    (v) => v.status === "PENDING",
+  );
+
+  async function review(
+    verificationId: string,
+    decision: "APPROVED" | "REJECTED",
+    decisionNote?: string,
+  ) {
+    setActing(true);
+    try {
+      await api(`/v1/professionals/verifications/${verificationId}/review`, {
+        method: "POST",
+        body: JSON.stringify({ decision, decisionNote }),
+      });
+      toast.success(
+        decision === "APPROVED" ? "Professional approved" : "Application rejected",
+      );
+      setRejectOpen(false);
+      await load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Action failed");
+    } finally {
+      setActing(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -123,10 +167,23 @@ export default function ProfessionalDetailPage() {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-lg font-bold tracking-tight text-white">{data.fullName}</h1>
-                <Badge variant="secondary">{humanize(data.professionType)}</Badge>
-                <StatusBadge status={data.accountStatus} />
-                {data.isVisible && <Badge variant="info">Listed</Badge>}
-                {data.acceptingNewClients && <Badge variant="success">Accepting clients</Badge>}
+                <Badge className="border-transparent bg-white/90 text-slate-900">
+                  {humanize(data.professionType)}
+                </Badge>
+                {/* Solid pills read clearly on the brand gradient — the
+                    translucent success/info variants were too faint here. */}
+                <StatusBadge
+                  status={data.accountStatus}
+                  className="border-transparent bg-white text-slate-900"
+                />
+                {data.isVisible && (
+                  <Badge className="border-transparent bg-white/90 text-slate-900">Listed</Badge>
+                )}
+                {data.acceptingNewClients && (
+                  <Badge className="border-transparent bg-amber-400 text-slate-900">
+                    Accepting clients
+                  </Badge>
+                )}
               </div>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-sm text-white/75">
                 <span className="inline-flex items-center gap-1.5">
@@ -250,10 +307,34 @@ export default function ProfessionalDetailPage() {
       {/* Verification history */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BadgeCheck className="h-4 w-4 text-primary" />
-            Verification history
-          </CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2">
+              <BadgeCheck className="h-4 w-4 text-primary" />
+              Verification history
+            </CardTitle>
+            {pendingVerification && (
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  disabled={acting}
+                  onClick={() => review(pendingVerification.id, "APPROVED")}
+                >
+                  <Check className="h-4 w-4" />
+                  Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-destructive hover:bg-destructive/10"
+                  disabled={acting}
+                  onClick={() => setRejectOpen(true)}
+                >
+                  <X className="h-4 w-4" />
+                  Reject
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {data.verifications.length === 0 ? (
@@ -339,7 +420,77 @@ export default function ProfessionalDetailPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <RejectDialog
+        open={rejectOpen}
+        name={data.fullName}
+        busy={acting}
+        onOpenChange={setRejectOpen}
+        onConfirm={(note) =>
+          pendingVerification && review(pendingVerification.id, "REJECTED", note)
+        }
+      />
     </>
+  );
+}
+
+function RejectDialog({
+  open,
+  name,
+  busy,
+  onOpenChange,
+  onConfirm,
+}: {
+  open: boolean;
+  name: string;
+  busy: boolean;
+  onOpenChange: (v: boolean) => void;
+  onConfirm: (note?: string) => void;
+}) {
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    if (open) setNote("");
+  }, [open]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <div className="mb-1 flex h-11 w-11 items-center justify-center rounded-xl bg-destructive/12 text-destructive">
+            <X className="h-5 w-5" />
+          </div>
+          <DialogTitle>Reject application?</DialogTitle>
+          <DialogDescription>
+            You&rsquo;re about to reject{" "}
+            <span className="font-medium text-foreground">{name}</span>
+            &rsquo;s verification. They will not be listed to users. This can be
+            revisited later.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-1.5">
+          <Label htmlFor="reject-note">Reason (optional)</Label>
+          <Textarea
+            id="reject-note"
+            placeholder="Add an internal note about why this was rejected…"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={busy}
+            onClick={() => onConfirm(note.trim() || undefined)}
+          >
+            {busy ? "Rejecting…" : "Reject application"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

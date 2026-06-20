@@ -49,8 +49,13 @@ final apiClientProvider = Provider<Dio>((ref) {
             }
           }
           // Refresh impossible (expired/revoked) → drop the session so the
-          // router sends the user back to sign-in.
-          await ref.read(authStateProvider.notifier).signOut();
+          // router sends the user back to sign-in. The token is already invalid,
+          // so skip the remote device-token DELETE (it would just 401-loop);
+          // teardown still invalidates the OS token and server-side pruning
+          // cleans the stale row.
+          await ref
+              .read(authStateProvider.notifier)
+              .signOut(deregisterRemote: false);
         }
 
         handler.next(error);

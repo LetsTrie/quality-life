@@ -7,6 +7,7 @@ import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/widgets/async_state_views.dart';
 import '../../../shared/widgets/gradient_header.dart';
+import '../../../shared/widgets/phone_field.dart';
 import '../../../shared/widgets/terms_conditions_dialog.dart';
 import '../../auth/state/auth_state.dart';
 import '../../geo/data/geo_repository.dart';
@@ -24,7 +25,7 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
 
   final _nameCtrl = TextEditingController();
   final _dobCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
+  final _phone = PhoneFieldController();
   DateTime? _dateOfBirth;
 
   String? _gender;
@@ -44,8 +45,10 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
   List<Map<String, dynamic>> _districts = const [];
   List<Map<String, dynamic>> _upazilas = const [];
   List<Map<String, dynamic>> _unions = const [];
+  bool _loadingDistricts = false;
   bool _loadingUpazilas = false;
   bool _loadingUnions = false;
+  String? _districtError;
   String? _upazilaError;
   String? _unionError;
 
@@ -61,7 +64,7 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
   void dispose() {
     _nameCtrl.dispose();
     _dobCtrl.dispose();
-    _phoneCtrl.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
@@ -120,7 +123,7 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
       _agreedToTerms = hasAcceptedConsent;
 
       _nameCtrl.text = (user['displayName']?.toString() ?? '').trim();
-      _phoneCtrl.text = (user['phone']?.toString() ?? '').trim();
+      _phone.seed(user['phone']?.toString());
 
       final dob = user['dateOfBirth']?.toString();
       if (dob != null) {
@@ -139,7 +142,16 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
       _upazilaId = user['upazilaId']?.toString();
       _unionId = user['unionId']?.toString();
 
-      _districts = await geo.listDistricts();
+      try {
+        setState(() => _loadingDistricts = true);
+        _districts = await geo.listDistricts();
+        _districtError = null;
+      } catch (_) {
+        _districtError = l.errLoadDistricts;
+      } finally {
+        _loadingDistricts = false;
+      }
+
       if (_districtId != null) {
         try {
           _upazilas = await geo.listUpazilas(_districtId!);
@@ -237,7 +249,7 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
         dateOfBirth: _dateOfBirth == null ? '' : _fmtDate(_dateOfBirth!),
         gender: _gender!,
         marital: _marital!,
-        phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+        phone: _phone.compose(),
         districtId: _districtId,
         upazilaId: _upazilaId,
         unionId: _unionId,
@@ -394,6 +406,10 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                     label: Text(l.fieldGender),
                     enabled: !_saving,
                     expandedInsets: EdgeInsets.zero,
+                    inputDecorationTheme: InputDecorationTheme(
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
                     onSelected: (v) => setState(() => _gender = v),
                     dropdownMenuEntries: [
                       DropdownMenuEntry(value: 'MALE', label: l.genderMale),
@@ -409,6 +425,10 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                     label: Text(l.fieldMaritalStatus),
                     enabled: !_saving,
                     expandedInsets: EdgeInsets.zero,
+                    inputDecorationTheme: InputDecorationTheme(
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
                     onSelected: (v) => setState(() => _marital = v),
                     dropdownMenuEntries: [
                       DropdownMenuEntry(value: 'SINGLE', label: l.maritalSingle),
@@ -425,12 +445,10 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                     ],
                   ),
                   const Gap(AppSpacing.md),
-                  TextFormField(
-                    controller: _phoneCtrl,
-                    decoration: InputDecoration(
-                      labelText: l.fieldPhoneOptional,
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                    ),
+                  PhoneField(
+                    controller: _phone,
+                    label: l.fieldPhoneOptional,
+                    enabled: !_saving,
                   ),
                   const Gap(AppSpacing.md),
                   DropdownMenu<String>(
@@ -438,6 +456,10 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                     label: Text(l.fieldDistrict),
                     enabled: !_saving,
                     expandedInsets: EdgeInsets.zero,
+                    inputDecorationTheme: InputDecorationTheme(
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
                     onSelected: (v) => _onDistrictChanged(v),
                     dropdownMenuEntries: _districts
                         .map((d) => DropdownMenuEntry(
@@ -446,6 +468,43 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                             ))
                         .toList(),
                   ),
+                  if (_loadingDistricts) ...[
+                    const Gap(AppSpacing.xs),
+                    const LinearProgressIndicator(minHeight: 2),
+                  ],
+                  if (_districtError != null) ...[
+                    const Gap(AppSpacing.xs),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _districtError!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _saving ? null : () async {
+                            final geo = ref.read(geoRepositoryProvider);
+                            setState(() {
+                              _loadingDistricts = true;
+                              _districtError = null;
+                            });
+                            try {
+                              final list = await geo.listDistricts();
+                              if (mounted) setState(() => _districts = list);
+                            } catch (_) {
+                              if (mounted) setState(() => _districtError = l.errLoadDistricts);
+                            } finally {
+                              if (mounted) setState(() => _loadingDistricts = false);
+                            }
+                          },
+                          child: Text(l.actionRetry),
+                        ),
+                      ],
+                    ),
+                  ],
                   const Gap(AppSpacing.md),
                   DropdownMenu<String>(
                     // DropdownMenu caches its entries; a key tied to the parent
@@ -455,6 +514,10 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                     label: Text(l.fieldUpazilaOptional),
                     enabled: !_saving && !_loadingUpazilas && _upazilas.isNotEmpty,
                     expandedInsets: EdgeInsets.zero,
+                    inputDecorationTheme: InputDecorationTheme(
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
                     onSelected: (v) => _onUpazilaChanged(v),
                     dropdownMenuEntries: _upazilas
                         .map((u) => DropdownMenuEntry(
@@ -493,6 +556,10 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                     label: Text(l.fieldUnionOptional),
                     enabled: !_saving && !_loadingUnions && _unions.isNotEmpty,
                     expandedInsets: EdgeInsets.zero,
+                    inputDecorationTheme: InputDecorationTheme(
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
                     onSelected: (v) => setState(() => _unionId = v),
                     dropdownMenuEntries: _unions
                         .map((u) => DropdownMenuEntry(
@@ -525,33 +592,17 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
                     ),
                   ],
                   const Gap(AppSpacing.lg),
-                  if (requiresConsent)
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      value: _agreedToTerms,
-                      onChanged: _saving
-                          ? null
-                          : (v) => setState(() => _agreedToTerms = v ?? false),
-                      title: InkWell(
-                        onTap: _saving
-                            ? null
-                            : () async {
-                                final accepted =
-                                    await TermsConditionsDialog.show(context);
-                                if (accepted && mounted) {
-                                  setState(() => _agreedToTerms = true);
-                                }
-                              },
-                        child: Text(
-                          l.fieldAgreeTerms,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                decoration: TextDecoration.underline,
-                              ),
-                        ),
-                      ),
-                    ),
+                  if (requiresConsent) _TermsCheckbox(
+                    agreed: _agreedToTerms,
+                    saving: _saving,
+                    onChanged: (v) => setState(() => _agreedToTerms = v),
+                    onReadTerms: () async {
+                      final accepted = await TermsConditionsDialog.show(context);
+                      if (accepted && mounted) {
+                        setState(() => _agreedToTerms = true);
+                      }
+                    },
+                  ),
                   if (_error != null) ...[
                     const Gap(AppSpacing.sm),
                     Text(_error!,
@@ -579,6 +630,87 @@ class _UserProfileCompletionScreenState extends ConsumerState<UserProfileComplet
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TermsCheckbox extends StatelessWidget {
+  final bool agreed;
+  final bool saving;
+  final ValueChanged<bool> onChanged;
+  final VoidCallback onReadTerms;
+
+  const _TermsCheckbox({
+    required this.agreed,
+    required this.saving,
+    required this.onChanged,
+    required this.onReadTerms,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final l = context.l10n;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: agreed
+            ? cs.primary.withValues(alpha: 0.06)
+            : cs.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: agreed ? cs.primary : cs.outlineVariant,
+          width: agreed ? 1.5 : 1.0,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: saving ? null : () => onChanged(!agreed),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Checkbox(
+                  value: agreed,
+                  onChanged: saving ? null : (v) => onChanged(v ?? false),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: saving ? null : onReadTerms,
+                    child: RichText(
+                      text: TextSpan(
+                        style: tt.bodyMedium?.copyWith(color: cs.onSurface),
+                        children: [
+                          TextSpan(text: l.fieldAgreeTermsPrefix),
+                          TextSpan(
+                            text: l.fieldAgreeTermsLink,
+                            style: tt.bodyMedium?.copyWith(
+                              color: cs.primary,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                              decorationColor: cs.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

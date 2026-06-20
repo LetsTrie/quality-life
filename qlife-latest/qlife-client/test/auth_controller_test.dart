@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qlife/src/features/auth/data/auth_repository.dart';
 import 'package:qlife/src/features/auth/data/auth_tokens.dart';
 import 'package:qlife/src/features/auth/state/auth_state.dart';
+import 'package:qlife/src/shared/push/push_notification_service.dart';
+import 'package:qlife/src/shared/realtime/realtime_service.dart';
 
 class FakeAuthRepo implements AuthRepository {
   AuthTokens? tokens;
@@ -55,9 +57,32 @@ class FakeAuthRepo implements AuthRepository {
   Future<void> deleteCognitoUser() async {}
 }
 
+// No-op session services so init/logout don't touch Firebase or open sockets.
+class _NoopPush extends PushNotificationService {
+  _NoopPush(super.ref);
+  @override
+  Future<void> initialize() async {}
+  @override
+  Future<void> syncToken() async {}
+  @override
+  Future<void> teardown({bool deregisterRemote = true}) async {}
+}
+
+class _NoopRealtime extends RealtimeService {
+  _NoopRealtime(super.ref);
+  @override
+  Future<void> connect() async {}
+  @override
+  Future<void> disconnect() async {}
+}
+
 ProviderContainer _container(FakeAuthRepo repo) {
   final container = ProviderContainer(
-    overrides: [authRepositoryProvider.overrideWithValue(repo)],
+    overrides: [
+      authRepositoryProvider.overrideWithValue(repo),
+      pushNotificationServiceProvider.overrideWith((ref) => _NoopPush(ref)),
+      realtimeServiceProvider.overrideWith((ref) => _NoopRealtime(ref)),
+    ],
   );
   addTearDown(container.dispose);
   return container;

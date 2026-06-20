@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "146936051759",
+    "project_id": "qlife-50bf4",
+    "storage_bucket": "qlife-50bf4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:146936051759:android:5e1c5fd53faa2a5419eeda",
+        "android_client_info": {
+          "package_name": "com.qlife.qlife"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxw2BlFpQ9-nMbr0rBd2SBBTeWVfx_d88"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

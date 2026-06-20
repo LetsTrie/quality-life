@@ -59,6 +59,39 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
     }
   }
 
+  Widget _instrumentTile(InstrumentSummary instrument) {
+    final slug = instrument.slug;
+    final checked = _selected.contains(slug);
+    return AppCard(
+      padding: EdgeInsets.zero,
+      onTap: _assigning
+          ? null
+          : () => setState(() {
+                if (checked) {
+                  _selected.remove(slug);
+                } else {
+                  _selected.add(slug);
+                }
+              }),
+      child: CheckboxListTile(
+        value: checked,
+        onChanged: _assigning
+            ? null
+            : (v) => setState(() {
+                  if (v == true) {
+                    _selected.add(slug);
+                  } else {
+                    _selected.remove(slug);
+                  }
+                }),
+        title: Text(instrument.name),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final seed = widget.initial;
@@ -75,18 +108,9 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
         children: [
           GradientHeader(
             title: name,
-            subtitle: l.assignMultipleScales,
+            subtitle: l.proMyClients,
             showBack: true,
             compact: true,
-            actions: [
-              IconButton(
-                tooltip: l.viewClientResults,
-                onPressed: () => context.push(
-                    ClientAssessmentsRoute(id: widget.careRelationshipId)
-                        .location),
-                icon: const Icon(Icons.fact_check_outlined),
-              ),
-            ],
           ),
           Expanded(
             child: asyncClient.when(
@@ -96,55 +120,47 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                 onRetry: () => ref.invalidate(
                     _clientDetailProvider(widget.careRelationshipId)),
               ),
-              data: (client) => asyncInstruments.when(
-                loading: () => const LoadingView(),
-                error: (e, _) => ErrorView(
-                  message: l.errLoadScalesRefresh,
-                  onRetry: () => ref.invalidate(_instrumentsProvider),
-                ),
-                data: (instruments) {
-                  if (instruments.isEmpty) {
-                    return EmptyView(message: l.emptyScales);
-                  }
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(AppSpacing.page),
-                    itemCount: instruments.length,
-                    separatorBuilder: (_, __) => const Gap(AppSpacing.sm),
-                    itemBuilder: (context, idx) {
-                      final instrument = instruments[idx];
-                      final slug = instrument.slug;
-                      final checked = _selected.contains(slug);
-                      return AppCard(
-                        padding: EdgeInsets.zero,
-                        onTap: _assigning
-                            ? null
-                            : () => setState(() {
-                                  if (checked) {
-                                    _selected.remove(slug);
-                                  } else {
-                                    _selected.add(slug);
-                                  }
-                                }),
-                        child: CheckboxListTile(
-                          value: checked,
-                          onChanged: _assigning
-                              ? null
-                              : (v) => setState(() {
-                                    if (v == true) {
-                                      _selected.add(slug);
-                                    } else {
-                                      _selected.remove(slug);
-                                    }
-                                  }),
-                          title: Text(instrument.name),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
-                          ),
-                        ),
+              data: (client) => ListView(
+                padding: const EdgeInsets.all(AppSpacing.page),
+                children: [
+                  // --- Client overview (who this person is) ---
+                  _ClientSummaryCard(client: client),
+                  const Gap(AppSpacing.md),
+                  // Primary action: review what they've already filled in.
+                  FeatureCard(
+                    icon: Icons.fact_check_outlined,
+                    title: l.viewClientResults,
+                    subtitle: l.clientAssessmentsSubtitle,
+                    onTap: () => context.push(
+                        ClientAssessmentsRoute(id: widget.careRelationshipId)
+                            .location),
+                  ),
+                  // --- Assign new self-checks ---
+                  SectionHeader(l.assignMultipleScales),
+                  asyncInstruments.when(
+                    loading: () => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                      child: LoadingView(),
+                    ),
+                    error: (e, _) => ErrorView(
+                      message: l.errLoadScalesRefresh,
+                      onRetry: () => ref.invalidate(_instrumentsProvider),
+                    ),
+                    data: (instruments) {
+                      if (instruments.isEmpty) {
+                        return EmptyView(message: l.emptyScales);
+                      }
+                      return Column(
+                        children: [
+                          for (final instrument in instruments) ...[
+                            _instrumentTile(instrument),
+                            const Gap(AppSpacing.sm),
+                          ],
+                        ],
                       );
                     },
-                  );
-                },
+                  ),
+                ],
               ),
             ),
           ),
@@ -172,6 +188,66 @@ class _ClientDetailScreenState extends ConsumerState<ClientDetailScreen> {
                 label: Text(_assigning ? l.assigning : l.assignSelected),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A compact "who is this client" card shown at the top of the detail screen,
+/// so the professional gets context before being offered scales to assign.
+class _ClientSummaryCard extends StatelessWidget {
+  const _ClientSummaryCard({required this.client});
+  final Client client;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final theme = Theme.of(context);
+    final name = client.user.displayName ?? l.clientTitle;
+    final refCode = client.referenceCode ?? '';
+    final phone = client.user.phone ?? '';
+
+    return AppCard(
+      child: Row(
+        children: [
+          InitialAvatar(name: name, size: 52),
+          const Gap.horizontal(AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                if (refCode.isNotEmpty) ...[
+                  const Gap(2),
+                  Text(refCode,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant)),
+                ],
+                if (phone.isNotEmpty) ...[
+                  const Gap(2),
+                  Row(
+                    children: [
+                      Icon(Icons.phone_outlined,
+                          size: 14, color: theme.colorScheme.onSurfaceVariant),
+                      const Gap.horizontal(AppSpacing.xs),
+                      Text(phone,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          StatusBadge(
+            humanizeStatus(client.status),
+            color: statusTone(context, client.status),
           ),
         ],
       ),

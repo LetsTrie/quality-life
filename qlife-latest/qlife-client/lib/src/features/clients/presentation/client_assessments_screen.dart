@@ -117,6 +117,22 @@ class _AssessmentTile extends ConsumerWidget {
                   Text(l.severityLabel(item.severityLabel!),
                       style: theme.textTheme.bodySmall),
                 ],
+                if (completed && item.completedAt != null) ...[
+                  const Gap(AppSpacing.xs),
+                  Row(
+                    children: [
+                      Icon(Icons.event_available_rounded,
+                          size: 14, color: theme.colorScheme.onSurfaceVariant),
+                      const Gap.horizontal(AppSpacing.xs),
+                      Text(
+                        l.clientAssessmentCompletedOn(
+                            item.completedAt!.split('T').first),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

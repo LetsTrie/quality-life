@@ -33,4 +33,18 @@ class NotificationsRepository {
   Future<void> markSeen(String id) async {
     await _dio.patch('/v1/notifications/$id/seen');
   }
+
+  Future<void> registerDeviceToken(String token) async {
+    await _dio.put(
+      '/v1/notifications/device-token',
+      data: {'token': token, 'platform': 'ANDROID'},
+    );
+  }
+
+  Future<void> unregisterDeviceToken(String token) async {
+    await _dio.delete(
+      '/v1/notifications/device-token',
+      data: {'token': token},
+    );
+  }
 }

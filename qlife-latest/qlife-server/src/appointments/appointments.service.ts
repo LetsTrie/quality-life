@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import type { AppointmentStatus, Prisma } from '@prisma/client';
 
 import { EmailService } from '../email/email.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 function parseIsoOrThrow(value: string) {
@@ -15,6 +16,7 @@ export class AppointmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async listForAccount(args: { accountId: string; role: 'USER' | 'PROFESSIONAL'; page: number; status?: string }) {
@@ -158,16 +160,16 @@ export class AppointmentsService {
       },
     });
 
-    await this.prisma.notification.create({
-      data: {
-        recipientAccountId: professional.accountId,
-        senderAccountId: args.accountId,
-        type: 'APPOINTMENT_REQUESTED',
-        channel: 'IN_APP',
-        title: 'New appointment request',
-        body: 'A client has requested an appointment with you.',
-        appointmentId: appointment.id,
-      },
+    const requesterName = userProfile.displayName?.trim();
+    await this.notifications.createInAppNotification({
+      recipientAccountId: professional.accountId,
+      senderAccountId: args.accountId,
+      type: 'APPOINTMENT_REQUESTED',
+      title: 'New appointment request',
+      body: requesterName
+        ? `${requesterName} would like to book a session with you. Tap to review.`
+        : 'A client would like to book a session with you. Tap to review.',
+      appointmentId: appointment.id,
     });
 
     // Best-effort email fanout.
@@ -309,25 +311,23 @@ export class AppointmentsService {
           ? 'APPOINTMENT_DECLINED'
           : 'APPOINTMENT_RESCHEDULED';
 
+    const proName = professional.fullName?.trim() || 'Your provider';
     const notifTitle =
-      type === 'APPOINTMENT_ACCEPTED' ? 'Appointment accepted' :
-      type === 'APPOINTMENT_DECLINED' ? 'Appointment declined' :
-      'Appointment rescheduled';
+      type === 'APPOINTMENT_ACCEPTED' ? 'Appointment confirmed' :
+      type === 'APPOINTMENT_DECLINED' ? 'Appointment update' :
+      'New time proposed';
     const notifBody =
-      type === 'APPOINTMENT_ACCEPTED' ? 'Your appointment has been confirmed.' :
-      type === 'APPOINTMENT_DECLINED' ? 'Your appointment request was declined.' :
-      'A new time has been proposed for your appointment.';
+      type === 'APPOINTMENT_ACCEPTED' ? `${proName} confirmed your session. Tap to see the details.` :
+      type === 'APPOINTMENT_DECLINED' ? `${proName} isn't able to take this appointment. Tap to find another time or provider.` :
+      `${proName} suggested a new time for your session. Tap to confirm.`;
 
-    await this.prisma.notification.create({
-      data: {
-        recipientAccountId: appt.user.accountId,
-        senderAccountId: args.accountId,
-        type,
-        channel: 'IN_APP',
-        title: notifTitle,
-        body: notifBody,
-        appointmentId: appt.id,
-      },
+    await this.notifications.createInAppNotification({
+      recipientAccountId: appt.user.accountId,
+      senderAccountId: args.accountId,
+      type,
+      title: notifTitle,
+      body: notifBody,
+      appointmentId: appt.id,
     });
 
     // Best-effort email fanout to user.
@@ -393,16 +393,15 @@ export class AppointmentsService {
       },
     });
 
-    await this.prisma.notification.create({
-      data: {
-        recipientAccountId: counterpartyAccountId,
-        senderAccountId: actorAccountId,
-        type: 'APPOINTMENT_CANCELLED',
-        channel: 'IN_APP',
-        title: 'Appointment cancelled',
-        body: 'An appointment was cancelled.',
-        appointmentId: appt.id,
-      },
+    await this.notifications.createInAppNotification({
+      recipientAccountId: counterpartyAccountId,
+      senderAccountId: actorAccountId,
+      type: 'APPOINTMENT_CANCELLED',
+      title: 'Appointment cancelled',
+      body: toStatus === 'CANCELLED_BY_USER'
+        ? 'A client cancelled their upcoming session. Tap to view.'
+        : 'Your provider cancelled your upcoming session. Tap to rebook.',
+      appointmentId: appt.id,
     });
 
     try {

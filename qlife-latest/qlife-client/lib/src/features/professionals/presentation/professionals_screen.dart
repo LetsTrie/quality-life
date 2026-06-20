@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/router.dart';
+import '../../../app/tab_refresh.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/professional.dart';
 import '../../../shared/models/paged_result.dart';
@@ -79,12 +80,21 @@ class _ProfessionalsScreenState extends ConsumerState<ProfessionalsScreen> {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    // Reload from the backend whenever the user re-taps the professionals tab.
+    ref.listen<int>(tabRefreshProvider, (_, __) => _reload());
     return Scaffold(
       body: Column(
         children: [
           GradientHeader(
             title: l.navProfessionals,
             subtitle: l.navProfessionalsDesc,
+            actions: [
+              IconButton(
+                onPressed: _reload,
+                icon: const Icon(Icons.refresh_rounded),
+                tooltip: l.actionRetry,
+              ),
+            ],
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -104,7 +114,7 @@ class _ProfessionalsScreenState extends ConsumerState<ProfessionalsScreen> {
                 const Gap(AppSpacing.sm),
                 DropdownMenu<String?>(
                   initialSelection: _professionType,
-                  label: Text(l.allProfessions),
+                  label: Text(l.professionFilterLabel),
                   expandedInsets: EdgeInsets.zero,
                   onSelected: (v) {
                     _professionType = v;
@@ -127,10 +137,9 @@ class _ProfessionalsScreenState extends ConsumerState<ProfessionalsScreen> {
                   return const LoadingView();
                 }
                 if (snap.hasError) {
-                  return ErrorView(
-                    message: l.errLoadProfessionals,
-                    onRetry: _reload,
-                  );
+                  // Retry lives in the top-right header reload icon, not a
+                  // center button.
+                  return ErrorView(message: l.errLoadProfessionals);
                 }
                 final items = snap.data?.items ?? const [];
                 if (items.isEmpty) {
@@ -151,14 +160,6 @@ class _ProfessionalsScreenState extends ConsumerState<ProfessionalsScreen> {
                               l.emptyProfessionals,
                               textAlign: TextAlign.center,
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const Gap(AppSpacing.sm),
-                            Text(
-                              l.emptyProfessionalsHint,
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),

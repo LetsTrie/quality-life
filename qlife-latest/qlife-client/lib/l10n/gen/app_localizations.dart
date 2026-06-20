@@ -758,6 +758,12 @@ abstract class AppLocalizations {
   /// **'Could not load this self-check. Please go back and try again.'**
   String get errLoadScaleDetail;
 
+  /// No description provided for @errLoadDistricts.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load districts. Please try again.'**
+  String get errLoadDistricts;
+
   /// No description provided for @errLoadUpazilas.
   ///
   /// In en, this message translates to:
@@ -797,14 +803,8 @@ abstract class AppLocalizations {
   /// No description provided for @emptyProfessionals.
   ///
   /// In en, this message translates to:
-  /// **'No professionals available'**
+  /// **'There are currently no professionals to show'**
   String get emptyProfessionals;
-
-  /// No description provided for @emptyProfessionalsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'If you just approved a professional, they may still need to finish onboarding, enable visibility, and turn on “Accepting clients”. Pull to refresh, or try again in a moment.'**
-  String get emptyProfessionalsHint;
 
   /// No description provided for @emptyScales.
   ///
@@ -1052,6 +1052,18 @@ abstract class AppLocalizations {
   /// **'Could not load assigned self-checks. Please try again.'**
   String get errLoadAssigned;
 
+  /// No description provided for @assignedPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} waiting to be completed'**
+  String assignedPending(Object count);
+
+  /// No description provided for @actionNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Action needed'**
+  String get actionNeeded;
+
   /// No description provided for @notificationsTitle.
   ///
   /// In en, this message translates to:
@@ -1075,6 +1087,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Read'**
   String get statusRead;
+
+  /// No description provided for @timeJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get timeJustNow;
+
+  /// No description provided for @timeMinutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m ago'**
+  String timeMinutesAgo(Object minutes);
+
+  /// No description provided for @timeHoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h ago'**
+  String timeHoursAgo(Object hours);
+
+  /// No description provided for @timeDaysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}d ago'**
+  String timeDaysAgo(Object days);
 
   /// No description provided for @scalesTitle.
   ///
@@ -1526,11 +1562,23 @@ abstract class AppLocalizations {
   /// **'Accepting new clients'**
   String get acceptingNewClients;
 
+  /// No description provided for @acceptingNewClientsDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow clients to send you new booking requests. Turn this off when your schedule is full — you stay in the directory but clients can\'t book you.'**
+  String get acceptingNewClientsDesc;
+
   /// No description provided for @showInDirectory.
   ///
   /// In en, this message translates to:
   /// **'Let clients find me'**
   String get showInDirectory;
+
+  /// No description provided for @showInDirectoryDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'List your profile in the public directory so clients can discover and view you. You only become visible after an admin approves your account.'**
+  String get showInDirectoryDesc;
 
   /// No description provided for @visibleAfterApproval.
   ///
@@ -1556,17 +1604,137 @@ abstract class AppLocalizations {
   /// **'Failed to save. Please try again.'**
   String get onboardingSaveFailed;
 
+  /// No description provided for @saveFailedReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save: {reason}'**
+  String saveFailedReason(Object reason);
+
   /// No description provided for @verificationStatus.
   ///
   /// In en, this message translates to:
   /// **'Verification: {status}'**
   String verificationStatus(Object status);
 
+  /// No description provided for @verificationPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account under review'**
+  String get verificationPendingTitle;
+
+  /// No description provided for @verificationPendingNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Our team is reviewing your profile. You won\'t appear to clients yet — once an admin approves your account, you\'ll be listed in the directory and clients can find and book you.'**
+  String get verificationPendingNote;
+
+  /// No description provided for @verificationApprovedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re approved'**
+  String get verificationApprovedTitle;
+
+  /// No description provided for @verificationApprovedNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile is live. Clients can find you in the directory and request appointments.'**
+  String get verificationApprovedNote;
+
+  /// No description provided for @exitAppTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close the app?'**
+  String get exitAppTitle;
+
+  /// No description provided for @exitAppMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to exit QLife?'**
+  String get exitAppMessage;
+
+  /// No description provided for @actionExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get actionExit;
+
+  /// No description provided for @proRejectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Application reviewed'**
+  String get proRejectedTitle;
+
+  /// No description provided for @proRejectedHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Thank you for your interest in QLife'**
+  String get proRejectedHeadline;
+
+  /// No description provided for @proRejectedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your application to join QLife as a professional has been carefully reviewed. After consideration, we are unable to approve your account to proceed at this time. We sincerely appreciate the time and effort you put into your application.'**
+  String get proRejectedBody;
+
+  /// No description provided for @proRejectedContact.
+  ///
+  /// In en, this message translates to:
+  /// **'If you have any questions or believe this decision was made in error, please contact our support team.'**
+  String get proRejectedContact;
+
   /// No description provided for @nonNegativeInteger.
   ///
   /// In en, this message translates to:
   /// **'Enter a non-negative integer'**
   String get nonNegativeInteger;
+
+  /// No description provided for @yearsOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a realistic number of years (0–80)'**
+  String get yearsOutOfRange;
+
+  /// No description provided for @weeklyOutOfRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a realistic number (0–500)'**
+  String get weeklyOutOfRange;
+
+  /// No description provided for @avgExceedsMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Average clients per week can\'t exceed your weekly maximum'**
+  String get avgExceedsMax;
+
+  /// No description provided for @bmdcHint.
+  ///
+  /// In en, this message translates to:
+  /// **'As printed on your BMDC certificate'**
+  String get bmdcHint;
+
+  /// No description provided for @fieldCountryCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get fieldCountryCode;
+
+  /// No description provided for @phoneHintBd.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 01712345678'**
+  String get phoneHintBd;
+
+  /// No description provided for @phoneInvalidBd.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid Bangladeshi mobile number (e.g. 01712345678)'**
+  String get phoneInvalidBd;
+
+  /// No description provided for @phoneInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid phone number'**
+  String get phoneInvalid;
 
   /// No description provided for @onboardingRequiredHint.
   ///
@@ -2030,6 +2198,12 @@ abstract class AppLocalizations {
   /// **'All professions'**
   String get allProfessions;
 
+  /// No description provided for @professionFilterLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Profession'**
+  String get professionFilterLabel;
+
   /// No description provided for @labelFee.
   ///
   /// In en, this message translates to:
@@ -2203,6 +2377,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'I agree to the Terms & Conditions and Privacy Policy'**
   String get fieldAgreeTerms;
+
+  /// No description provided for @fieldAgreeTermsPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'I agree to the '**
+  String get fieldAgreeTermsPrefix;
+
+  /// No description provided for @fieldAgreeTermsLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms & Conditions and Privacy Policy'**
+  String get fieldAgreeTermsLink;
+
+  /// No description provided for @serverUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Our servers are currently unavailable. Please try again in a few moments.'**
+  String get serverUnavailable;
+
+  /// No description provided for @alreadyRequestedAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have an appointment with this professional.'**
+  String get alreadyRequestedAppointment;
+
+  /// No description provided for @actionViewAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'View appointment'**
+  String get actionViewAppointment;
+
+  /// No description provided for @clientAssessmentCompletedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed {date}'**
+  String clientAssessmentCompletedOn(Object date);
 }
 
 class _AppLocalizationsDelegate

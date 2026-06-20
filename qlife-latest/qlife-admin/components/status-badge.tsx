@@ -54,13 +54,15 @@ export function statusTone(status?: string | null): Variant {
 export function StatusBadge({
   status,
   dot = true,
+  className,
 }: {
   status?: string | null;
   dot?: boolean;
+  className?: string;
 }) {
   const tone = statusTone(status);
   return (
-    <Badge variant={tone}>
+    <Badge variant={tone} className={className}>
       {dot && (
         <span className={cn("h-1.5 w-1.5 rounded-full", DOT[tone])} />
       )}

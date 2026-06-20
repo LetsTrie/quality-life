@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../shared/l10n/l10n_extension.dart';
 import 'router.dart';
+import 'tab_refresh.dart';
 
 /// Branch indices in the [StatefulShellRoute] declared in `router.dart`.
 /// Keep in sync with the branch order there.
@@ -67,16 +69,43 @@ class ShellScaffold extends ConsumerWidget {
     var selected = tabs.indexWhere((t) => t.branch == navigationShell.currentIndex);
     if (selected < 0) selected = 0;
 
-    return Scaffold(
+    // The first tab is "home" for this role (USER → home, PROFESSIONAL →
+    // dashboard). Android back never silently kills the app: it pops a nested
+    // detail page, else returns to the home tab, else asks before exiting.
+    final homeBranch = tabs.first.branch;
+    final onHomeTab = navigationShell.currentIndex == homeBranch;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final router = GoRouter.of(context);
+        if (router.canPop()) {
+          router.pop(); // pop a nested route within the current branch
+          return;
+        }
+        if (!onHomeTab) {
+          navigationShell.goBranch(homeBranch);
+          return;
+        }
+        final shouldExit = await _confirmExit(context);
+        if (shouldExit) await SystemNavigator.pop();
+      },
+      child: Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
         // Hide labels on unselected tabs; show selected tab label without wrapping
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         selectedIndex: selected,
-        onDestinationSelected: (i) => navigationShell.goBranch(
-          tabs[i].branch,
-          initialLocation: tabs[i].branch == navigationShell.currentIndex,
-        ),
+        onDestinationSelected: (i) {
+          // Force each tab's data to reload from the backend on every tap so
+          // the user never sees cached/stale data when navigating tabs.
+          ref.read(tabRefreshProvider.notifier).state++;
+          navigationShell.goBranch(
+            tabs[i].branch,
+            initialLocation: tabs[i].branch == navigationShell.currentIndex,
+          );
+        },
         height: 84,
         destinations: [
           for (final t in tabs)
@@ -87,6 +116,29 @@ class ShellScaffold extends ConsumerWidget {
             ),
         ],
       ),
+      ),
     );
+  }
+
+  Future<bool> _confirmExit(BuildContext context) async {
+    final l = context.l10n;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.exitAppTitle),
+        content: Text(l.exitAppMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l.actionCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l.actionExit),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 }

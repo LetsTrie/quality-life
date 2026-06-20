@@ -18,6 +18,7 @@ import { InstrumentsModule } from './instruments/instruments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RealtimeModule } from './realtime/realtime.module';
 import { SpecializationsModule } from './specializations/specializations.module';
 import { SupportModule } from './support/support.module';
 import { UsersModule } from './users/users.module';
@@ -40,6 +41,7 @@ import { UsersModule } from './users/users.module';
     NotificationsModule,
     AppointmentsModule,
     ProfessionalsModule,
+    RealtimeModule,
     SpecializationsModule,
     SupportModule,
     ContentModule,

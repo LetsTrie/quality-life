@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/router.dart';
+import '../../../app/tab_refresh.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/notification_model.dart';
 import '../../../shared/models/paged_result.dart';
@@ -42,88 +45,15 @@ class NotificationsScreen extends ConsumerWidget {
                 if (result.items.isEmpty) {
                   return EmptyView(message: l.emptyNotifications);
                 }
-                return ListView.separated(
-                  padding: const EdgeInsets.all(AppSpacing.page),
-                  itemCount: result.items.length,
-                  separatorBuilder: (_, __) => const Gap(AppSpacing.sm),
-                  itemBuilder: (context, idx) {
-                    final n = result.items[idx];
-                    final theme = Theme.of(context);
-                    return AppCard(
-                      onTap: () async {
-                        if (!n.isUnread) return;
-                        try {
-                          await ref
-                              .read(notificationsRepositoryProvider)
-                              .markSeen(n.id);
-                          if (!context.mounted) return;
-                          ref.invalidate(_notificationsProvider);
-                        } catch (_) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(l.markReadFailed)),
-                            );
-                          }
-                        }
-                      },
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: (n.isUnread
-                                      ? AppColors.primary
-                                      : theme.colorScheme.outline)
-                                  .withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              n.isUnread
-                                  ? Icons.notifications_active_rounded
-                                  : Icons.notifications_none_rounded,
-                              size: 20,
-                              color: n.isUnread
-                                  ? AppColors.primary
-                                  : theme.colorScheme.outline,
-                            ),
-                          ),
-                          const Gap.horizontal(AppSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  n.displayTitle,
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontWeight: n.isUnread
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                  ),
-                                ),
-                                const Gap(2),
-                                Text(
-                                  n.isUnread ? l.statusUnread : l.statusRead,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (n.isUnread)
-                            Container(
-                              width: 9,
-                              height: 9,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
+                return RefreshIndicator(
+                  onRefresh: () async => ref.invalidate(_notificationsProvider),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(AppSpacing.page),
+                    itemCount: result.items.length,
+                    separatorBuilder: (_, __) => const Gap(AppSpacing.sm),
+                    itemBuilder: (context, idx) =>
+                        _NotificationCard(notification: result.items[idx]),
+                  ),
                 );
               },
             ),
@@ -134,7 +64,128 @@ class NotificationsScreen extends ConsumerWidget {
   }
 }
 
+class _NotificationCard extends ConsumerWidget {
+  const _NotificationCard({required this.notification});
+
+  final AppNotification notification;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final n = notification;
+    final theme = Theme.of(context);
+    final l = context.l10n;
+    final time = _relativeTime(context, n.createdAtTime);
+    return AppCard(
+      onTap: () async {
+        final messenger = ScaffoldMessenger.of(context);
+        final location = notificationRouteLocation(
+          type: n.type,
+          appointmentId: n.appointmentId,
+          assessmentId: n.assessmentId,
+        );
+        // Mark read first so the unread badge updates everywhere, then open the
+        // most relevant screen. Tapping always navigates — read or unread.
+        if (n.isUnread) {
+          try {
+            await ref.read(notificationsRepositoryProvider).markSeen(n.id);
+            ref.read(tabRefreshProvider.notifier).state++;
+            ref.invalidate(_notificationsProvider);
+          } catch (_) {
+            messenger.showSnackBar(SnackBar(content: Text(l.markReadFailed)));
+          }
+        }
+        if (!context.mounted) return;
+        context.go(location);
+      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: (n.isUnread ? AppColors.primary : theme.colorScheme.outline)
+                  .withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              n.isUnread
+                  ? Icons.notifications_active_rounded
+                  : Icons.notifications_none_rounded,
+              size: 20,
+              color:
+                  n.isUnread ? AppColors.primary : theme.colorScheme.outline,
+            ),
+          ),
+          const Gap.horizontal(AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  n.displayTitle,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight:
+                        n.isUnread ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+                if (n.displayBody.isNotEmpty) ...[
+                  const Gap(3),
+                  Text(
+                    n.displayBody,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+                if (time.isNotEmpty) ...[
+                  const Gap(6),
+                  Text(
+                    time,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (n.isUnread)
+            Container(
+              margin: const EdgeInsets.only(left: AppSpacing.sm, top: 6),
+              width: 9,
+              height: 9,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Relative "time ago" label, falling back to an ISO-ish date past a week.
+String _relativeTime(BuildContext context, DateTime? time) {
+  if (time == null) return '';
+  final l = context.l10n;
+  final diff = DateTime.now().difference(time);
+  if (diff.inMinutes < 1) return l.timeJustNow;
+  if (diff.inHours < 1) return l.timeMinutesAgo('${diff.inMinutes}');
+  if (diff.inDays < 1) return l.timeHoursAgo('${diff.inHours}');
+  if (diff.inDays < 7) return l.timeDaysAgo('${diff.inDays}');
+  return '${time.year}-${time.month.toString().padLeft(2, '0')}-'
+      '${time.day.toString().padLeft(2, '0')}';
+}
+
+/// Refetches on every screen open (autoDispose) and whenever a realtime event
+/// bumps [tabRefreshProvider], so the list is never stale.
 final _notificationsProvider =
-    FutureProvider<PagedResult<AppNotification>>((ref) async {
+    FutureProvider.autoDispose<PagedResult<AppNotification>>((ref) async {
+  ref.watch(tabRefreshProvider);
   return ref.read(notificationsRepositoryProvider).list(page: 1);
 });

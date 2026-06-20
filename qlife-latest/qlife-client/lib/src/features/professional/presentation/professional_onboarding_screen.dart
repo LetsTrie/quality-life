@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +9,7 @@ import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/widgets/app_components.dart';
 import '../../../shared/widgets/async_state_views.dart';
 import '../../../shared/widgets/gradient_header.dart';
+import '../../../shared/widgets/phone_field.dart';
 import '../../auth/state/auth_state.dart';
 import '../../geo/data/geo_repository.dart';
 import '../data/professional_repository.dart';
@@ -43,6 +45,18 @@ const _weekdays = <String>[
   'FRIDAY',
 ];
 
+/// Graduation-batch options, mirroring the legacy picker: "Batch N - YYYY/YY"
+/// for each intake year from 1997 up to last year, newest first.
+List<String> _graduationBatches() {
+  final currentYear = DateTime.now().year;
+  final out = <String>[];
+  for (var i = 1997; i < currentYear; i++) {
+    final next = (i + 1) % 100;
+    out.add('Batch ${i - 1996} - $i/${next.toString().padLeft(2, '0')}');
+  }
+  return out.reversed.toList();
+}
+
 class ProfessionalOnboardingScreen extends ConsumerStatefulWidget {
   const ProfessionalOnboardingScreen({super.key});
 
@@ -56,17 +70,20 @@ class _ProfessionalOnboardingScreenState
   final _formKey = GlobalKey<FormState>();
 
   final _bmdcCtrl = TextEditingController();
-  final _batchCtrl = TextEditingController();
   final _workplaceCtrl = TextEditingController();
   final _yearsCtrl = TextEditingController();
   final _educationCtrl = TextEditingController();
   final _bioCtrl = TextEditingController();
-  final _phoneCtrl = TextEditingController();
+  final _phone = PhoneFieldController();
   final _feeCtrl = TextEditingController();
   final _maxWeeklyCtrl = TextEditingController();
   final _avgWeeklyCtrl = TextEditingController();
   final _referralCtrl = TextEditingController();
   final _otherSpecCtrl = TextEditingController();
+
+  // Graduation batch is a picker, not free text.
+  String? _batchValue;
+  late final List<String> _batchOptions = _graduationBatches();
 
   String? _districtId;
   String? _upazilaId;
@@ -87,8 +104,8 @@ class _ProfessionalOnboardingScreenState
   final List<_AvailabilityRow> _availability = [];
   final List<_CaseloadRow> _caseloads = [];
 
-  bool _acceptingNewClients = false;
-  bool _isVisible = false;
+  bool _acceptingNewClients = true;
+  bool _isVisible = true;
   bool _loading = true;
   bool _saving = false;
   String? _error;
@@ -104,12 +121,10 @@ class _ProfessionalOnboardingScreenState
   void dispose() {
     for (final c in [
       _bmdcCtrl,
-      _batchCtrl,
       _workplaceCtrl,
       _yearsCtrl,
       _educationCtrl,
       _bioCtrl,
-      _phoneCtrl,
       _feeCtrl,
       _maxWeeklyCtrl,
       _avgWeeklyCtrl,
@@ -118,6 +133,7 @@ class _ProfessionalOnboardingScreenState
     ]) {
       c.dispose();
     }
+    _phone.dispose();
     for (final r in _caseloads) {
       r.dispose();
     }
@@ -140,6 +156,37 @@ class _ProfessionalOnboardingScreenState
 
   String _fmtTime(TimeOfDay t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+  /// Pull a human-readable reason out of the backend error envelope
+  /// (`{ error: { message, details } }`). ValidationPipe rejections carry the
+  /// per-field messages in `details.message` (a list); other failures use the
+  /// top-level `error.message`. Returns null when nothing useful is present so
+  /// the caller falls back to the generic localized message.
+  String? _serverErrorMessage(Object e) {
+    if (e is! DioException) return null;
+    final data = e.response?.data;
+    if (data is! Map) return null;
+    final error = data['error'];
+    if (error is! Map) return null;
+
+    final details = error['details'];
+    if (details is Map) {
+      final msg = details['message'];
+      if (msg is List && msg.isNotEmpty) {
+        return msg.map((m) => m.toString()).join('\n');
+      }
+      if (msg is String && msg.trim().isNotEmpty) return msg.trim();
+    }
+
+    final top = error['message'];
+    // Skip the generic NestJS wrapper title; it carries no field detail.
+    if (top is String &&
+        top.trim().isNotEmpty &&
+        top.trim() != 'Bad Request Exception') {
+      return top.trim();
+    }
+    return null;
+  }
 
   Future<void> _load() async {
     setState(() {
@@ -168,11 +215,12 @@ class _ProfessionalOnboardingScreenState
           as Map<String, dynamic>;
 
       _bmdcCtrl.text = (data['bmdcRegistrationNo']?.toString() ?? '').trim();
-      _batchCtrl.text = (data['graduationBatch']?.toString() ?? '').trim();
+      final batch = (data['graduationBatch']?.toString() ?? '').trim();
+      _batchValue = _batchOptions.contains(batch) ? batch : null;
       _workplaceCtrl.text = (data['workplace']?.toString() ?? '').trim();
       _educationCtrl.text = (data['educationSummary']?.toString() ?? '').trim();
       _bioCtrl.text = (data['bio']?.toString() ?? '').trim();
-      _phoneCtrl.text = (data['phone']?.toString() ?? '').trim();
+      _phone.seed(data['phone']?.toString());
 
       final years = data['yearsOfExperience'];
       _yearsCtrl.text = years == null ? '' : years.toString();
@@ -234,8 +282,8 @@ class _ProfessionalOnboardingScreenState
         ));
       }
 
-      _acceptingNewClients = (data['acceptingNewClients'] as bool?) ?? false;
-      _isVisible = (data['isVisible'] as bool?) ?? false;
+      _acceptingNewClients = (data['acceptingNewClients'] as bool?) ?? true;
+      _isVisible = (data['isVisible'] as bool?) ?? true;
 
       final verifications =
           (data['verifications'] as List<dynamic>?) ?? const [];
@@ -341,6 +389,15 @@ class _ProfessionalOnboardingScreenState
       final ok = _formKey.currentState?.validate() ?? false;
       if (!ok) return;
 
+      // The average can never exceed the weekly maximum (both required above, so
+      // they parse cleanly here). Caught client-side to avoid a save round-trip.
+      final maxWeekly = int.tryParse(_maxWeeklyCtrl.text.trim());
+      final avgWeekly = int.tryParse(_avgWeeklyCtrl.text.trim());
+      if (maxWeekly != null && avgWeekly != null && avgWeekly > maxWeekly) {
+        setState(() => _error = l.avgExceedsMax);
+        return;
+      }
+
       if (_selectedSpecIds.isEmpty) {
         setState(() => _error = l.selectAtLeastOneSpecialization);
         return;
@@ -403,11 +460,11 @@ class _ProfessionalOnboardingScreenState
 
       final patch = <String, dynamic>{
         'bmdcRegistrationNo': t(_bmdcCtrl),
-        'graduationBatch': t(_batchCtrl),
+        'graduationBatch': _batchValue,
         'workplace': t(_workplaceCtrl),
         'educationSummary': t(_educationCtrl),
         'bio': t(_bioCtrl),
-        'phone': t(_phoneCtrl),
+        'phone': _phone.compose(),
         'feeAmount': double.tryParse(_feeCtrl.text.trim()),
         'feeCurrency': 'BDT',
         if (n(_yearsCtrl) != null) 'yearsOfExperience': n(_yearsCtrl),
@@ -437,7 +494,12 @@ class _ProfessionalOnboardingScreenState
       );
       context.go(const ProfessionalDashboardRoute().location);
     } catch (e) {
-      if (mounted) setState(() => _error = context.l10n.onboardingSaveFailed);
+      if (mounted) {
+        final reason = _serverErrorMessage(e);
+        setState(() => _error = reason == null
+            ? context.l10n.onboardingSaveFailed
+            : context.l10n.saveFailedReason(reason));
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -480,7 +542,9 @@ class _ProfessionalOnboardingScreenState
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.page),
                   children: [
-                  if (_verificationStatus != null) _verificationBanner(l),
+                  if (_verificationStatus != null &&
+                      _verificationStatus != 'APPROVED')
+                    _verificationBanner(l),
                   Text(l.onboardingRequiredHint,
                       style: Theme.of(context).textTheme.bodySmall),
 
@@ -488,13 +552,21 @@ class _ProfessionalOnboardingScreenState
                   SectionHeader(l.sectionCredentials),
                   TextFormField(
                     controller: _bmdcCtrl,
-                    decoration: InputDecoration(labelText: l.fieldBmdcOptional),
+                    decoration: InputDecoration(
+                      labelText: l.fieldBmdcOptional,
+                      helperText: l.bmdcHint,
+                    ),
                   ),
                   const Gap(AppSpacing.sm),
-                  TextFormField(
-                    controller: _batchCtrl,
-                    decoration: InputDecoration(
-                        labelText: l.fieldGraduationBatchOptional),
+                  DropdownMenu<String>(
+                    initialSelection: _batchValue,
+                    label: Text(l.fieldGraduationBatchOptional),
+                    enabled: !_saving,
+                    expandedInsets: EdgeInsets.zero,
+                    onSelected: (v) => setState(() => _batchValue = v),
+                    dropdownMenuEntries: _batchOptions
+                        .map((b) => DropdownMenuEntry(value: b, label: b))
+                        .toList(),
                   ),
                   const Gap(AppSpacing.sm),
                   TextFormField(
@@ -524,17 +596,18 @@ class _ProfessionalOnboardingScreenState
                       if (s.isEmpty) return l.requiredField;
                       final parsed = int.tryParse(s);
                       if (parsed == null || parsed < 0) return l.nonNegativeInteger;
+                      // Mirror the server bound (@Max(80)) so an out-of-range
+                      // value is caught inline instead of failing the save.
+                      if (parsed > 80) return l.yearsOutOfRange;
                       return null;
                     },
                   ),
                   const Gap(AppSpacing.sm),
-                  TextFormField(
-                    controller: _phoneCtrl,
-                    decoration:
-                        InputDecoration(labelText: l.fieldPhoneRequired),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? l.requiredField
-                        : null,
+                  PhoneField(
+                    controller: _phone,
+                    label: l.fieldPhoneRequired,
+                    isRequired: true,
+                    enabled: !_saving,
                   ),
                   const Gap(AppSpacing.sm),
                   TextFormField(
@@ -662,6 +735,7 @@ class _ProfessionalOnboardingScreenState
                       if (s.isEmpty) return l.requiredField;
                       final parsed = int.tryParse(s);
                       if (parsed == null || parsed < 0) return l.nonNegativeInteger;
+                      if (parsed > 500) return l.weeklyOutOfRange;
                       return null;
                     },
                   ),
@@ -676,6 +750,7 @@ class _ProfessionalOnboardingScreenState
                       if (s.isEmpty) return l.requiredField;
                       final parsed = int.tryParse(s);
                       if (parsed == null || parsed < 0) return l.nonNegativeInteger;
+                      if (parsed > 500) return l.weeklyOutOfRange;
                       return null;
                     },
                   ),
@@ -686,22 +761,9 @@ class _ProfessionalOnboardingScreenState
                         InputDecoration(labelText: l.fieldReferralSource),
                   ),
 
-                  // --- Visibility ---
-                  SectionHeader(l.sectionVisibility),
-                  SwitchListTile(
-                    title: Text(l.acceptingNewClients),
-                    value: _acceptingNewClients,
-                    onChanged: _saving
-                        ? null
-                        : (v) => setState(() => _acceptingNewClients = v),
-                  ),
-                  SwitchListTile(
-                    title: Text(l.showInDirectory),
-                    subtitle: Text(l.visibleAfterApproval),
-                    value: _isVisible,
-                    onChanged:
-                        _saving ? null : (v) => setState(() => _isVisible = v),
-                  ),
+                  // Visibility (listing + accepting new clients) defaults ON;
+                  // the professional only appears publicly after admin approval.
+                  // Kept off the onboarding form to keep it short and simple.
                   if (_error != null) ...[
                     const Gap(AppSpacing.lg),
                     Text(_error!,
@@ -810,9 +872,19 @@ class _ProfessionalOnboardingScreenState
   }
 
   Widget _availabilityRow(AppLocalizations l, int index, _AvailabilityRow row) {
+    // Match the time buttons to the Day dropdown's field height so all three
+    // controls line up on the same baseline.
+    final timeButtonStyle = OutlinedButton.styleFrom(
+      minimumSize: const Size.fromHeight(56),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             flex: 3,
@@ -832,18 +904,26 @@ class _ProfessionalOnboardingScreenState
           Expanded(
             flex: 2,
             child: OutlinedButton(
+              style: timeButtonStyle,
               onPressed: _saving ? null : () => _pickTime(row, true),
               child: Text(
-                  row.start == null ? l.fieldStartTime : _fmtTime(row.start!)),
+                row.start == null ? l.fieldStartTime : _fmtTime(row.start!),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
           const Gap.horizontal(AppSpacing.xs),
           Expanded(
             flex: 2,
             child: OutlinedButton(
+              style: timeButtonStyle,
               onPressed: _saving ? null : () => _pickTime(row, false),
               child: Text(
-                  row.end == null ? l.fieldEndTime : _fmtTime(row.end!)),
+                row.end == null ? l.fieldEndTime : _fmtTime(row.end!),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
           IconButton(

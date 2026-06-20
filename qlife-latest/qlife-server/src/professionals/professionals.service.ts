@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { Prisma, ProfessionType } from '@prisma/client';
 
 import { EmailService } from '../email/email.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfessionalDto } from './dto/update-professional.dto';
 
@@ -16,6 +17,7 @@ export class ProfessionalsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async registerAsProfessional(accountId: string, dto: { fullName: string; professionType: any; gender?: any; designation?: string; phone?: string }) {
@@ -40,8 +42,11 @@ export class ProfessionalsService {
         designation: dto.designation ?? null,
         phone: dto.phone ?? null,
         isOnboardingComplete: false,
-        isVisible: false,
-        acceptingNewClients: false,
+        // Default both ON so onboarding stays short — the professional still
+        // never appears publicly until an admin APPROVES them and onboarding
+        // is complete (see listDirectory/getPublicProfile gating).
+        isVisible: true,
+        acceptingNewClients: true,
       },
     });
 
@@ -376,15 +381,12 @@ export class ProfessionalsService {
         where: { id: verification.professional.accountId },
         data: { status: 'ACTIVE' },
       });
-      await this.prisma.notification.create({
-        data: {
-          recipientAccountId: verification.professional.accountId,
-          senderAccountId: args.adminAccountId,
-          type: 'ACCOUNT_APPROVED',
-          channel: 'IN_APP',
-          title: 'You are verified',
-          body: 'Your professional account has been approved. You can now be listed to clients.',
-        },
+      await this.notifications.createInAppNotification({
+        recipientAccountId: verification.professional.accountId,
+        senderAccountId: args.adminAccountId,
+        type: 'ACCOUNT_APPROVED',
+        title: "You're verified",
+        body: "Your professional account is approved — you're now visible to clients on QLife.",
       });
     }
 

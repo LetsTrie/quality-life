@@ -1,8 +1,9 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { EmailService } from '../email/email.service';
-import { PrismaService } from '../prisma/prisma.service';
 import { InstrumentsService } from '../instruments/instruments.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AssessmentsService {
@@ -10,6 +11,7 @@ export class AssessmentsService {
     private readonly prisma: PrismaService,
     private readonly instruments: InstrumentsService,
     private readonly email: EmailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async assignToClient(args: {
@@ -60,8 +62,8 @@ export class AssessmentsService {
             senderAccountId: args.professionalAccountId,
             type: 'ASSESSMENT_ASSIGNED',
             channel: 'IN_APP',
-            title: 'New self-check assigned',
-            body: 'Your professional has assigned you a self-check to complete.',
+            title: 'A new self-check for you',
+            body: 'Your provider has a quick self-check for you. Tap to start — it only takes a few minutes.',
             assessmentId: assessment.id,
           },
         });
@@ -85,6 +87,14 @@ export class AssessmentsService {
         });
       }
     } catch (_) {}
+
+    if (created.length > 0) {
+      await this.notifications.sendPush({
+        accountId: care.user.accountId,
+        title: 'A new self-check for you',
+        body: 'Your provider has a quick self-check for you. Tap to start — it only takes a few minutes.',
+      });
+    }
 
     return created;
   }
@@ -392,16 +402,13 @@ export class AssessmentsService {
         select: { accountId: true },
       });
       if (professional) {
-        await this.prisma.notification.create({
-          data: {
-            recipientAccountId: professional.accountId,
-            senderAccountId: args.accountId,
-            type: 'ASSESSMENT_COMPLETED',
-            channel: 'IN_APP',
-            title: 'Self-check completed',
-            body: 'A client has completed an assigned self-check.',
-            assessmentId: assessment.id,
-          },
+        await this.notifications.createInAppNotification({
+          recipientAccountId: professional.accountId,
+          senderAccountId: args.accountId,
+          type: 'ASSESSMENT_COMPLETED',
+          title: 'Self-check completed',
+          body: 'A client just finished an assigned self-check. Tap to review their results.',
+          assessmentId: assessment.id,
         });
 
         // Best-effort email fanout.

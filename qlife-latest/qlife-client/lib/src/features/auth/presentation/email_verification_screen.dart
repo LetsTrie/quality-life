@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router.dart';
+import '../../../shared/api/health_repository.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../data/auth_repository.dart';
@@ -61,6 +62,17 @@ class _EmailVerificationScreenState
         await ref
             .read(authStateProvider.notifier)
             .signInWithPassword(widget.email, widget.password!);
+
+        // Silent server health check — not shown in UI, only surfaces on failure.
+        try {
+          await ref.read(healthRepositoryProvider).check();
+        } catch (_) {
+          if (mounted) {
+            setState(() => _error = l.serverUnavailable);
+          }
+          return;
+        }
+
         ref.invalidate(appSessionProvider);
         if (mounted) context.go(const SplashRoute().location);
       } else if (mounted) {
@@ -140,8 +152,9 @@ class _EmailVerificationScreenState
 
 /// Industry-standard 6-box OTP input.
 ///
-/// Each box accepts one digit. Focus auto-advances on entry and retreats on
-/// backspace. [onCompleted] fires when all six digits are filled.
+/// Backed by a SINGLE hidden text field so the OS paste action fills every box
+/// at once and backspace deletes smoothly (one digit per tap, hold to repeat).
+/// The six boxes are purely visual and reflect the field's current value.
 class _OtpInput extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final ValueChanged<String>? onCompleted;
@@ -154,110 +167,118 @@ class _OtpInput extends StatefulWidget {
 
 class _OtpInputState extends State<_OtpInput> {
   static const _length = 6;
-  late final List<TextEditingController> _controllers;
-  late final List<FocusNode> _nodes;
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(_length, (_) => TextEditingController());
-    _nodes = List.generate(_length, (_) => FocusNode());
+    _focusNode.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
-    }
-    for (final n in _nodes) {
-      n.dispose();
-    }
+    _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
-  String get _value => _controllers.map((c) => c.text).join();
-
-  void _onChanged(int index, String value) {
-    if (value.isEmpty) {
-      widget.onChanged(_value);
-      return;
+  void _onChanged(String value) {
+    widget.onChanged(value);
+    if (value.length == _length) {
+      _focusNode.unfocus();
+      widget.onCompleted?.call(value);
     }
-    if (index < _length - 1) {
-      _nodes[index + 1].requestFocus();
-    } else {
-      _nodes[index].unfocus();
-    }
-    final current = _value;
-    widget.onChanged(current);
-    if (current.length == _length) widget.onCompleted?.call(current);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(_length, (i) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 5),
-          child: Focus(
-            onKeyEvent: (_, event) {
-              if (event is KeyDownEvent &&
-                  event.logicalKey == LogicalKeyboardKey.backspace &&
-                  _controllers[i].text.isEmpty &&
-                  i > 0) {
-                _nodes[i - 1].requestFocus();
-                return KeyEventResult.handled;
-              }
-              return KeyEventResult.ignored;
-            },
-            child: SizedBox(
-              width: 46,
-              height: 58,
-              child: TextFormField(
-                controller: _controllers[i],
-                focusNode: _nodes[i],
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                maxLength: 1,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-                decoration: InputDecoration(
-                  counterText: '',
-                  contentPadding: EdgeInsets.zero,
-                  filled: true,
-                  fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.4),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: cs.outline.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: cs.outline.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: cs.primary, width: 2),
-                  ),
-                ),
-                onChanged: (v) => _onChanged(i, v),
-                onTap: () => _controllers[i].selection =
-                    TextSelection.fromPosition(
-                  TextPosition(offset: _controllers[i].text.length),
-                ),
+    return GestureDetector(
+      onTap: () => _focusNode.requestFocus(),
+      behavior: HitTestBehavior.opaque,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Boxes render the value; they don't intercept taps.
+          IgnorePointer(
+            child: AnimatedBuilder(
+              animation: Listenable.merge([_controller, _focusNode]),
+              builder: (context, _) => Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children:
+                    List.generate(_length, (i) => _box(theme, i)),
               ),
             ),
           ),
-        );
-      }),
+          // The real, invisible input sits on top and captures all editing,
+          // including multi-character paste and continuous backspace.
+          Positioned.fill(
+            child: TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              showCursor: false,
+              maxLength: _length,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(_length),
+              ],
+              style: const TextStyle(
+                color: Colors.transparent,
+                height: 1,
+                fontSize: 1,
+              ),
+              cursorColor: Colors.transparent,
+              decoration: const InputDecoration(
+                counterText: '',
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+                fillColor: Colors.transparent,
+                filled: true,
+              ),
+              onChanged: _onChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _box(ThemeData theme, int i) {
+    final cs = theme.colorScheme;
+    final text = _controller.text;
+    final char = i < text.length ? text[i] : '';
+    // Highlight the box the next digit will land in.
+    final isActive = _focusNode.hasFocus &&
+        (i == text.length || (text.length == _length && i == _length - 1));
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        width: 46,
+        height: 58,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActive ? cs.primary : cs.outline.withValues(alpha: 0.5),
+            width: isActive ? 2 : 1,
+          ),
+        ),
+        child: Text(
+          char,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
     );
   }
 }

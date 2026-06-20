@@ -286,6 +286,13 @@ enum NotificationChannel {
   @@map("notification_channel")
 }
 
+enum DevicePlatform {
+  ANDROID
+  IOS
+
+  @@map("device_platform")
+}
+
 enum ConsentType {
   TERMS_OF_SERVICE
   PRIVACY_POLICY
@@ -351,6 +358,7 @@ model Account {
 
   notificationsReceived Notification[]             @relation("NotificationRecipient")
   notificationsSent     Notification[]             @relation("NotificationSender")
+  deviceTokens          DeviceToken[]
   auditLogs             AuditLog[]                 @relation("AuditActor")
   reviewedVerifications ProfessionalVerification[] @relation("VerificationReviewer")
   appointmentEvents     AppointmentEvent[]         @relation("AppointmentEventActor")
@@ -1147,6 +1155,21 @@ model Notification {
   @@index([type])
   @@index([createdAt])
   @@map("notifications")
+}
+
+/// FCM/APNs registration token for mobile push delivery.
+model DeviceToken {
+  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId String         @map("account_id") @db.Uuid
+  token     String         @unique
+  platform  DevicePlatform
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@map("device_tokens")
 }
 
 // =============================================================================

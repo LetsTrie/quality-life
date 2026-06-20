@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/router.dart';
+import '../../../app/tab_refresh.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/client.dart';
 import '../../../shared/models/paged_result.dart';
@@ -25,14 +26,19 @@ class ClientsScreen extends ConsumerWidget {
           GradientHeader(
             title: l.clientsTitle,
             subtitle: l.proMyClientsDesc,
+            actions: [
+              IconButton(
+                onPressed: () => ref.invalidate(_clientsProvider),
+                icon: const Icon(Icons.refresh_rounded),
+                tooltip: l.actionRetry,
+              ),
+            ],
           ),
           Expanded(
             child: asyncClients.when(
               loading: () => const LoadingView(),
-              error: (e, _) => ErrorView(
-                message: l.errLoadClients,
-                onRetry: () => ref.invalidate(_clientsProvider),
-              ),
+              // Retry lives in the top-right header reload icon, not a center button.
+              error: (e, _) => ErrorView(message: l.errLoadClients),
               data: (result) {
                 if (result.items.isEmpty) {
                   return EmptyView(message: l.emptyClients);
@@ -105,5 +111,6 @@ class ClientsScreen extends ConsumerWidget {
 }
 
 final _clientsProvider = FutureProvider<PagedResult<Client>>((ref) async {
+  ref.watch(tabRefreshProvider);
   return ref.read(clientsRepositoryProvider).list();
 });

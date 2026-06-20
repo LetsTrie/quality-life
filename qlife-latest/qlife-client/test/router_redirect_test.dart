@@ -5,12 +5,20 @@ import 'package:qlife/src/app/app.dart';
 import 'package:qlife/src/app/router.dart';
 import 'package:qlife/src/features/auth/data/auth_repository.dart';
 import 'package:qlife/src/features/auth/data/auth_tokens.dart';
+import 'package:qlife/src/features/auth/presentation/forgot_password_screen.dart';
 import 'package:qlife/src/features/auth/presentation/sign_in_screen.dart';
+import 'package:qlife/src/features/auth/presentation/sign_up_screen.dart';
+import 'package:qlife/src/features/auth/presentation/email_verification_screen.dart';
+import 'package:qlife/src/features/auth/state/auth_intent.dart';
 import 'package:qlife/src/features/home/presentation/home_screen.dart';
 import 'package:qlife/src/features/professional/presentation/professional_home_screen.dart';
 import 'package:qlife/src/features/professional/presentation/professional_onboarding_screen.dart';
+import 'package:qlife/src/features/professional/presentation/professional_register_screen.dart';
+import 'package:qlife/src/features/professional/presentation/professional_rejected_screen.dart';
 import 'package:qlife/src/features/users/presentation/user_profile_completion_screen.dart';
 import 'package:qlife/src/shared/api/api_client.dart';
+import 'package:qlife/src/shared/push/push_notification_service.dart';
+import 'package:qlife/src/shared/realtime/realtime_service.dart';
 
 // ─── Fakes ────────────────────────────────────────────────────────────────────
 
@@ -62,6 +70,26 @@ class _FakeAuthRepo implements AuthRepository {
   Future<void> deleteCognitoUser() async {}
 }
 
+// No-op session services so init/logout don't touch Firebase or open sockets
+// (which would leave pending timers in the test environment).
+class _NoopPush extends PushNotificationService {
+  _NoopPush(super.ref);
+  @override
+  Future<void> initialize() async {}
+  @override
+  Future<void> syncToken() async {}
+  @override
+  Future<void> teardown({bool deregisterRemote = true}) async {}
+}
+
+class _NoopRealtime extends RealtimeService {
+  _NoopRealtime(super.ref);
+  @override
+  Future<void> connect() async {}
+  @override
+  Future<void> disconnect() async {}
+}
+
 // Returns a Dio that always throws — ensures no real HTTP calls escape in tests.
 Dio _noopDio() => Dio()
   ..interceptors.add(InterceptorsWrapper(
@@ -85,6 +113,8 @@ Future<void> _bootApp(
       overrides: [
         authRepositoryProvider.overrideWithValue(_FakeAuthRepo(stored: storedTokens)),
         apiClientProvider.overrideWithValue(_noopDio()),
+        pushNotificationServiceProvider.overrideWith((ref) => _NoopPush(ref)),
+        realtimeServiceProvider.overrideWith((ref) => _NoopRealtime(ref)),
         if (session != null)
           appSessionProvider.overrideWith((_) async => session)
         else
@@ -127,6 +157,63 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets(
+        'authenticated user with unresolved session can open sign-up and forgot-password',
+        (tester) async {
+      await _bootApp(
+        tester,
+        storedTokens:
+            const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        session: null,
+      );
+      expect(find.byType(SignInScreen), findsOneWidget);
+
+      await tester.tap(find.text('New here? Create an account'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SignUpScreen), findsOneWidget);
+
+      await tester.tap(find.text('Already have an account? Sign in'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SignInScreen), findsOneWidget);
+
+      await tester.tap(find.text('Forgot password?'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+    });
+
+    testWidgets(
+        'authenticated user with unresolved session can reach email verification without a loop',
+        (tester) async {
+      await _bootApp(
+        tester,
+        storedTokens:
+            const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        session: null,
+      );
+      expect(find.byType(SignInScreen), findsOneWidget);
+
+      // Simulate navigation to /verify (e.g. after sign-up) — must not bounce.
+      final router = ProviderScope.containerOf(tester.element(find.byType(QLifeApp)))
+          .read(appRouterProvider);
+      router.go(const VerifyEmailRoute().location);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EmailVerificationScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+        'USER on the professional path is redirected to ProfessionalRegisterScreen',
+        (tester) async {
+      await _bootApp(
+        tester,
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        session: const AppSession(role: 'USER', isUserProfileComplete: true),
+        extra: [pendingProfessionalRegistrationProvider.overrideWith((_) => true)],
+      );
+      expect(find.byType(ProfessionalRegisterScreen), findsOneWidget);
+    });
+
     testWidgets('USER with incomplete profile is redirected to UserProfileCompletionScreen',
         (tester) async {
       await _bootApp(
@@ -167,6 +254,42 @@ void main() {
       expect(find.byType(ProfessionalHomeScreen), findsOneWidget);
     });
 
+    testWidgets(
+        'PROFESSIONAL whose verification was REJECTED lands on ProfessionalRejectedScreen',
+        (tester) async {
+      await _bootApp(
+        tester,
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        session: const AppSession(
+          role: 'PROFESSIONAL',
+          isProfessionalOnboardingComplete: true,
+          professionalVerificationStatus: 'REJECTED',
+        ),
+      );
+      expect(find.byType(ProfessionalRejectedScreen), findsOneWidget);
+      expect(find.byType(ProfessionalHomeScreen), findsNothing);
+    });
+
+    testWidgets('rejected PROFESSIONAL cannot reach the dashboard', (tester) async {
+      await _bootApp(
+        tester,
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        session: const AppSession(
+          role: 'PROFESSIONAL',
+          isProfessionalOnboardingComplete: true,
+          professionalVerificationStatus: 'REJECTED',
+        ),
+      );
+      expect(find.byType(ProfessionalRejectedScreen), findsOneWidget);
+
+      final router = ProviderScope.containerOf(tester.element(find.byType(QLifeApp)))
+          .read(appRouterProvider);
+      router.go(const ProfessionalDashboardRoute().location);
+      await tester.pumpAndSettle();
+      expect(find.byType(ProfessionalRejectedScreen), findsOneWidget);
+      expect(find.byType(ProfessionalHomeScreen), findsNothing);
+    });
+
     testWidgets('ADMIN lands on HomeScreen', (tester) async {
       await _bootApp(
         tester,
@@ -174,6 +297,22 @@ void main() {
         session: const AppSession(role: 'ADMIN'),
       );
       expect(find.byType(HomeScreen), findsOneWidget);
+    });
+
+    testWidgets('PROFESSIONAL with incomplete onboarding cannot reach HomeScreen', (tester) async {
+      await _bootApp(
+        tester,
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        session: const AppSession(role: 'PROFESSIONAL', isProfessionalOnboardingComplete: false),
+      );
+      expect(find.byType(ProfessionalOnboardingScreen), findsOneWidget);
+
+      final router = ProviderScope.containerOf(tester.element(find.byType(QLifeApp)))
+          .read(appRouterProvider);
+      router.go(const HomeRoute().location);
+      await tester.pumpAndSettle();
+      expect(find.byType(ProfessionalOnboardingScreen), findsOneWidget);
+      expect(find.byType(HomeScreen), findsNothing);
     });
   });
 }

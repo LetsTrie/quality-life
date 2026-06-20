@@ -357,6 +357,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not load this self-check. Please go back and try again.';
 
   @override
+  String get errLoadDistricts => 'Could not load districts. Please try again.';
+
+  @override
   String get errLoadUpazilas => 'Could not load upazilas. Please try again.';
 
   @override
@@ -375,11 +378,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emptyContent => 'No resources available yet';
 
   @override
-  String get emptyProfessionals => 'No professionals available';
-
-  @override
-  String get emptyProfessionalsHint =>
-      'If you just approved a professional, they may still need to finish onboarding, enable visibility, and turn on “Accepting clients”. Pull to refresh, or try again in a moment.';
+  String get emptyProfessionals =>
+      'There are currently no professionals to show';
 
   @override
   String get emptyScales => 'No self-checks available yet';
@@ -531,6 +531,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not load assigned self-checks. Please try again.';
 
   @override
+  String assignedPending(Object count) {
+    return '$count waiting to be completed';
+  }
+
+  @override
+  String get actionNeeded => 'Action needed';
+
+  @override
   String get notificationsTitle => 'Notifications';
 
   @override
@@ -541,6 +549,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statusRead => 'Read';
+
+  @override
+  String get timeJustNow => 'Just now';
+
+  @override
+  String timeMinutesAgo(Object minutes) {
+    return '${minutes}m ago';
+  }
+
+  @override
+  String timeHoursAgo(Object hours) {
+    return '${hours}h ago';
+  }
+
+  @override
+  String timeDaysAgo(Object days) {
+    return '${days}d ago';
+  }
 
   @override
   String get scalesTitle => 'Self-checks';
@@ -786,7 +812,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get acceptingNewClients => 'Accepting new clients';
 
   @override
+  String get acceptingNewClientsDesc =>
+      'Allow clients to send you new booking requests. Turn this off when your schedule is full — you stay in the directory but clients can\'t book you.';
+
+  @override
   String get showInDirectory => 'Let clients find me';
+
+  @override
+  String get showInDirectoryDesc =>
+      'List your profile in the public directory so clients can discover and view you. You only become visible after an admin approves your account.';
 
   @override
   String get visibleAfterApproval => 'Visible only after admin approval';
@@ -801,12 +835,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingSaveFailed => 'Failed to save. Please try again.';
 
   @override
+  String saveFailedReason(Object reason) {
+    return 'Couldn\'t save: $reason';
+  }
+
+  @override
   String verificationStatus(Object status) {
     return 'Verification: $status';
   }
 
   @override
+  String get verificationPendingTitle => 'Account under review';
+
+  @override
+  String get verificationPendingNote =>
+      'Our team is reviewing your profile. You won\'t appear to clients yet — once an admin approves your account, you\'ll be listed in the directory and clients can find and book you.';
+
+  @override
+  String get verificationApprovedTitle => 'You\'re approved';
+
+  @override
+  String get verificationApprovedNote =>
+      'Your profile is live. Clients can find you in the directory and request appointments.';
+
+  @override
+  String get exitAppTitle => 'Close the app?';
+
+  @override
+  String get exitAppMessage => 'Are you sure you want to exit QLife?';
+
+  @override
+  String get actionExit => 'Exit';
+
+  @override
+  String get proRejectedTitle => 'Application reviewed';
+
+  @override
+  String get proRejectedHeadline => 'Thank you for your interest in QLife';
+
+  @override
+  String get proRejectedBody =>
+      'Your application to join QLife as a professional has been carefully reviewed. After consideration, we are unable to approve your account to proceed at this time. We sincerely appreciate the time and effort you put into your application.';
+
+  @override
+  String get proRejectedContact =>
+      'If you have any questions or believe this decision was made in error, please contact our support team.';
+
+  @override
   String get nonNegativeInteger => 'Enter a non-negative integer';
+
+  @override
+  String get yearsOutOfRange => 'Enter a realistic number of years (0–80)';
+
+  @override
+  String get weeklyOutOfRange => 'Enter a realistic number (0–500)';
+
+  @override
+  String get avgExceedsMax =>
+      'Average clients per week can\'t exceed your weekly maximum';
+
+  @override
+  String get bmdcHint => 'As printed on your BMDC certificate';
+
+  @override
+  String get fieldCountryCode => 'Country';
+
+  @override
+  String get phoneHintBd => 'e.g. 01712345678';
+
+  @override
+  String get phoneInvalidBd =>
+      'Enter a valid Bangladeshi mobile number (e.g. 01712345678)';
+
+  @override
+  String get phoneInvalid => 'Enter a valid phone number';
 
   @override
   String get onboardingRequiredHint =>
@@ -1054,6 +1156,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allProfessions => 'All professions';
 
   @override
+  String get professionFilterLabel => 'Profession';
+
+  @override
   String get labelFee => 'Fee';
 
   @override
@@ -1147,4 +1252,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get fieldAgreeTerms =>
       'I agree to the Terms & Conditions and Privacy Policy';
+
+  @override
+  String get fieldAgreeTermsPrefix => 'I agree to the ';
+
+  @override
+  String get fieldAgreeTermsLink => 'Terms & Conditions and Privacy Policy';
+
+  @override
+  String get serverUnavailable =>
+      'Our servers are currently unavailable. Please try again in a few moments.';
+
+  @override
+  String get alreadyRequestedAppointment =>
+      'You already have an appointment with this professional.';
+
+  @override
+  String get actionViewAppointment => 'View appointment';
+
+  @override
+  String clientAssessmentCompletedOn(Object date) {
+    return 'Completed $date';
+  }
 }

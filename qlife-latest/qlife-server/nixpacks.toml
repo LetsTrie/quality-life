@@ -1,0 +1,11 @@
+# Fallback if you disable Dockerfile in Railway and use Nixpacks instead.
+# Uses `npm install` (not `npm ci`) to avoid cross-platform lockfile issues.
+
+[phases.install]
+cmds = ["npm install"]
+
+[phases.build]
+cmds = ["npx prisma generate", "npm run build"]
+
+[start]
+cmd = "npx prisma migrate deploy && npm run start"

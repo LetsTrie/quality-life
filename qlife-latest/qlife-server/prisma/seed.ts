@@ -208,53 +208,54 @@ async function syncInstrumentVersion(
   await prisma.question.deleteMany({ where: { instrumentVersionId: targetVersionId } });
   await prisma.scoringBand.deleteMany({ where: { instrumentVersionId: targetVersionId } });
 
-  for (let i = 0; i < desired.questions.length; i++) {
-    const q = desired.questions[i]!;
-    const question = await prisma.question.create({
-      data: {
-        instrumentVersionId: targetVersionId,
-        position: i + 1,
-        prompt: q.prompt,
-        type: q.type,
-        isRequired: true,
-      },
-    });
+  // Pre-generate question IDs so options can reference them without a round-trip
+  // per row. This turns ~(1 + N options) sequential inserts into 2 bulk inserts.
+  const questionRows = desired.questions.map((q, i) => ({
+    id: crypto.randomUUID(),
+    instrumentVersionId: targetVersionId,
+    position: i + 1,
+    prompt: q.prompt,
+    type: q.type,
+    isRequired: true,
+  }));
 
-    for (let j = 0; j < q.options.length; j++) {
-      const opt = q.options[j]!;
-      await prisma.answerOption.create({
-        data: {
-          questionId: question.id,
-          position: j + 1,
-          label: opt.label,
-          value: opt.value,
-          weight: String(opt.weight),
-        },
-      });
-    }
-  }
+  const optionRows = desired.questions.flatMap((q, i) =>
+    q.options.map((opt, j) => ({
+      questionId: questionRows[i]!.id,
+      position: j + 1,
+      label: opt.label,
+      value: opt.value,
+      weight: String(opt.weight),
+    })),
+  );
 
-  for (let i = 0; i < desired.bands.length; i++) {
-    const b = desired.bands[i]!;
-    await prisma.scoringBand.create({
-      data: {
-        instrumentVersionId: targetVersionId,
-        position: i + 1,
-        label: b.label,
-        severityRank: b.severityRank,
-        minScore: String(b.minScore),
-        maxScore: String(b.maxScore),
-        recommendedAction: b.recommendedAction,
-        recommendedContentId: b.recommendedContentId ?? null,
-      },
-    });
-  }
+  const bandRows = desired.bands.map((b, i) => ({
+    instrumentVersionId: targetVersionId,
+    position: i + 1,
+    label: b.label,
+    severityRank: b.severityRank,
+    minScore: String(b.minScore),
+    maxScore: String(b.maxScore),
+    recommendedAction: b.recommendedAction,
+    recommendedContentId: b.recommendedContentId ?? null,
+  }));
+
+  if (questionRows.length) await prisma.question.createMany({ data: questionRows });
+  if (optionRows.length) await prisma.answerOption.createMany({ data: optionRows });
+  if (bandRows.length) await prisma.scoringBand.createMany({ data: bandRows });
 }
 
 async function main() {
   const prisma = new PrismaClient();
   const seedRoot = path.join(__dirname, 'seed-data', 'legacy');
   const repoRoot = path.resolve(__dirname, '..', '..', '..');
+
+  const chunk = <T,>(items: T[], size: number): T[][] => {
+    if (size <= 0) return [items];
+    const out: T[][] = [];
+    for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+    return out;
+  };
 
   // --- Educational content (legacy videos.js) ---
   const videos = await readJson<Array<{ name: string; videoId: string; content_id: string; order?: number }>>(
@@ -591,51 +592,92 @@ async function main() {
     create: { code: 'BD', nameBn: 'বাংলাদেশ', nameEn: 'Bangladesh' },
   });
 
+  // Reset the geo hierarchy before re-inserting so a re-seed stays clean: the
+  // codes are derived from BN names, so any name/spelling change would otherwise
+  // leave stale duplicate rows behind. Profile FKs are onDelete:SetNull, so this
+  // nulls out (rather than blocks) any existing profile references; the seed
+  // below re-creates the canonical rows. Delete child→parent (FKs are Restrict).
+  await prisma.union.deleteMany({});
+  await prisma.upazila.deleteMany({});
+  await prisma.district.deleteMany({});
+
+  // This dataset can be thousands of rows; avoid per-row upserts (slow on remote DBs).
+  // We insert in batches with skipDuplicates, then look up IDs by code.
+  const districtsInput = (region.districts ?? [])
+    .map((d) => (d.districtName ?? '').trim())
+    .filter(Boolean);
+
+  const districtRows = districtsInput.map((name) => ({
+    code: stableSlug('dist', name),
+    nameBn: name,
+    nameEn: name,
+    divisionId: division.id,
+  }));
+
+  for (const batch of chunk(districtRows, 500)) {
+    await prisma.district.createMany({ data: batch, skipDuplicates: true });
+  }
+
+  const districts = await prisma.district.findMany({
+    where: { code: { in: districtRows.map((d) => d.code) } },
+    select: { id: true, code: true },
+  });
+  const districtIdByCode = new Map(districts.map((d) => [d.code, d.id]));
+
+  const upazilaRows: Array<{ code: string; nameBn: string; nameEn: string; districtId: string }> = [];
+  const unionRows: Array<{ code: string; nameBn: string; nameEn: string; upazilaCode: string }> = [];
+
   for (const d of region.districts ?? []) {
     const districtName = (d.districtName ?? '').trim();
     if (!districtName) continue;
-
-    const district = await prisma.district.upsert({
-      where: { code: stableSlug('dist', districtName) },
-      update: { nameBn: districtName, nameEn: districtName, divisionId: division.id },
-      create: {
-        code: stableSlug('dist', districtName),
-        nameBn: districtName,
-        nameEn: districtName,
-        divisionId: division.id,
-      },
-    });
+    const districtCode = stableSlug('dist', districtName);
+    const districtId = districtIdByCode.get(districtCode);
+    if (!districtId) continue;
 
     for (const s of d.subDistricts ?? []) {
       const upazilaName = (s.subDistrictName ?? '').trim();
       if (!upazilaName) continue;
-
-      const upazila = await prisma.upazila.upsert({
-        where: { code: stableSlug('upa', `${districtName}|${upazilaName}`) },
-        update: { nameBn: upazilaName, nameEn: upazilaName, districtId: district.id },
-        create: {
-          code: stableSlug('upa', `${districtName}|${upazilaName}`),
-          nameBn: upazilaName,
-          nameEn: upazilaName,
-          districtId: district.id,
-        },
+      const upazilaCode = stableSlug('upa', `${districtName}|${upazilaName}`);
+      upazilaRows.push({
+        code: upazilaCode,
+        nameBn: upazilaName,
+        nameEn: upazilaName,
+        districtId,
       });
 
       for (const u of s.unions ?? []) {
         const unionName = (u.unionName ?? '').trim();
         if (!unionName) continue;
-        await prisma.union.upsert({
-          where: { code: stableSlug('uni', `${districtName}|${upazilaName}|${unionName}`) },
-          update: { nameBn: unionName, nameEn: unionName, upazilaId: upazila.id },
-          create: {
-            code: stableSlug('uni', `${districtName}|${upazilaName}|${unionName}`),
-            nameBn: unionName,
-            nameEn: unionName,
-            upazilaId: upazila.id,
-          },
+        unionRows.push({
+          code: stableSlug('uni', `${districtName}|${upazilaName}|${unionName}`),
+          nameBn: unionName,
+          nameEn: unionName,
+          upazilaCode,
         });
       }
     }
+  }
+
+  for (const batch of chunk(upazilaRows, 1000)) {
+    await prisma.upazila.createMany({ data: batch, skipDuplicates: true });
+  }
+
+  const upazilas = await prisma.upazila.findMany({
+    where: { code: { in: upazilaRows.map((u) => u.code) } },
+    select: { id: true, code: true },
+  });
+  const upazilaIdByCode = new Map(upazilas.map((u) => [u.code, u.id]));
+
+  const resolvedUnionRows = unionRows
+    .map((u) => {
+      const upazilaId = upazilaIdByCode.get(u.upazilaCode);
+      if (!upazilaId) return null;
+      return { code: u.code, nameBn: u.nameBn, nameEn: u.nameEn, upazilaId };
+    })
+    .filter(Boolean) as Array<{ code: string; nameBn: string; nameEn: string; upazilaId: string }>;
+
+  for (const batch of chunk(resolvedUnionRows, 1500)) {
+    await prisma.union.createMany({ data: batch, skipDuplicates: true });
   }
 
   // --- Clinical specialization vocabulary (legacy specAreaLists) ---

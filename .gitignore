@@ -111,7 +111,7 @@ dist
 package-lock.json
 yarn.lock
 
-# Allow lockfile for Render builds (npm ci requires it)
+# Allow server package-lock for reproducible deploys (Railway/Docker)
 !qlife-latest/qlife-server/package-lock.json
 
 .expo
@@ -125,3 +125,4 @@ nginx.txt
 # Editor / local notes
 .vscode/
 qlife-latest/notes.txt
+qlife-latest/qlife-server/qlife-50bf4-firebase-adminsdk-fbsvc-86f59baf9d.json
