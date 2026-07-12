@@ -447,7 +447,7 @@ async function main() {
     'dhaka_university_cognitive_distortion_scale_(ducds)': 'চিন্তার বিকৃতি যাচাই (DUCDS)',
     'aggression_scale': 'রাগ ও আগ্রাসন যাচাই',
     'satisfaction_with_life_scale': 'জীবনে সন্তুষ্টি যাচাই',
-    'hopelessness_scale_(beck)': 'হতাশা যাচাই (Beck)',
+    'hopelessness_scale_(beck)': 'হতাশা যাচাই (Hopelessness scale)',
     'social_interaction_anxiety_scale': 'সামাজিক মেলামেশায় উদ্বেগ যাচাই',
     'nicotine_addiction_scale': 'নিকোটিন আসক্তি যাচাই',
     'social_avoidance_and_distress_scale': 'সামাজিক এড়িয়ে চলা ও অস্বস্তি যাচাই',
@@ -478,13 +478,26 @@ async function main() {
         options: q.options.map((opt) => ({ label: opt.label, value: opt.value, weight: opt.weight })),
       })),
       bands: scale.scoring.bands.map((b, i) => {
-        const action =
-          b.label === 'তীব্র মাত্রা'
-            ? OutcomeAction.SHOW_HELP_CENTER_URGENT
-            : OutcomeAction.RECOMMEND_CONTENT;
+        let action: OutcomeAction;
+        let severityRank: number;
+        if (scale.slug === 'wellbeing-5') {
+          // Well-being is scored the opposite way to the screening scales: a
+          // HIGHER percentage is BETTER. So severity is inverted (the low band
+          // is the more severe one), and a poor result (≤50%) escalates to the
+          // help center rather than only recommending coping content.
+          const isPoor = b.max <= 50;
+          action = isPoor ? OutcomeAction.SHOW_HELP_CENTER : OutcomeAction.RECOMMEND_CONTENT;
+          severityRank = isPoor ? 1 : 0;
+        } else {
+          action =
+            b.label === 'তীব্র মাত্রা'
+              ? OutcomeAction.SHOW_HELP_CENTER_URGENT
+              : OutcomeAction.RECOMMEND_CONTENT;
+          severityRank = i;
+        }
         return {
           label: b.label,
-          severityRank: i,
+          severityRank,
           minScore: b.min,
           maxScore: b.max,
           recommendedAction: action,
@@ -554,9 +567,13 @@ async function main() {
     const numQuestions = data.questions.length;
 
     const instrument = await prisma.instrument.upsert({
+      // Risk-profile screens are removed from the user portion entirely:
+      // isSelfAssessable=false keeps them out of the user list AND blocks
+      // self-starting them by slug (createSelfAssessment guard). They also do
+      // not appear for professionals (clinical-only assign filter).
       where: { slug: rp.slug },
-      update: { name: rp.nameEn, nameBn: rp.nameBn, category: 'RISK_PROFILE', isActive: true, isSelfAssessable: true },
-      create: { slug: rp.slug, name: rp.nameEn, nameBn: rp.nameBn, category: 'RISK_PROFILE', isActive: true, isSelfAssessable: true },
+      update: { name: rp.nameEn, nameBn: rp.nameBn, category: 'RISK_PROFILE', isActive: true, isSelfAssessable: false },
+      create: { slug: rp.slug, name: rp.nameEn, nameBn: rp.nameBn, category: 'RISK_PROFILE', isActive: true, isSelfAssessable: false },
     });
 
     await syncInstrumentVersion(prisma, instrument.id, 'bn', {

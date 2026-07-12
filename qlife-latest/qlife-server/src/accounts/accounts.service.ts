@@ -72,6 +72,20 @@ export class AccountsService {
     return this.prisma.account.findUnique({ where: { id } });
   }
 
+  /// Persist the account's preferred language (BCP-47, e.g. "bn"/"en"). Drives
+  /// the language of in-app / push notifications. Normalized to the base
+  /// language subtag so "en-US" and "en" behave the same.
+  async setPreferredLocale(id: string, locale: string) {
+    const normalized = locale.trim().toLowerCase().split(/[-_]/)[0];
+    const preferredLocale = normalized === 'en' ? 'en' : 'bn';
+    const account = await this.prisma.account.update({
+      where: { id },
+      data: { preferredLocale },
+      select: { preferredLocale: true },
+    });
+    return { preferredLocale: account.preferredLocale };
+  }
+
   /// Self-deactivate: recoverable. The account is blocked from normal use but
   /// retained. A deactivated professional drops out of the directory.
   async deactivate(id: string) {

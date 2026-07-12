@@ -12,6 +12,9 @@ function makePrisma() {
       upsert: jest.fn(),
       deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
+    account: {
+      findUnique: jest.fn(),
+    },
   };
 }
 
@@ -101,6 +104,64 @@ describe('NotificationsService', () => {
     });
 
     expect(result).toEqual({ id: 'notif-1' });
+  });
+
+  it('sends the Bangla pair when the recipient prefers Bangla (default)', async () => {
+    const prisma = makePrisma();
+    const push = makePush();
+    const realtime = makeRealtime();
+    prisma.account.findUnique.mockResolvedValue({ preferredLocale: 'bn' });
+    const service = new NotificationsService(prisma as never, push as never, realtime as never);
+
+    await service.createLocalizedNotification({
+      recipientAccountId: 'acc-1',
+      type: 'APPOINTMENT_CANCELLED',
+      bn: { title: 'বাতিল', body: 'ক্লায়েন্ট বাতিল করেছেন' },
+      en: { title: 'Cancelled', body: 'A client cancelled' },
+      appointmentId: 'appt-1',
+    });
+
+    expect(prisma.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ title: 'বাতিল', body: 'ক্লায়েন্ট বাতিল করেছেন' }),
+    });
+  });
+
+  it('sends the English pair when the recipient prefers English', async () => {
+    const prisma = makePrisma();
+    const push = makePush();
+    const realtime = makeRealtime();
+    prisma.account.findUnique.mockResolvedValue({ preferredLocale: 'en' });
+    const service = new NotificationsService(prisma as never, push as never, realtime as never);
+
+    await service.createLocalizedNotification({
+      recipientAccountId: 'acc-1',
+      type: 'APPOINTMENT_CANCELLED',
+      bn: { title: 'বাতিল', body: 'ক্লায়েন্ট বাতিল করেছেন' },
+      en: { title: 'Cancelled', body: 'A client cancelled' },
+    });
+
+    expect(prisma.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ title: 'Cancelled', body: 'A client cancelled' }),
+    });
+  });
+
+  it('defaults to Bangla when the account has no explicit preference', async () => {
+    const prisma = makePrisma();
+    const push = makePush();
+    const realtime = makeRealtime();
+    prisma.account.findUnique.mockResolvedValue(null);
+    const service = new NotificationsService(prisma as never, push as never, realtime as never);
+
+    await service.createLocalizedNotification({
+      recipientAccountId: 'acc-1',
+      type: 'ASSESSMENT_COMPLETED',
+      bn: { title: 'সম্পন্ন', body: 'শেষ' },
+      en: { title: 'Done', body: 'Finished' },
+    });
+
+    expect(prisma.notification.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ title: 'সম্পন্ন' }),
+    });
   });
 
   it('removes a device token scoped to the caller account', async () => {

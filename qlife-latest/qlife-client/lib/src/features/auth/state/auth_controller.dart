@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../account/data/account_repository.dart';
+import '../../../shared/locale/locale_controller.dart';
 import '../../../shared/push/push_notification_service.dart';
 import '../../../shared/realtime/realtime_service.dart';
 import '../data/auth_repository.dart';
@@ -62,6 +63,13 @@ class AuthController extends StateNotifier<AuthState> {
     } catch (_) {}
     try {
       await _ref.read(realtimeServiceProvider).connect();
+    } catch (_) {}
+    // Backfill the backend's preferred language from the device choice so
+    // notifications match the selected language (esp. for accounts created
+    // before language sync existed). Best-effort.
+    try {
+      final code = await _ref.read(localeControllerProvider.notifier).storedLocaleCode();
+      await _ref.read(accountRepositoryProvider).setPreferredLocale(code);
     } catch (_) {}
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../theme/app_decorations.dart';
 import '../theme/app_spacing.dart';
@@ -79,7 +80,13 @@ class GradientHeader extends StatelessWidget {
                   children: [
                     if (showBack) ...[
                       IconButton(
-                        onPressed: () => Navigator.of(context).maybePop(),
+                        // Pop when possible; otherwise (e.g. the screen was
+                        // reached via context.go, which replaced the stack — a
+                        // notification tap or a result CTA) fall back to home so
+                        // the button is never a silent no-op. The router redirect
+                        // re-routes professionals off '/' to their dashboard.
+                        onPressed: () =>
+                            context.canPop() ? context.pop() : context.go('/'),
                         icon: const Icon(Icons.arrow_back_rounded),
                         color: onGradient,
                         visualDensity: VisualDensity.compact,

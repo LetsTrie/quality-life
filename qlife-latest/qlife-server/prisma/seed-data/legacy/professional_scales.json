@@ -4741,7 +4741,7 @@
   },
   {
     "id": "hopelessness_scale_(beck)",
-    "name": "Hopelessness Scale (Beck)",
+    "name": "Hopelessness Scale",
     "needToEvaluate": true,
     "copyright": "Developed by Dr. Aaron T. Beck",
     "ques": [

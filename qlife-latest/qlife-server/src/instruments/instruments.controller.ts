@@ -8,10 +8,17 @@ export class InstrumentsController {
 
   @Get()
   async list(@Req() req: Request) {
-    // Users only see self-assessable scales; professionals/admins see all so
-    // they can assign the clinical (assign-only) ones to clients.
-    const selfAssessableOnly = req.auth?.account.role === 'USER';
-    return { data: { instruments: await this.instruments.list({ selfAssessableOnly }) } };
+    // Users only see self-assessable scales; professionals see only the clinical
+    // scales they may assign (GHQ/PSS/anxiety/well-being + the risk-profile
+    // screens are user-facing defaults, not assignable); admins see all.
+    const role = req.auth?.account.role;
+    const selfAssessableOnly = role === 'USER';
+    const professionalAssignableOnly = role === 'PROFESSIONAL';
+    return {
+      data: {
+        instruments: await this.instruments.list({ selfAssessableOnly, professionalAssignableOnly }),
+      },
+    };
   }
 
   @Get(':slug')

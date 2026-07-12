@@ -1,5 +1,27 @@
 import 'reflect-metadata';
 
+import * as http from 'node:http';
+import * as https from 'node:https';
+
+// firebase-admin / google-auth fetch OAuth2 access tokens through node-fetch,
+// which uses Node's default *global* HTTP(S) agent. On Node 19+ that agent
+// keeps sockets alive, and node-fetch 2.x reuses a pooled socket the server has
+// already half-closed — aborting the googleapis.com/oauth2 response mid-body
+// with "Premature close" (node-fetch#1735 / nodejs/node#47130). This surfaces
+// as `app/invalid-credential` and breaks all FCM push sends. Forcing a fresh
+// socket per request avoids the stale-socket reuse entirely. globalAgent is
+// read-only, so mutate keep-alive on the existing instances in place.
+const disableKeepAlive = (agent: http.Agent) => {
+  const a = agent as unknown as {
+    keepAlive: boolean;
+    options?: { keepAlive?: boolean };
+  };
+  a.keepAlive = false;
+  if (a.options) a.options.keepAlive = false;
+};
+disableKeepAlive(http.globalAgent);
+disableKeepAlive(https.globalAgent);
+
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';

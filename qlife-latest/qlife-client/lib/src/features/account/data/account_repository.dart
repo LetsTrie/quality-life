@@ -10,6 +10,9 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
 abstract class AccountRepository {
   Future<Map<String, dynamic>> me();
 
+  /// Persist the preferred language (drives notification language). Best-effort.
+  Future<void> setPreferredLocale(String localeCode);
+
   /// Recoverable self-deactivation.
   Future<void> deactivate();
 
@@ -25,6 +28,14 @@ class HttpAccountRepository implements AccountRepository {
   Future<Map<String, dynamic>> me() async {
     final res = await _dio.get('/v1/me');
     return (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+  }
+
+  @override
+  Future<void> setPreferredLocale(String localeCode) async {
+    await _dio.patch(
+      '/v1/me/preferences',
+      data: {'preferredLocale': localeCode == 'en' ? 'en' : 'bn'},
+    );
   }
 
   @override

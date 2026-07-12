@@ -195,8 +195,12 @@ class _InstrumentDetailScreenState
                       const Gap(AppSpacing.lg),
                     ],
                     const Gap(AppSpacing.xs),
+                    // Every question must be answered before the scale can be
+                    // submitted/scored — a partial set would deflate the result.
                     FilledButton(
-                      onPressed: _submitting ? null : () => _submit(instrument),
+                      onPressed: (_submitting || answered != total || total == 0)
+                          ? null
+                          : () => _submit(instrument),
                       child: Text(
                           _submitting ? l.actionSubmitting : l.actionSubmit),
                     ),
@@ -204,7 +208,10 @@ class _InstrumentDetailScreenState
                       const Gap(AppSpacing.sm),
                       Center(
                         child: Text(
-                          '$answered / $total',
+                          answered != total
+                              ? '${l.answerAllToSubmit}  ($answered / $total)'
+                              : '$answered / $total',
+                          textAlign: TextAlign.center,
                           style: theme.textTheme.labelMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),

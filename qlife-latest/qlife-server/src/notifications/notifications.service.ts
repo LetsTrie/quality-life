@@ -128,6 +128,41 @@ export class NotificationsService {
     return notification;
   }
 
+  /// Localized variant of [createInAppNotification]. Resolves the recipient's
+  /// `Account.preferredLocale` (defaults to Bangla) and picks the matching
+  /// title/body pair, then delegates to the single write+fanout chokepoint.
+  /// Callers author both a Bangla and an English pair so the notification is
+  /// shown in the recipient's chosen language.
+  async createLocalizedNotification(args: {
+    recipientAccountId: string;
+    senderAccountId?: string | null;
+    type: NotificationType;
+    bn: { title: string; body: string };
+    en: { title: string; body: string };
+    appointmentId?: string;
+    assessmentId?: string;
+  }) {
+    const account = await this.prisma.account.findUnique({
+      where: { id: args.recipientAccountId },
+      select: { preferredLocale: true },
+    });
+    // Bangla is the product default; only an explicit "en" preference opts out.
+    const useEnglish = (account?.preferredLocale ?? 'bn')
+      .toLowerCase()
+      .startsWith('en');
+    const chosen = useEnglish ? args.en : args.bn;
+
+    return this.createInAppNotification({
+      recipientAccountId: args.recipientAccountId,
+      senderAccountId: args.senderAccountId,
+      type: args.type,
+      title: chosen.title,
+      body: chosen.body,
+      appointmentId: args.appointmentId,
+      assessmentId: args.assessmentId,
+    });
+  }
+
   async sendPush(args: {
     accountId: string;
     title: string;

@@ -13,13 +13,21 @@ const CATEGORY_LABELS: Record<string, { en: string; bn: string }> = {
 export class InstrumentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(opts?: { selfAssessableOnly?: boolean }) {
+  async list(opts?: { selfAssessableOnly?: boolean; professionalAssignableOnly?: boolean }) {
     const instruments = await this.prisma.instrument.findMany({
       where: {
         isActive: true,
-        // Users only see scales they can take themselves; professionals/admins
-        // see all (so they can assign the clinical, assign-only ones).
-        ...(opts?.selfAssessableOnly ? { isSelfAssessable: true } : {}),
+        // Users' self-check list shows only the primary screening scales
+        // (GHQ-12, PSS-10, Anxiety). Well-being (WHO-5) is reached via a separate
+        // home CTA, and the risk-profile screens are no longer offered to users.
+        ...(opts?.selfAssessableOnly
+            ? { isSelfAssessable: true, category: 'PRIMARY_SCREENING' }
+            : {}),
+        // Professionals assign only clinical scales — the primary/screening,
+        // well-being and risk-profile "screens" are user-facing defaults and
+        // must not appear in the professional's suggestion list. Admins (neither
+        // flag) still see everything.
+        ...(opts?.professionalAssignableOnly ? { category: 'CLINICAL_ASSESSMENT' } : {}),
       },
       orderBy: [{ category: 'asc' }, { name: 'asc' }],
       select: {

@@ -18,7 +18,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get navProfile => 'আমার প্রোফাইল';
 
   @override
-  String get navScales => 'মানসিক যাচাই';
+  String get navScales => 'মানসিক অবস্থা যাচাই';
 
   @override
   String get navProfessionals => 'বিশেষজ্ঞ';
@@ -299,6 +299,17 @@ class AppLocalizationsBn extends AppLocalizations {
   String get actionSubmitting => 'জমা হচ্ছে…';
 
   @override
+  String get answerAllToSubmit =>
+      'চালিয়ে যেতে অনুগ্রহ করে সব প্রশ্নের উত্তর দিন।';
+
+  @override
+  String get assignedAlreadyDone =>
+      'আপনি ইতিমধ্যে এই সেলফ-চেকটি সম্পন্ন করেছেন। নিচে আপনার ফলাফল দেখতে পারেন।';
+
+  @override
+  String get viewResult => 'ফলাফল দেখুন';
+
+  @override
   String get actionContinue => 'চালিয়ে যান';
 
   @override
@@ -571,7 +582,7 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
-  String get scalesTitle => 'মানসিক যাচাই';
+  String get scalesTitle => 'মানসিক অবস্থা যাচাই';
 
   @override
   String get assessmentIntro =>
@@ -613,6 +624,9 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get followUpExploreResources => 'রিসোর্স দেখুন';
+
+  @override
+  String get followUpTakeHelpResources => 'আমাদের রিসোর্স থেকে সাহায্য নিন';
 
   @override
   String get followUpTalkToProfessional => 'বিশেষজ্ঞের সাথে কথা বলুন';
@@ -660,10 +674,10 @@ class AppLocalizationsBn extends AppLocalizations {
   String get becomeProfessionalTitle => 'বিশেষজ্ঞ হিসেবে যোগ দিন';
 
   @override
-  String get fieldFullName => 'পুরো নাম';
+  String get fieldFullName => 'পূর্ণ নাম';
 
   @override
-  String get fieldProfessionType => 'পেশার ধরন';
+  String get fieldProfessionType => 'পেশা';
 
   @override
   String get fieldGenderOptional => 'লিঙ্গ (ঐচ্ছিক)';
@@ -939,6 +953,59 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get sectionVisibility => 'দৃশ্যমানতা';
+
+  @override
+  String get sectionBasics => 'মৌলিক তথ্য';
+
+  @override
+  String get editProfileTitle => 'প্রোফাইল সম্পাদনা';
+
+  @override
+  String get editProfileSubtitle => 'আপনার পেশাদার তথ্য হালনাগাদ করুন';
+
+  @override
+  String get actionEditProfile => 'প্রোফাইল সম্পাদনা';
+
+  @override
+  String get navMyProfileProDesc =>
+      'আপনার পেশাদার প্রোফাইল দেখুন ও সম্পাদনা করুন';
+
+  @override
+  String get labelNotSet => 'উল্লেখ নেই';
+
+  @override
+  String get labelYes => 'হ্যাঁ';
+
+  @override
+  String get labelNo => 'না';
+
+  @override
+  String get fieldDesignation => 'পদবি';
+
+  @override
+  String get fieldVisibleInDirectory => 'ডিরেক্টরিতে দৃশ্যমান';
+
+  @override
+  String get navPrivacy => 'গোপনীয়তা নীতি';
+
+  @override
+  String get navPrivacyDesc => 'আমরা কীভাবে আপনার তথ্য ব্যবহার করি';
+
+  @override
+  String get navAbout => 'QLife সম্পর্কে';
+
+  @override
+  String get navAboutDesc => 'আমাদের সম্পর্কে আরও জানুন';
+
+  @override
+  String get privacyTitle => 'গোপনীয়তা নীতি';
+
+  @override
+  String get aboutTitle => 'QLife সম্পর্কে';
+
+  @override
+  String get legalDraftNotice =>
+      'এটি একটি খসড়া লেখা এবং চূড়ান্ত প্রকাশিত সংস্করণ দিয়ে প্রতিস্থাপন করা হবে।';
 
   @override
   String get fieldBmdcOptional => 'বিএমডিসি রেজিস্ট্রেশন নম্বর (ঐচ্ছিক)';
@@ -1247,7 +1314,7 @@ class AppLocalizationsBn extends AppLocalizations {
   }
 
   @override
-  String get introNudgeTitle => 'আপনার দ্রুত সুস্থতা যাচাই করুন';
+  String get introNudgeTitle => 'আপনার সুস্থতা দ্রুত যাচাই করুন';
 
   @override
   String get introNudgeDesc => 'পরামর্শ ব্যক্তিগতকৃত করতে ১ মিনিটের সেলফ-চেক';

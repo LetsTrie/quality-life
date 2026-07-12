@@ -124,13 +124,14 @@ export class PushService implements OnModuleInit {
       body: args.body,
     };
 
-    const result = await admin.messaging(this.app).sendEachForMulticast({
+    const result = await this.sendWithRetry({
       tokens: args.tokens,
       data,
       android: {
         priority: 'high',
       },
     });
+    if (!result) return;
 
     const staleTokens: string[] = [];
     result.responses.forEach((response, index) => {
@@ -152,5 +153,48 @@ export class PushService implements OnModuleInit {
         where: { token: { in: staleTokens } },
       });
     }
+  }
+
+  /// Sends with bounded retries. Transient auth/network failures (e.g. the
+  /// node-fetch "Premature close" that surfaces as `app/invalid-credential`)
+  /// are retried with backoff; a fresh socket on retry typically succeeds.
+  /// Returns the last batch response (so stale-token pruning still runs), or
+  /// null if every attempt threw.
+  private async sendWithRetry(
+    message: admin.messaging.MulticastMessage,
+    attempts = 3,
+  ): Promise<admin.messaging.BatchResponse | null> {
+    let last: admin.messaging.BatchResponse | null = null;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        last = await admin.messaging(this.app!).sendEachForMulticast(message);
+        const transient = last.responses.find(
+          (r) => !r.success && this.isTransient(r.error?.code),
+        );
+        if (!transient) return last;
+        this.logger.warn(
+          `FCM send attempt ${attempt}/${attempts} hit transient error ` +
+            `(${transient.error?.code}): ${transient.error?.message}`,
+        );
+      } catch (err) {
+        this.logger.warn(
+          `FCM send attempt ${attempt}/${attempts} threw: ${(err as Error)?.message}`,
+        );
+      }
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt));
+      }
+    }
+    return last;
+  }
+
+  private isTransient(code?: string): boolean {
+    return (
+      code === 'app/invalid-credential' ||
+      code === 'messaging/authentication-error' ||
+      code === 'messaging/server-unavailable' ||
+      code === 'messaging/internal-error' ||
+      code === 'messaging/unknown-error'
+    );
   }
 }

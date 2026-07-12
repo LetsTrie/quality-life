@@ -299,6 +299,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionSubmitting => 'Submitting…';
 
   @override
+  String get answerAllToSubmit => 'Please answer all questions to continue.';
+
+  @override
+  String get assignedAlreadyDone =>
+      'You\'ve already completed this self-check. You can view your result below.';
+
+  @override
+  String get viewResult => 'View result';
+
+  @override
   String get actionContinue => 'Continue';
 
   @override
@@ -613,6 +623,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get followUpExploreResources => 'Explore resources';
 
   @override
+  String get followUpTakeHelpResources => 'Take help from our resources';
+
+  @override
   String get followUpTalkToProfessional => 'Talk to a professional';
 
   @override
@@ -662,7 +675,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fieldFullName => 'Full name';
 
   @override
-  String get fieldProfessionType => 'Profession type';
+  String get fieldProfessionType => 'Profession';
 
   @override
   String get fieldGenderOptional => 'Gender (optional)';
@@ -937,6 +950,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sectionVisibility => 'Visibility';
+
+  @override
+  String get sectionBasics => 'Basics';
+
+  @override
+  String get editProfileTitle => 'Edit profile';
+
+  @override
+  String get editProfileSubtitle => 'Update your professional details';
+
+  @override
+  String get actionEditProfile => 'Edit profile';
+
+  @override
+  String get navMyProfileProDesc => 'View and edit your professional profile';
+
+  @override
+  String get labelNotSet => 'Not set';
+
+  @override
+  String get labelYes => 'Yes';
+
+  @override
+  String get labelNo => 'No';
+
+  @override
+  String get fieldDesignation => 'Designation';
+
+  @override
+  String get fieldVisibleInDirectory => 'Visible in directory';
+
+  @override
+  String get navPrivacy => 'Privacy Policy';
+
+  @override
+  String get navPrivacyDesc => 'How we handle your data';
+
+  @override
+  String get navAbout => 'About QLife';
+
+  @override
+  String get navAboutDesc => 'Learn more about us';
+
+  @override
+  String get privacyTitle => 'Privacy Policy';
+
+  @override
+  String get aboutTitle => 'About QLife';
+
+  @override
+  String get legalDraftNotice =>
+      'This is placeholder text and will be replaced with the final published version.';
 
   @override
   String get fieldBmdcOptional => 'BMDC registration no. (optional)';

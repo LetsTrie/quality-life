@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/router.dart';
 import '../../../app/tab_refresh.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/assessment.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/widgets/app_components.dart';
 import '../../../shared/widgets/async_state_views.dart';
 import '../../../shared/widgets/gradient_header.dart';
 import '../../instruments/scale_localization.dart';
@@ -96,6 +99,12 @@ class _AssignedAssessmentScreenState
         final theme = Theme.of(context);
         final total = detail.questions.length;
         final answered = _selectedByQuestionId.length;
+        // A suggested scale can be filled only once: if it's already been
+        // completed (e.g. reached again from a stale notification), show the
+        // result instead of a re-fillable form (item 11).
+        final alreadyCompleted = _result == null &&
+            detail.status != 'ASSIGNED' &&
+            detail.status != 'IN_PROGRESS';
         return Scaffold(
           body: Column(
             children: [
@@ -142,41 +151,69 @@ class _AssignedAssessmentScreenState
                       ),
                     ),
                     const Gap(AppSpacing.xl),
-                    for (var i = 0; i < total; i++) ...[
-                      AssessmentQuestionCard(
-                        index: i + 1,
-                        question: detail.questions[i],
-                        groupValue:
-                            _selectedByQuestionId[detail.questions[i].id],
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() => _selectedByQuestionId[
-                              detail.questions[i].id] = value);
-                        },
-                      ),
-                      const Gap(AppSpacing.lg),
-                    ],
-                    const Gap(AppSpacing.xs),
-                    if (_result == null)
-                      FilledButton(
-                        onPressed: _submitting ? null : _submit,
-                        child: Text(
-                            _submitting ? l.actionSubmitting : l.actionSubmit),
-                      ),
-                    if (_result == null && total > 0) ...[
-                      const Gap(AppSpacing.sm),
-                      Center(
-                        child: Text(
-                          '$answered / $total',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                    if (alreadyCompleted)
+                      AppCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(l.assignedAlreadyDone,
+                                style: theme.textTheme.bodyMedium),
+                            const Gap(AppSpacing.md),
+                            FilledButton.icon(
+                              onPressed: () => context.push(
+                                  AssessmentResultRoute(id: widget.assessmentId)
+                                      .location),
+                              icon: const Icon(Icons.assessment_outlined),
+                              label: Text(l.viewResult),
+                            ),
+                          ],
+                        ),
+                      )
+                    else ...[
+                      for (var i = 0; i < total; i++) ...[
+                        AssessmentQuestionCard(
+                          index: i + 1,
+                          question: detail.questions[i],
+                          groupValue:
+                              _selectedByQuestionId[detail.questions[i].id],
+                          onChanged: (value) {
+                            if (value == null) return;
+                            setState(() => _selectedByQuestionId[
+                                detail.questions[i].id] = value);
+                          },
+                        ),
+                        const Gap(AppSpacing.lg),
+                      ],
+                      const Gap(AppSpacing.xs),
+                      if (_result == null)
+                        FilledButton(
+                          // All questions must be answered before submit (item 14).
+                          onPressed:
+                              (_submitting || answered != total || total == 0)
+                                  ? null
+                                  : _submit,
+                          child: Text(_submitting
+                              ? l.actionSubmitting
+                              : l.actionSubmit),
+                        ),
+                      if (_result == null && total > 0) ...[
+                        const Gap(AppSpacing.sm),
+                        Center(
+                          child: Text(
+                            answered != total
+                                ? '${l.answerAllToSubmit}  ($answered / $total)'
+                                : '$answered / $total',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                    if (_result != null) ...[
-                      const Gap(AppSpacing.lg),
-                      AssessmentResultCard(result: _result!, slug: _slug),
+                      ],
+                      if (_result != null) ...[
+                        const Gap(AppSpacing.lg),
+                        AssessmentResultCard(result: _result!, slug: _slug),
+                      ],
                     ],
                   ],
                 ),

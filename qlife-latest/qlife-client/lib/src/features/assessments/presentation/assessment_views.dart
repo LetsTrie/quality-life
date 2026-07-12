@@ -8,7 +8,6 @@ import '../../../shared/models/instrument.dart';
 import '../../../shared/theme/app_colors.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../../../shared/widgets/app_components.dart';
-import '../../content/presentation/content_player_screen.dart';
 
 /// A single assessment question rendered as a card with single-choice options.
 /// Shared by the self-check (instrument detail) and the assigned-assessment
@@ -208,51 +207,21 @@ class _FollowUpActions extends StatelessWidget {
   void _goResources(BuildContext context) =>
       context.go(const ContentLibraryRoute().location);
 
-  /// Open the band's recommended content directly: in-app player for a YouTube
-  /// video, otherwise fall back to the resource library.
-  void _goRecommendedContent(BuildContext context) {
-    final c = result.recommendedContent;
-    if (c != null &&
-        c.isVideo &&
-        c.provider == 'YOUTUBE' &&
-        (c.providerRef ?? '').isNotEmpty) {
-      context.push(
-        const ContentPlayerRoute().location,
-        extra: ContentPlayerArgs(
-          contentKey: c.contentKey,
-          videoId: c.providerRef!,
-          title: c.title,
-        ),
-      );
-    } else {
-      _goResources(context);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final hasContent = result.recommendedContent != null;
 
     late final Widget primary;
     late final Widget secondary;
 
+    // Resources are no longer tied to a specific scale/result. A result either
+    // routes to the help center (risk) or to a professional, always offering a
+    // generic "take help from our resources" path to the library.
     if (result.needsHelpCenter) {
       primary = FilledButton.icon(
         onPressed: () => _goHelp(context),
         icon: const Icon(Icons.favorite_rounded),
         label: Text(l.followUpHelpCenter),
-      );
-      secondary = OutlinedButton.icon(
-        onPressed: () => _goProfessionals(context),
-        icon: const Icon(Icons.psychology_outlined),
-        label: Text(l.followUpTalkToProfessional),
-      );
-    } else if (hasContent) {
-      primary = FilledButton.icon(
-        onPressed: () => _goRecommendedContent(context),
-        icon: const Icon(Icons.play_circle_outline_rounded),
-        label: Text(l.followUpWatchResource),
       );
       secondary = OutlinedButton.icon(
         onPressed: () => _goProfessionals(context),
@@ -268,7 +237,7 @@ class _FollowUpActions extends StatelessWidget {
       secondary = OutlinedButton.icon(
         onPressed: () => _goResources(context),
         icon: const Icon(Icons.spa_outlined),
-        label: Text(l.followUpExploreResources),
+        label: Text(l.followUpTakeHelpResources),
       );
     }
 

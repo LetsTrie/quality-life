@@ -4,6 +4,7 @@ import type { Request } from 'express';
 import { Roles } from '../auth/roles.decorator';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { RequestAppointmentDto } from './dto/request-appointment.dto';
+import { RescheduleResponseDto } from './dto/reschedule-response.dto';
 import { RespondAppointmentDto } from './dto/respond-appointment.dto';
 import { AppointmentsService } from './appointments.service';
 
@@ -80,6 +81,24 @@ export class AppointmentsController {
       scheduledStartAt: body.scheduledStartAt,
       professionalMessage: body.professionalMessage,
       meetingLink: body.meetingLink,
+    });
+    return { data: { appointment } };
+  }
+
+  // User responds to a professional-proposed reschedule (accept or counter).
+  @Post('/:id/reschedule-response')
+  @Roles('USER')
+  async rescheduleResponse(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() body: RescheduleResponseDto,
+  ) {
+    const appointment = await this.appointments.respondToRescheduleByUser({
+      accountId: req.auth!.account.id,
+      appointmentId: id,
+      action: body.action,
+      requestedStartAt: body.requestedStartAt,
+      userMessage: body.userMessage,
     });
     return { data: { appointment } };
   }

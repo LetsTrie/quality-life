@@ -48,7 +48,16 @@ class NotificationsScreen extends ConsumerWidget {
                 return RefreshIndicator(
                   onRefresh: () async => ref.invalidate(_notificationsProvider),
                   child: ListView.separated(
-                    padding: const EdgeInsets.all(AppSpacing.page),
+                    // The body is a bare Column with no bottom SafeArea, so add
+                    // the device's bottom inset to the list padding — otherwise
+                    // the last card is clipped under the system nav bar / home
+                    // indicator (item 5).
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.page,
+                      AppSpacing.page,
+                      AppSpacing.page,
+                      AppSpacing.page + MediaQuery.of(context).viewPadding.bottom,
+                    ),
                     itemCount: result.items.length,
                     separatorBuilder: (_, __) => const Gap(AppSpacing.sm),
                     itemBuilder: (context, idx) =>

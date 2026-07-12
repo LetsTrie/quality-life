@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/appointment.dart';
 import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/util/date_format.dart';
 import '../../../shared/widgets/app_components.dart';
 import '../../../shared/widgets/async_state_views.dart';
 import '../../../shared/widgets/gradient_header.dart';
@@ -73,11 +74,13 @@ class _AppointmentDetailScreenState
       }
 
       final l = context.l10n;
-      final dialogTitle = action == 'DECLINED'
-          ? l.actionDecline
-          : action == 'ACCEPTED'
-              ? l.actionAccept
-              : l.actionProposeReschedule;
+      // Only Decline and Propose-reschedule reach the dialog now; Accept is a
+      // one-tap action handled separately.
+      final dialogTitle =
+          action == 'DECLINED' ? l.actionDecline : l.actionProposeReschedule;
+      // Meeting link only makes sense when confirming/proposing a time — it is
+      // irrelevant to a rejection (item 8).
+      final showMeetingLink = action == 'RESCHEDULE_PROPOSED';
 
       final ok = await showDialog<bool>(
         context: context,
@@ -88,18 +91,25 @@ class _AppointmentDetailScreenState
             children: [
               if (pickedDate != null && pickedTime != null)
                 Text(
-                  context.l10n.fieldScheduled(
-                      '${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')} ${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')} UTC'),
+                  context.l10n.fieldScheduled(friendlyDateTime(
+                        DateTime.utc(pickedDate.year, pickedDate.month,
+                                pickedDate.day, pickedTime.hour, pickedTime.minute)
+                            .toIso8601String(),
+                        Localizations.localeOf(context),
+                      ) ??
+                      ''),
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               if (pickedDate != null) const Gap(AppSpacing.md),
-              TextField(
-                controller: link,
-                decoration: InputDecoration(
-                  labelText: context.l10n.fieldMeetingLinkInput,
+              if (showMeetingLink) ...[
+                TextField(
+                  controller: link,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.fieldMeetingLinkInput,
+                  ),
                 ),
-              ),
-              const Gap(AppSpacing.sm),
+                const Gap(AppSpacing.sm),
+              ],
               TextField(
                 controller: message,
                 decoration: InputDecoration(
@@ -155,6 +165,80 @@ class _AppointmentDetailScreenState
     } finally {
       message.dispose();
       link.dispose();
+      if (mounted) setState(() => _acting = false);
+    }
+  }
+
+  /// Client counters a professional-proposed time with a different one.
+  Future<void> _proposeDifferentTimeAsUser() async {
+    final message = TextEditingController();
+    try {
+      final pickedDate = await showDatePicker(
+        context: context,
+        initialDate: DateTime.now().add(const Duration(days: 1)),
+        firstDate: DateTime.now(),
+        lastDate: DateTime.now().add(const Duration(days: 365)),
+      );
+      if (pickedDate == null || !mounted) return;
+      final pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+      if (pickedTime == null || !mounted) return;
+
+      final dt = DateTime.utc(pickedDate.year, pickedDate.month, pickedDate.day,
+          pickedTime.hour, pickedTime.minute);
+      final l = context.l10n;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l.actionProposeReschedule),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                context.l10n.fieldScheduled(
+                    friendlyDateTime(dt.toIso8601String(), Localizations.localeOf(context)) ?? ''),
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const Gap(AppSpacing.md),
+              TextField(
+                controller: message,
+                decoration: InputDecoration(labelText: context.l10n.fieldMessageOptional),
+                minLines: 2,
+                maxLines: 4,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(context.l10n.actionCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(context.l10n.actionSubmit),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+
+      setState(() => _acting = true);
+      final a = await ref.read(appointmentsRepositoryProvider).rescheduleResponse(
+            appointmentId: widget.appointmentId,
+            action: 'COUNTER',
+            requestedStartAtIso: dt.toIso8601String(),
+            userMessage: message.text.trim().isEmpty ? null : message.text.trim(),
+          );
+      if (mounted) setState(() => _mutated = a);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.apptActionFailed)),
+      );
+    } finally {
+      message.dispose();
       if (mounted) setState(() => _acting = false);
     }
   }
@@ -251,6 +335,7 @@ class _AppointmentDetailScreenState
   Widget _buildDetail(BuildContext context, AppointmentDetail a) {
     final l = context.l10n;
     final dash = l.valueDash;
+    final locale = Localizations.localeOf(context);
     return Scaffold(
       body: Column(
         children: [
@@ -279,12 +364,12 @@ class _AppointmentDetailScreenState
                       InfoRow(
                         icon: Icons.schedule_rounded,
                         label: _label(l.fieldRequested('')),
-                        value: a.requestedStartAt ?? dash,
+                        value: friendlyDateTime(a.requestedStartAt, locale) ?? dash,
                       ),
                       InfoRow(
                         icon: Icons.event_available_rounded,
                         label: _label(l.fieldScheduled('')),
-                        value: a.scheduledStartAt ?? dash,
+                        value: friendlyDateTime(a.scheduledStartAt, locale) ?? dash,
                       ),
                       InfoRow(
                         icon: Icons.link_rounded,
@@ -314,7 +399,16 @@ class _AppointmentDetailScreenState
                 if (a.isProfessionalView) ...[
                   const Gap(AppSpacing.xl),
                   FilledButton.icon(
-                    onPressed: _acting ? null : () => _respond('ACCEPTED'),
+                    // One-tap accept: confirms the client's requested time with
+                    // no extra dialog (item 7).
+                    onPressed: _acting
+                        ? null
+                        : () => _runAction(() => ref
+                            .read(appointmentsRepositoryProvider)
+                            .respond(
+                              appointmentId: widget.appointmentId,
+                              action: 'ACCEPTED',
+                            )),
                     icon: const Icon(Icons.check_rounded),
                     label: Text(l.actionAccept),
                   ),
@@ -361,6 +455,29 @@ class _AppointmentDetailScreenState
                             .noShow(widget.appointmentId)),
                     icon: const Icon(Icons.person_off_outlined),
                     label: Text(l.actionMarkNoShow),
+                  ),
+                ],
+                // Client's turn: respond to a professional-proposed new time
+                // (item 10) — accept it, or counter with a different time.
+                if (!a.isProfessionalView && a.status == 'RESCHEDULE_PROPOSED') ...[
+                  const Gap(AppSpacing.xl),
+                  FilledButton.icon(
+                    onPressed: _acting
+                        ? null
+                        : () => _runAction(() => ref
+                            .read(appointmentsRepositoryProvider)
+                            .rescheduleResponse(
+                              appointmentId: widget.appointmentId,
+                              action: 'ACCEPT',
+                            )),
+                    icon: const Icon(Icons.check_rounded),
+                    label: Text(l.actionAccept),
+                  ),
+                  const Gap(AppSpacing.md),
+                  OutlinedButton.icon(
+                    onPressed: _acting ? null : _proposeDifferentTimeAsUser,
+                    icon: const Icon(Icons.edit_calendar_rounded),
+                    label: Text(l.actionProposeReschedule),
                   ),
                 ],
                 if (_activeStatuses.contains(a.status)) ...[

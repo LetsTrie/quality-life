@@ -24,9 +24,14 @@ class LocaleController extends Notifier<Locale> {
   }
 
   Future<void> _restore() async {
-    final code = await _storage.read(key: _storageKey);
-    if (code != null && code.isNotEmpty && code != state.languageCode) {
-      state = Locale(code);
+    try {
+      final code = await _storage.read(key: _storageKey);
+      if (code != null && code.isNotEmpty && code != state.languageCode) {
+        state = Locale(code);
+      }
+    } catch (_) {
+      // Storage may be unavailable (e.g. in tests / before plugins load) —
+      // fall back to the default rather than surfacing an unhandled error.
     }
   }
 
@@ -34,5 +39,15 @@ class LocaleController extends Notifier<Locale> {
     if (locale.languageCode == state.languageCode) return;
     state = locale;
     await _storage.write(key: _storageKey, value: locale.languageCode);
+  }
+
+  /// The persisted language code (falls back to the in-memory state, then the
+  /// default). Read directly from storage so callers don't race the async
+  /// [_restore] that runs after first build — used to sync the backend's
+  /// `preferredLocale` at session start.
+  Future<String> storedLocaleCode() async {
+    final code = await _storage.read(key: _storageKey);
+    if (code != null && code.isNotEmpty) return code;
+    return state.languageCode;
   }
 }

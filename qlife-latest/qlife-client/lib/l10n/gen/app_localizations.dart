@@ -656,6 +656,24 @@ abstract class AppLocalizations {
   /// **'Submitting…'**
   String get actionSubmitting;
 
+  /// No description provided for @answerAllToSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Please answer all questions to continue.'**
+  String get answerAllToSubmit;
+
+  /// No description provided for @assignedAlreadyDone.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve already completed this self-check. You can view your result below.'**
+  String get assignedAlreadyDone;
+
+  /// No description provided for @viewResult.
+  ///
+  /// In en, this message translates to:
+  /// **'View result'**
+  String get viewResult;
+
   /// No description provided for @actionContinue.
   ///
   /// In en, this message translates to:
@@ -1184,6 +1202,12 @@ abstract class AppLocalizations {
   /// **'Explore resources'**
   String get followUpExploreResources;
 
+  /// No description provided for @followUpTakeHelpResources.
+  ///
+  /// In en, this message translates to:
+  /// **'Take help from our resources'**
+  String get followUpTakeHelpResources;
+
   /// No description provided for @followUpTalkToProfessional.
   ///
   /// In en, this message translates to:
@@ -1277,7 +1301,7 @@ abstract class AppLocalizations {
   /// No description provided for @fieldProfessionType.
   ///
   /// In en, this message translates to:
-  /// **'Profession type'**
+  /// **'Profession'**
   String get fieldProfessionType;
 
   /// No description provided for @fieldGenderOptional.
@@ -1789,6 +1813,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Visibility'**
   String get sectionVisibility;
+
+  /// No description provided for @sectionBasics.
+  ///
+  /// In en, this message translates to:
+  /// **'Basics'**
+  String get sectionBasics;
+
+  /// No description provided for @editProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get editProfileTitle;
+
+  /// No description provided for @editProfileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your professional details'**
+  String get editProfileSubtitle;
+
+  /// No description provided for @actionEditProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
+  String get actionEditProfile;
+
+  /// No description provided for @navMyProfileProDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'View and edit your professional profile'**
+  String get navMyProfileProDesc;
+
+  /// No description provided for @labelNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get labelNotSet;
+
+  /// No description provided for @labelYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get labelYes;
+
+  /// No description provided for @labelNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get labelNo;
+
+  /// No description provided for @fieldDesignation.
+  ///
+  /// In en, this message translates to:
+  /// **'Designation'**
+  String get fieldDesignation;
+
+  /// No description provided for @fieldVisibleInDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible in directory'**
+  String get fieldVisibleInDirectory;
+
+  /// No description provided for @navPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get navPrivacy;
+
+  /// No description provided for @navPrivacyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'How we handle your data'**
+  String get navPrivacyDesc;
+
+  /// No description provided for @navAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About QLife'**
+  String get navAbout;
+
+  /// No description provided for @navAboutDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn more about us'**
+  String get navAboutDesc;
+
+  /// No description provided for @privacyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyTitle;
+
+  /// No description provided for @aboutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'About QLife'**
+  String get aboutTitle;
+
+  /// No description provided for @legalDraftNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'This is placeholder text and will be replaced with the final published version.'**
+  String get legalDraftNotice;
 
   /// No description provided for @fieldBmdcOptional.
   ///

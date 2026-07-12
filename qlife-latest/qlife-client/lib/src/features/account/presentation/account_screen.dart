@@ -78,6 +78,16 @@ class AccountScreen extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.page),
               children: [
+                if (isPro) ...[
+                  FeatureCard(
+                    icon: Icons.person_outline_rounded,
+                    title: l.navProfile,
+                    subtitle: l.navMyProfileProDesc,
+                    onTap: () =>
+                        context.push(const ProfessionalProfileRoute().location),
+                  ),
+                  const Gap(AppSpacing.md),
+                ],
                 if (!isPro) ...[
                   FeatureCard(
                     icon: Icons.person_outline_rounded,
@@ -112,6 +122,23 @@ class AccountScreen extends ConsumerWidget {
                   tint: AppColors.secondary,
                   onTap: () =>
                       context.push(const ChangePasswordRoute().location),
+                ),
+                const Gap(AppSpacing.md),
+                FeatureCard(
+                  icon: Icons.privacy_tip_outlined,
+                  title: l.navPrivacy,
+                  subtitle: l.navPrivacyDesc,
+                  tint: AppColors.tertiary,
+                  onTap: () =>
+                      context.push(const PrivacyPolicyRoute().location),
+                ),
+                const Gap(AppSpacing.md),
+                FeatureCard(
+                  icon: Icons.info_outline_rounded,
+                  title: l.navAbout,
+                  subtitle: l.navAboutDesc,
+                  tint: AppColors.tertiary,
+                  onTap: () => context.push(const AboutUsRoute().location),
                 ),
                 const Gap(AppSpacing.lg),
                 const _LanguageToggle(),
@@ -197,8 +224,16 @@ class _LanguageToggle extends ConsumerWidget {
               ButtonSegment(value: 'en', label: Text('English')),
             ],
             selected: {code},
-            onSelectionChanged: (selection) =>
-                controller.setLocale(Locale(selection.first)),
+            onSelectionChanged: (selection) {
+              final choice = selection.first;
+              controller.setLocale(Locale(choice));
+              // Sync to the backend so notifications arrive in this language.
+              // Best-effort — a failure never blocks the UI change.
+              ref
+                  .read(accountRepositoryProvider)
+                  .setPreferredLocale(choice)
+                  .catchError((_) {});
+            },
           ),
         ],
       ),

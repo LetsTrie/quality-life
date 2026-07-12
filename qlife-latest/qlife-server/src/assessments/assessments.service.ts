@@ -263,7 +263,7 @@ export class AssessmentsService {
     const assessment = await this.prisma.assessment.findUnique({
       where: { id: args.assessmentId },
       include: {
-        subject: { select: { accountId: true } },
+        subject: { select: { accountId: true, displayName: true } },
         instrumentVersion: {
           select: {
             id: true,
@@ -299,6 +299,18 @@ export class AssessmentsService {
       if (!questionIds.has(a.questionId)) {
         throw new BadRequestException('Answer has invalid questionId');
       }
+    }
+
+    // Completeness: every question must be answered exactly once before the
+    // assessment can be scored. A partial submission would silently deflate the
+    // result (unanswered items contribute 0 against the full max score) — most
+    // visibly on percent-normalized scales like WHO-5.
+    const answeredQuestionIds = new Set(args.answers.map((a) => a.questionId));
+    if (
+      args.answers.length !== questionIds.size ||
+      answeredQuestionIds.size !== questionIds.size
+    ) {
+      throw new BadRequestException('All questions must be answered');
     }
 
     // Replace answers for idempotency.
@@ -402,12 +414,21 @@ export class AssessmentsService {
         select: { accountId: true },
       });
       if (professional) {
-        await this.notifications.createInAppNotification({
+        const clientName = assessment.subject.displayName?.trim();
+        const clientEn = clientName || 'A client';
+        const clientBn = clientName || 'একজন ক্লায়েন্ট';
+        await this.notifications.createLocalizedNotification({
           recipientAccountId: professional.accountId,
           senderAccountId: args.accountId,
           type: 'ASSESSMENT_COMPLETED',
-          title: 'Self-check completed',
-          body: 'A client just finished an assigned self-check. Tap to review their results.',
+          en: {
+            title: 'Self-check completed',
+            body: `${clientEn} just finished an assigned self-check. Tap to review their results.`,
+          },
+          bn: {
+            title: 'সেলফ-চেক সম্পন্ন হয়েছে',
+            body: `${clientBn} একটি নির্ধারিত সেলফ-চেক সম্পন্ন করেছেন। ফলাফল দেখতে ট্যাপ করুন।`,
+          },
           assessmentId: assessment.id,
         });
 

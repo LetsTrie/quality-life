@@ -11,6 +11,18 @@ function parseIsoOrThrow(value: string) {
   return d;
 }
 
+// Counterpart includes matching the read endpoints' convention: a PROFESSIONAL
+// viewer's payload carries the `user` (client) relation, a USER viewer's carries
+// `professional`. Mutation responses MUST include the viewer's counterpart or
+// the client parses back a nameless appointment (header falls back to a generic
+// title, and isProfessionalView flips false, hiding the action buttons).
+const CLIENT_INCLUDE = {
+  user: { select: { id: true, displayName: true, phone: true } },
+} as const;
+const PROFESSIONAL_INCLUDE = {
+  professional: { select: { id: true, fullName: true, professionType: true, phone: true } },
+} as const;
+
 @Injectable()
 export class AppointmentsService {
   constructor(
@@ -161,14 +173,20 @@ export class AppointmentsService {
     });
 
     const requesterName = userProfile.displayName?.trim();
-    await this.notifications.createInAppNotification({
+    const clientEn = requesterName || 'A client';
+    const clientBn = requesterName || 'একজন ক্লায়েন্ট';
+    await this.notifications.createLocalizedNotification({
       recipientAccountId: professional.accountId,
       senderAccountId: args.accountId,
       type: 'APPOINTMENT_REQUESTED',
-      title: 'New appointment request',
-      body: requesterName
-        ? `${requesterName} would like to book a session with you. Tap to review.`
-        : 'A client would like to book a session with you. Tap to review.',
+      en: {
+        title: 'New appointment request',
+        body: `${clientEn} would like to book a session with you. Tap to review.`,
+      },
+      bn: {
+        title: 'নতুন অ্যাপয়েন্টমেন্টের অনুরোধ',
+        body: `${clientBn} আপনার সাথে একটি সেশন বুক করতে চান। দেখতে ট্যাপ করুন।`,
+      },
       appointmentId: appointment.id,
     });
 
@@ -210,6 +228,7 @@ export class AppointmentsService {
           },
         },
       },
+      include: CLIENT_INCLUDE,
     });
 
     await this.prisma.notification.updateMany({
@@ -253,8 +272,13 @@ export class AppointmentsService {
     else if (args.action === 'DECLINED') toStatus = 'DECLINED';
     else toStatus = 'RESCHEDULE_PROPOSED';
 
-    const scheduledStartAt = args.scheduledStartAt ? parseIsoOrThrow(args.scheduledStartAt) : null;
-    if ((toStatus === 'ACCEPTED' || toStatus === 'RESCHEDULE_PROPOSED') && !scheduledStartAt) {
+    let scheduledStartAt = args.scheduledStartAt ? parseIsoOrThrow(args.scheduledStartAt) : null;
+    // One-tap accept: accepting confirms the client's originally requested time,
+    // so a scheduled time is only mandatory when proposing a *different* one.
+    if (toStatus === 'ACCEPTED' && !scheduledStartAt) {
+      scheduledStartAt = appt.requestedStartAt;
+    }
+    if (toStatus === 'RESCHEDULE_PROPOSED' && !scheduledStartAt) {
       throw new BadRequestException('scheduledStartAt required');
     }
 
@@ -301,6 +325,7 @@ export class AppointmentsService {
           },
         },
       },
+      include: CLIENT_INCLUDE,
     });
 
     // Notify user
@@ -311,22 +336,27 @@ export class AppointmentsService {
           ? 'APPOINTMENT_DECLINED'
           : 'APPOINTMENT_RESCHEDULED';
 
-    const proName = professional.fullName?.trim() || 'Your provider';
-    const notifTitle =
-      type === 'APPOINTMENT_ACCEPTED' ? 'Appointment confirmed' :
-      type === 'APPOINTMENT_DECLINED' ? 'Appointment update' :
-      'New time proposed';
-    const notifBody =
-      type === 'APPOINTMENT_ACCEPTED' ? `${proName} confirmed your session. Tap to see the details.` :
-      type === 'APPOINTMENT_DECLINED' ? `${proName} isn't able to take this appointment. Tap to find another time or provider.` :
-      `${proName} suggested a new time for your session. Tap to confirm.`;
+    const proNameEn = professional.fullName?.trim() || 'Your provider';
+    const proNameBn = professional.fullName?.trim() || 'আপনার সেবাদাতা';
+    const en =
+      type === 'APPOINTMENT_ACCEPTED'
+        ? { title: 'Appointment confirmed', body: `${proNameEn} confirmed your session. Tap to see the details.` }
+        : type === 'APPOINTMENT_DECLINED'
+          ? { title: 'Appointment update', body: `${proNameEn} isn't able to take this appointment. Tap to find another time or provider.` }
+          : { title: 'New time proposed', body: `${proNameEn} suggested a new time for your session. Tap to accept or propose another.` };
+    const bn =
+      type === 'APPOINTMENT_ACCEPTED'
+        ? { title: 'অ্যাপয়েন্টমেন্ট নিশ্চিত হয়েছে', body: `${proNameBn} আপনার সেশনটি নিশ্চিত করেছেন। বিস্তারিত দেখতে ট্যাপ করুন।` }
+        : type === 'APPOINTMENT_DECLINED'
+          ? { title: 'অ্যাপয়েন্টমেন্ট আপডেট', body: `${proNameBn} এই অ্যাপয়েন্টমেন্টটি নিতে পারছেন না। অন্য সময় বা সেবাদাতা খুঁজতে ট্যাপ করুন।` }
+          : { title: 'নতুন সময়ের প্রস্তাব', body: `${proNameBn} আপনার সেশনের জন্য একটি নতুন সময়ের প্রস্তাব দিয়েছেন। গ্রহণ করতে বা অন্য সময় প্রস্তাব করতে ট্যাপ করুন।` };
 
-    await this.notifications.createInAppNotification({
+    await this.notifications.createLocalizedNotification({
       recipientAccountId: appt.user.accountId,
       senderAccountId: args.accountId,
       type,
-      title: notifTitle,
-      body: notifBody,
+      en,
+      bn,
       appointmentId: appt.id,
     });
 
@@ -348,6 +378,120 @@ export class AppointmentsService {
     return updated;
   }
 
+  /// User responds to a professional's proposed reschedule. From
+  /// `RESCHEDULE_PROPOSED` the client can either ACCEPT the proposed time
+  /// (→ ACCEPTED, opening a care relationship) or COUNTER with a different time
+  /// (→ REQUESTED, handing the turn back to the professional). Turn ownership is
+  /// derived purely from status, so no extra column is needed.
+  async respondToRescheduleByUser(args: {
+    accountId: string;
+    appointmentId: string;
+    action: 'ACCEPT' | 'COUNTER';
+    requestedStartAt?: string;
+    userMessage?: string;
+  }) {
+    const userProfile = await this.prisma.userProfile.findUnique({
+      where: { accountId: args.accountId },
+    });
+    if (!userProfile) throw new BadRequestException('User profile missing');
+
+    const appt = await this.prisma.appointment.findFirst({
+      where: { id: args.appointmentId, userProfileId: userProfile.id, deletedAt: null },
+      include: { professional: { select: { accountId: true, fullName: true } } },
+    });
+    if (!appt) throw new NotFoundException('Appointment not found');
+    if (appt.status !== 'RESCHEDULE_PROPOSED') {
+      throw new BadRequestException('No proposed time to respond to');
+    }
+
+    const clientName = userProfile.displayName?.trim();
+    const clientEn = clientName || 'A client';
+    const clientBn = clientName || 'একজন ক্লায়েন্ট';
+
+    if (args.action === 'ACCEPT') {
+      // Ensure a care relationship exists (mirrors the professional accept path).
+      let careRelationshipId: string | null = appt.careRelationshipId ?? null;
+      const existing = await this.prisma.careRelationship.findFirst({
+        where: {
+          userProfileId: appt.userProfileId,
+          professionalProfileId: appt.professionalProfileId,
+          status: 'ACTIVE',
+        },
+        select: { id: true },
+      });
+      if (existing) careRelationshipId = existing.id;
+      else {
+        const rel = await this.prisma.careRelationship.create({
+          data: {
+            userProfileId: appt.userProfileId,
+            professionalProfileId: appt.professionalProfileId,
+            referenceCode: String(Math.floor(1000000 + Math.random() * 9000000)),
+            status: 'ACTIVE',
+          },
+        });
+        careRelationshipId = rel.id;
+      }
+
+      const updated = await this.prisma.appointment.update({
+        where: { id: appt.id },
+        data: {
+          status: 'ACCEPTED',
+          respondedAt: new Date(),
+          careRelationshipId,
+          events: {
+            create: { fromStatus: appt.status, toStatus: 'ACCEPTED', actorAccountId: args.accountId },
+          },
+        },
+        include: PROFESSIONAL_INCLUDE,
+      });
+
+      await this.notifications.createLocalizedNotification({
+        recipientAccountId: appt.professional.accountId,
+        senderAccountId: args.accountId,
+        type: 'APPOINTMENT_ACCEPTED',
+        en: { title: 'Proposed time accepted', body: `${clientEn} accepted the time you proposed. Tap to view.` },
+        bn: { title: 'প্রস্তাবিত সময় গৃহীত', body: `${clientBn} আপনার প্রস্তাবিত সময়টি গ্রহণ করেছেন। দেখতে ট্যাপ করুন।` },
+        appointmentId: appt.id,
+      });
+
+      return updated;
+    }
+
+    // COUNTER: client proposes a different time; turn returns to the professional.
+    if (!args.requestedStartAt) throw new BadRequestException('requestedStartAt required');
+    const requestedStartAt = parseIsoOrThrow(args.requestedStartAt);
+
+    const updated = await this.prisma.appointment.update({
+      where: { id: appt.id },
+      data: {
+        status: 'REQUESTED',
+        requestedStartAt,
+        requestMessage: args.userMessage ?? appt.requestMessage,
+        respondedAt: new Date(),
+        events: {
+          create: {
+            fromStatus: appt.status,
+            toStatus: 'REQUESTED',
+            actorAccountId: args.accountId,
+            note: args.userMessage ?? null,
+          },
+        },
+      },
+      include: PROFESSIONAL_INCLUDE,
+    });
+
+    await this.notifications.createLocalizedNotification({
+      recipientAccountId: appt.professional.accountId,
+      senderAccountId: args.accountId,
+      type: 'APPOINTMENT_RESCHEDULED',
+      en: { title: 'New time requested', body: `${clientEn} proposed a different time. Tap to review.` },
+      bn: { title: 'নতুন সময়ের অনুরোধ', body: `${clientBn} একটি ভিন্ন সময়ের প্রস্তাব দিয়েছেন। দেখতে ট্যাপ করুন।` },
+      appointmentId: appt.id,
+    });
+
+    return updated;
+  }
+
   /// Either party cancels. A user can cancel while the request/booking is still
   /// open or accepted; a professional can cancel an accepted/open booking.
   async cancel(args: { accountId: string; role: 'USER' | 'PROFESSIONAL'; appointmentId: string; reason?: string }) {
@@ -362,7 +506,7 @@ export class AppointmentsService {
       });
       if (!appt) throw new NotFoundException('Appointment not found');
       if (!cancellableFrom.includes(appt.status)) throw new BadRequestException('Appointment not cancellable');
-      return this.applyCancellation(appt, 'CANCELLED_BY_USER', args.accountId, appt.professional.accountId, args.reason);
+      return this.applyCancellation(appt, 'CANCELLED_BY_USER', args.accountId, appt.professional.accountId, 'USER', args.reason, userProfile.displayName?.trim() || undefined);
     }
 
     const professionalProfile = await this.prisma.professionalProfile.findUnique({ where: { accountId: args.accountId } });
@@ -373,7 +517,7 @@ export class AppointmentsService {
     });
     if (!appt) throw new NotFoundException('Appointment not found');
     if (!cancellableFrom.includes(appt.status)) throw new BadRequestException('Appointment not cancellable');
-    return this.applyCancellation(appt, 'CANCELLED_BY_PROFESSIONAL', args.accountId, appt.user.accountId, args.reason);
+    return this.applyCancellation(appt, 'CANCELLED_BY_PROFESSIONAL', args.accountId, appt.user.accountId, 'PROFESSIONAL', args.reason);
   }
 
   private async applyCancellation(
@@ -381,7 +525,9 @@ export class AppointmentsService {
     toStatus: 'CANCELLED_BY_USER' | 'CANCELLED_BY_PROFESSIONAL',
     actorAccountId: string,
     counterpartyAccountId: string,
+    actorRole: 'USER' | 'PROFESSIONAL',
     reason?: string,
+    actorName?: string,
   ) {
     const updated = await this.prisma.appointment.update({
       where: { id: appt.id },
@@ -391,16 +537,29 @@ export class AppointmentsService {
         cancellationReason: reason ?? null,
         events: { create: { fromStatus: appt.status, toStatus, actorAccountId, note: reason ?? null } },
       },
+      // Return the actor's counterpart so their view keeps the name + role.
+      include: actorRole === 'USER' ? PROFESSIONAL_INCLUDE : CLIENT_INCLUDE,
     });
 
-    await this.notifications.createInAppNotification({
+    // When a client cancels, name them for the professional (item 4).
+    const clientEn = actorName || 'A client';
+    const clientBn = actorName || 'একজন ক্লায়েন্ট';
+    await this.notifications.createLocalizedNotification({
       recipientAccountId: counterpartyAccountId,
       senderAccountId: actorAccountId,
       type: 'APPOINTMENT_CANCELLED',
-      title: 'Appointment cancelled',
-      body: toStatus === 'CANCELLED_BY_USER'
-        ? 'A client cancelled their upcoming session. Tap to view.'
-        : 'Your provider cancelled your upcoming session. Tap to rebook.',
+      en: {
+        title: 'Appointment cancelled',
+        body: toStatus === 'CANCELLED_BY_USER'
+          ? `${clientEn} cancelled their upcoming session. Tap to view.`
+          : 'Your provider cancelled your upcoming session. Tap to rebook.',
+      },
+      bn: {
+        title: 'অ্যাপয়েন্টমেন্ট বাতিল হয়েছে',
+        body: toStatus === 'CANCELLED_BY_USER'
+          ? `${clientBn} তাদের আসন্ন সেশনটি বাতিল করেছেন। দেখতে ট্যাপ করুন।`
+          : 'আপনার সেবাদাতা আপনার আসন্ন সেশনটি বাতিল করেছেন। পুনরায় বুক করতে ট্যাপ করুন।',
+      },
       appointmentId: appt.id,
     });
 
@@ -440,6 +599,7 @@ export class AppointmentsService {
         completedAt: args.outcome === 'COMPLETED' ? new Date() : null,
         events: { create: { fromStatus: appt.status, toStatus: args.outcome, actorAccountId: args.accountId } },
       },
+      include: CLIENT_INCLUDE,
     });
   }
 }

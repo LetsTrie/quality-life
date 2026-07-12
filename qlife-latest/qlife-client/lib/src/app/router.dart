@@ -34,7 +34,9 @@ import '../shared/models/client.dart';
 import '../shared/models/instrument.dart';
 import '../shared/models/assessment.dart';
 import '../features/professional/presentation/professional_home_screen.dart';
+import '../features/legal/presentation/info_doc_screen.dart';
 import '../features/professional/presentation/professional_onboarding_screen.dart';
+import '../features/professional/presentation/professional_profile_screen.dart';
 import '../features/professional/presentation/professional_register_screen.dart';
 import '../features/professional/presentation/professional_rejected_screen.dart';
 import '../features/users/presentation/user_profile_completion_screen.dart';
@@ -302,12 +304,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ProfessionalOnboardingScreen(),
       ),
       GoRoute(
+        path: const ProfessionalProfileRoute().location,
+        builder: (context, state) => const ProfessionalProfileScreen(),
+      ),
+      GoRoute(
+        path: const ProfessionalProfileEditRoute().location,
+        builder: (context, state) =>
+            const ProfessionalOnboardingScreen(isEditing: true),
+      ),
+      GoRoute(
         path: const ProfessionalRejectedRoute().location,
         builder: (context, state) => const ProfessionalRejectedScreen(),
       ),
       GoRoute(
         path: const NotificationsRoute().location,
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: const PrivacyPolicyRoute().location,
+        builder: (context, state) => const PrivacyPolicyScreen(),
+      ),
+      GoRoute(
+        path: const AboutUsRoute().location,
+        builder: (context, state) => const AboutUsScreen(),
       ),
       GoRoute(
         path: const ContentLibraryRoute().location,
@@ -513,6 +532,16 @@ class ProfessionalOnboardingRoute {
   String get location => '/professional/onboarding';
 }
 
+class ProfessionalProfileRoute {
+  const ProfessionalProfileRoute();
+  String get location => '/professional/profile';
+}
+
+class ProfessionalProfileEditRoute {
+  const ProfessionalProfileEditRoute();
+  String get location => '/professional/profile/edit';
+}
+
 class ProfessionalRejectedRoute {
   const ProfessionalRejectedRoute();
   String get location => '/professional/rejected';
@@ -557,6 +586,16 @@ class AppointmentDetailRoute {
 class NotificationsRoute {
   const NotificationsRoute();
   String get location => '/notifications';
+}
+
+class PrivacyPolicyRoute {
+  const PrivacyPolicyRoute();
+  String get location => '/privacy';
+}
+
+class AboutUsRoute {
+  const AboutUsRoute();
+  String get location => '/about';
 }
 
 class ContentLibraryRoute {

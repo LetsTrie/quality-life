@@ -7,6 +7,13 @@ final professionalRepositoryProvider = Provider<ProfessionalRepository>((ref) {
   return ProfessionalRepository(ref.watch(apiClientProvider));
 });
 
+/// The signed-in professional's own profile (`data.professional`). Watched by
+/// the profile view; invalidate after an edit to refresh it.
+final professionalMeProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final res = await ref.watch(professionalRepositoryProvider).me();
+  return (res['data'] as Map<String, dynamic>)['professional'] as Map<String, dynamic>;
+});
+
 class ProfessionalRepository {
   final Dio _dio;
   ProfessionalRepository(this._dio);

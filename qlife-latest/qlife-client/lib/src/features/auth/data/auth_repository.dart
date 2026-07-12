@@ -191,15 +191,30 @@ class CognitoAuthRepository implements AuthRepository {
     }
   }
 
+  // Single-flight guard: on startup several requests can 401 at once (the
+  // session provider's /v1/me plus the push device-token registration), and
+  // firing concurrent refreshes races on the same refresh token — which can
+  // wedge the app on the splash. Concurrent callers share one in-flight refresh.
+  Future<AuthTokens?>? _refreshInFlight;
+
   @override
-  Future<AuthTokens?> refreshSession() async {
+  Future<AuthTokens?> refreshSession() {
+    return _refreshInFlight ??=
+        _doRefreshSession().whenComplete(() => _refreshInFlight = null);
+  }
+
+  Future<AuthTokens?> _doRefreshSession() async {
     final email = await storage.read(key: _kEmail);
     final refresh = await storage.read(key: _kRefreshToken);
     if (email == null || refresh == null) return null;
 
     final user = CognitoUser(email, _pool);
     try {
-      final session = await user.refreshSession(CognitoRefreshToken(refresh));
+      // The Cognito client has no built-in timeout; without this a stalled
+      // network call would hang the splash indefinitely.
+      final session = await user
+          .refreshSession(CognitoRefreshToken(refresh))
+          .timeout(const Duration(seconds: 12));
       if (session == null) return null;
       final refreshed = _tokensFromSession(session);
       // A refresh response usually omits the refresh token; keep the stored one

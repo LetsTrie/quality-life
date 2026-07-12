@@ -7,6 +7,7 @@ import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/models/appointment.dart';
 import '../../../shared/models/paged_result.dart';
 import '../../../shared/theme/app_spacing.dart';
+import '../../../shared/util/date_format.dart';
 import '../../../shared/widgets/app_components.dart';
 import '../../../shared/widgets/async_state_views.dart';
 import '../../../shared/widgets/gradient_header.dart';
@@ -51,7 +52,9 @@ class AppointmentsScreen extends ConsumerWidget {
                   itemBuilder: (context, idx) {
                     final a = result.items[idx];
                     final counterpart = a.counterpartName;
-                    final requested = a.requestedStartAt ?? '';
+                    final requested = friendlyDateTime(
+                            a.requestedStartAt, Localizations.localeOf(context)) ??
+                        '';
                     return AppCard(
                       onTap: () => prefetchThenPush<AppointmentDetail>(
                         context,

@@ -58,7 +58,11 @@ List<String> _graduationBatches() {
 }
 
 class ProfessionalOnboardingScreen extends ConsumerStatefulWidget {
-  const ProfessionalOnboardingScreen({super.key});
+  /// When true the screen is reused as the post-onboarding *edit profile* form:
+  /// it shows a back button (not sign-out), an "edit" title, and returns to the
+  /// profile view on save instead of the dashboard.
+  final bool isEditing;
+  const ProfessionalOnboardingScreen({super.key, this.isEditing = false});
 
   @override
   ConsumerState<ProfessionalOnboardingScreen> createState() =>
@@ -487,12 +491,20 @@ class _ProfessionalOnboardingScreenState
       // Re-resolve the session so the router lets the professional into the
       // dashboard instead of bouncing back to onboarding.
       ref.invalidate(appSessionProvider);
+      // Refresh the profile view with the saved values.
+      ref.invalidate(professionalMeProvider);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l.onboardingCompleted)),
       );
-      context.go(const ProfessionalDashboardRoute().location);
+      // Editing returns to the profile view; first-time onboarding proceeds to
+      // the dashboard.
+      if (widget.isEditing && context.canPop()) {
+        context.pop();
+      } else {
+        context.go(const ProfessionalDashboardRoute().location);
+      }
     } catch (e) {
       if (mounted) {
         final reason = _serverErrorMessage(e);
@@ -513,16 +525,21 @@ class _ProfessionalOnboardingScreenState
       body: Column(
         children: [
           GradientHeader(
-            title: l.proOnboardingTitle,
-            subtitle: l.proOnboardingSubtitle,
-            actions: [
-              IconButton(
-                onPressed: () =>
-                    ref.read(authStateProvider.notifier).signOut(),
-                icon: const Icon(Icons.logout_rounded),
-                tooltip: l.actionSignOut,
-              ),
-            ],
+            title: widget.isEditing ? l.editProfileTitle : l.proOnboardingTitle,
+            subtitle: widget.isEditing
+                ? l.editProfileSubtitle
+                : l.proOnboardingSubtitle,
+            showBack: widget.isEditing,
+            actions: widget.isEditing
+                ? const []
+                : [
+                    IconButton(
+                      onPressed: () =>
+                          ref.read(authStateProvider.notifier).signOut(),
+                      icon: const Icon(Icons.logout_rounded),
+                      tooltip: l.actionSignOut,
+                    ),
+                  ],
           ),
           Expanded(
             child: Form(

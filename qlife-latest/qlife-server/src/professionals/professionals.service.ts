@@ -381,12 +381,18 @@ export class ProfessionalsService {
         where: { id: verification.professional.accountId },
         data: { status: 'ACTIVE' },
       });
-      await this.notifications.createInAppNotification({
+      await this.notifications.createLocalizedNotification({
         recipientAccountId: verification.professional.accountId,
         senderAccountId: args.adminAccountId,
         type: 'ACCOUNT_APPROVED',
-        title: "You're verified",
-        body: "Your professional account is approved — you're now visible to clients on QLife.",
+        en: {
+          title: "You're verified",
+          body: "Your professional account is approved — you're now visible to clients on QLife.",
+        },
+        bn: {
+          title: 'আপনি যাচাইকৃত হয়েছেন',
+          body: 'আপনার পেশাদার অ্যাকাউন্ট অনুমোদিত হয়েছে — এখন আপনি QLife-এ ক্লায়েন্টদের কাছে দৃশ্যমান।',
+        },
       });
     }
 

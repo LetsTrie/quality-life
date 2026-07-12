@@ -72,6 +72,26 @@ class AppointmentsRepository {
     return AppointmentDetail.fromJson(data['appointment'] as Map<String, dynamic>);
   }
 
+  /// User responds to a professional-proposed reschedule: ACCEPT the proposed
+  /// time, or COUNTER with a different [requestedStartAtIso].
+  Future<AppointmentDetail> rescheduleResponse({
+    required String appointmentId,
+    required String action, // ACCEPT | COUNTER
+    String? requestedStartAtIso,
+    String? userMessage,
+  }) async {
+    final res = await _dio.post(
+      '/v1/appointments/$appointmentId/reschedule-response',
+      data: {
+        'action': action,
+        if (requestedStartAtIso != null) 'requestedStartAt': requestedStartAtIso,
+        if (userMessage != null) 'userMessage': userMessage,
+      },
+    );
+    final data = (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+    return AppointmentDetail.fromJson(data['appointment'] as Map<String, dynamic>);
+  }
+
   /// Either party cancels the appointment.
   Future<AppointmentDetail> cancel(String appointmentId, {String? reason}) async {
     final res = await _dio.post('/v1/appointments/$appointmentId/cancel', data: {
