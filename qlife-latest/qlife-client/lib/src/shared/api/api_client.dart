@@ -21,11 +21,8 @@ final apiClientProvider = Provider<Dio>((ref) {
     InterceptorsWrapper(
       onRequest: (options, handler) async {
         final tokens = await ref.read(authRepositoryProvider).loadTokens();
-        // The backend verifies the token's `aud` against the Cognito app client
-        // ID and reads the user's email from the claims — both of which are only
-        // present on the ID token, not the access token. So authenticate with
-        // the ID token (falling back to access token only if absent).
-        final bearer = tokens?.idToken ?? tokens?.accessToken;
+        // WorkOS access token — verified server-side against the WorkOS JWKS.
+        final bearer = tokens?.accessToken;
         if (bearer != null) {
           options.headers['Authorization'] = 'Bearer $bearer';
         }

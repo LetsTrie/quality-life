@@ -13,25 +13,8 @@ output "db_port" {
   description = "RDS port."
 }
 
-output "cognito_user_pool_id" {
-  value       = aws_cognito_user_pool.users.id
-  description = "Cognito User Pool ID."
-}
-
-output "cognito_app_client_id" {
-  value       = aws_cognito_user_pool_client.mobile.id
-  description = "Cognito App Client ID."
-}
-
-output "cognito_issuer" {
-  value       = aws_cognito_user_pool.users.endpoint
-  description = "Issuer base (use with /{userPoolId})."
-}
-
-output "cognito_domain" {
-  value       = aws_cognito_user_pool_domain.hosted_ui.domain
-  description = "Hosted UI domain prefix (without the cognito-idp host suffix)."
-}
+# Authentication is provided by WorkOS (configured in the WorkOS dashboard);
+# there are no auth resources or outputs here.
 
 output "eb_application_name" {
   value       = aws_elastic_beanstalk_application.server.name

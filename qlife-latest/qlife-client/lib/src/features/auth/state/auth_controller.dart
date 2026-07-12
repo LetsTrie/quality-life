@@ -5,6 +5,7 @@ import '../../../shared/locale/locale_controller.dart';
 import '../../../shared/push/push_notification_service.dart';
 import '../../../shared/realtime/realtime_service.dart';
 import '../data/auth_repository.dart';
+import '../data/auth_tokens.dart';
 import 'auth_state.dart';
 
 class AuthController extends StateNotifier<AuthState> {
@@ -26,8 +27,14 @@ class AuthController extends StateNotifier<AuthState> {
 
   Future<void> signInWithPassword(String email, String password) async {
     final tokens = await _repo.signIn(email: email, password: password);
+    await onAuthenticated(tokens);
+  }
+
+  /// Establish a session from freshly issued tokens (from sign-in or from
+  /// completing email verification).
+  Future<void> onAuthenticated(AuthTokens tokens) async {
     await _repo.saveTokens(tokens);
-    // Best-effort: hit backend so it can link/create local account from Cognito claims.
+    // Best-effort: hit backend so it links/creates the local account.
     try {
       await _ref.read(accountRepositoryProvider).me();
     } catch (_) {}

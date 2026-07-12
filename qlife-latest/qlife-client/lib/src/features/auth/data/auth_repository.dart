@@ -1,27 +1,35 @@
-import 'package:amazon_cognito_identity_dart_2/cognito.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'auth_tokens.dart';
 
 /// Thrown for any auth failure that should be shown to the user. [message] is
-/// already human-readable (Cognito surfaces friendly messages like "Incorrect
-/// username or password.").
+/// already human-readable (surfaced from the backend). [code] carries a coarse
+/// classifier; [pendingAuthenticationToken] is set when the failure is actually
+/// "email not verified yet" so the caller can route to the OTP screen.
 class AuthException implements Exception {
   final String message;
   final String? code;
-  const AuthException(this.message, {this.code});
+  final String? pendingAuthenticationToken;
+  const AuthException(this.message, {this.code, this.pendingAuthenticationToken});
 
   @override
   String toString() => message;
 }
 
-/// Result of a sign-up attempt. [userConfirmed] is true only if the pool is
-/// configured to auto-confirm (it isn't here), so the OTP step is normally
-/// required.
+/// Result of a sign-up attempt. When the account needs email verification (the
+/// normal case) [pendingAuthenticationToken] is set and must be passed to the
+/// OTP screen; [userConfirmed] is true only if verification is disabled.
 class SignUpOutcome {
   final bool userConfirmed;
-  const SignUpOutcome({required this.userConfirmed});
+  final String? pendingAuthenticationToken;
+  final AuthTokens? tokens;
+  const SignUpOutcome({
+    required this.userConfirmed,
+    this.pendingAuthenticationToken,
+    this.tokens,
+  });
 }
 
 abstract class AuthRepository {
@@ -29,63 +37,80 @@ abstract class AuthRepository {
   Future<void> saveTokens(AuthTokens tokens);
   Future<void> clearTokens();
 
-  /// Registers a new account. Cognito emails a confirmation code; the caller
-  /// must then call [confirmSignUp].
+  /// Registers a new account. The backend creates the WorkOS user and emails a
+  /// verification code; the caller passes the returned pending token to
+  /// [confirmSignUp].
   Future<SignUpOutcome> signUp({required String email, required String password});
-  Future<void> confirmSignUp({required String email, required String code});
-  Future<void> resendConfirmationCode(String email);
 
-  /// Authenticates with email + password (USER_PASSWORD / SRP) and returns the
-  /// issued tokens. Also persists the email so [refreshSession] can rebuild the
-  /// Cognito user later.
+  /// Completes email verification with the OTP code + the pending token, and
+  /// returns the issued session tokens (auto sign-in).
+  Future<AuthTokens> confirmSignUp({
+    required String pendingAuthenticationToken,
+    required String code,
+  });
+
+  /// Re-triggers a verification email (by re-authenticating) and returns a
+  /// fresh pending token, or null if the account is already verified.
+  Future<String?> resendConfirmationCode({required String email, required String password});
+
+  /// Authenticates with email + password. Returns the issued tokens, or throws
+  /// [AuthException] — with `code == 'UserNotConfirmedException'` and a
+  /// `pendingAuthenticationToken` when the email still needs verifying.
   Future<AuthTokens> signIn({required String email, required String password});
 
+  /// Requests a password-reset code by email (WorkOS Magic Auth).
   Future<void> forgotPassword(String email);
-  Future<void> confirmForgotPassword({
+
+  /// Completes an in-app reset: verifies the emailed code, sets [newPassword],
+  /// and returns session tokens (the user is signed in).
+  Future<AuthTokens> resetPassword({
     required String email,
     required String code,
     required String newPassword,
   });
 
   /// Exchanges the stored refresh token for fresh tokens. Returns null when no
-  /// refresh is possible (missing email/refresh token, or Cognito rejects it).
+  /// refresh is possible.
   Future<AuthTokens?> refreshSession();
 
   /// Changes the signed-in user's password (verifies the current one).
   Future<void> changePassword({required String oldPassword, required String newPassword});
 
-  /// Permanently deletes the signed-in user from the identity provider (Cognito).
-  /// Best-effort: callers should still sign out afterwards.
-  Future<void> deleteCognitoUser();
+  /// Permanently deletes the signed-in user (WorkOS + local). Best-effort:
+  /// callers should still sign out afterwards.
+  Future<void> deleteAccount();
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return CognitoAuthRepository(storage: const FlutterSecureStorage());
+  return HttpAuthRepository(storage: const FlutterSecureStorage());
 });
 
-class CognitoAuthRepository implements AuthRepository {
+/// Backend-for-frontend auth: the app calls our own `/v1/auth/*` endpoints,
+/// which broker WorkOS. Uses a bare Dio (no auth interceptor) to avoid a
+/// refresh recursion; authed calls attach the stored access token manually.
+class HttpAuthRepository implements AuthRepository {
   static const _kAccessToken = 'auth.access_token';
   static const _kRefreshToken = 'auth.refresh_token';
-  static const _kIdToken = 'auth.id_token';
   static const _kEmail = 'auth.email';
 
+  static const _baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'http://127.0.0.1:3000',
+  );
+
   final FlutterSecureStorage storage;
+  final Dio _dio;
 
-  CognitoAuthRepository({required this.storage});
+  HttpAuthRepository({required this.storage, Dio? dio})
+      : _dio = dio ??
+            Dio(BaseOptions(
+              baseUrl: _baseUrl,
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 20),
+            ));
 
-  // Pass per-environment values at build time:
-  //   flutter run --dart-define=COGNITO_USER_POOL_ID=... --dart-define=COGNITO_CLIENT_ID=...
-  // Dev defaults kept so the app still runs without explicit --dart-define.
-  static const _userPoolId = String.fromEnvironment(
-    'COGNITO_USER_POOL_ID',
-    defaultValue: 'us-east-1_S8XqA3wif',
-  );
-  static const _clientId = String.fromEnvironment(
-    'COGNITO_CLIENT_ID',
-    defaultValue: '3eq0m0ssb3dcd19qsg6a8hesp7',
-  );
-
-  final CognitoUserPool _pool = CognitoUserPool(_userPoolId, _clientId);
+  Map<String, dynamic> _data(Response res) =>
+      (res.data as Map<String, dynamic>)['data'] as Map<String, dynamic>;
 
   @override
   Future<AuthTokens?> loadTokens() async {
@@ -94,7 +119,6 @@ class CognitoAuthRepository implements AuthRepository {
     return AuthTokens(
       accessToken: access,
       refreshToken: await storage.read(key: _kRefreshToken),
-      idToken: await storage.read(key: _kIdToken),
     );
   }
 
@@ -102,14 +126,12 @@ class CognitoAuthRepository implements AuthRepository {
   Future<void> saveTokens(AuthTokens tokens) async {
     await storage.write(key: _kAccessToken, value: tokens.accessToken);
     await storage.write(key: _kRefreshToken, value: tokens.refreshToken);
-    await storage.write(key: _kIdToken, value: tokens.idToken);
   }
 
   @override
   Future<void> clearTokens() async {
     await storage.delete(key: _kAccessToken);
     await storage.delete(key: _kRefreshToken);
-    await storage.delete(key: _kIdToken);
     await storage.delete(key: _kEmail);
   }
 
@@ -117,84 +139,110 @@ class CognitoAuthRepository implements AuthRepository {
   Future<SignUpOutcome> signUp({required String email, required String password}) async {
     final normalized = email.trim().toLowerCase();
     try {
-      final data = await _pool.signUp(
-        normalized,
-        password,
-        userAttributes: [AttributeArg(name: 'email', value: normalized)],
+      final res = await _dio.post('/v1/auth/register',
+          data: {'email': normalized, 'password': password});
+      final data = _data(res);
+      if (data['status'] == 'ok') {
+        await storage.write(key: _kEmail, value: normalized);
+        final tokens = _tokensFromData(data);
+        return SignUpOutcome(userConfirmed: true, tokens: tokens);
+      }
+      return SignUpOutcome(
+        userConfirmed: false,
+        pendingAuthenticationToken: data['pendingAuthenticationToken'] as String?,
       );
-      return SignUpOutcome(userConfirmed: data.userConfirmed ?? false);
-    } on CognitoClientException catch (e) {
-      throw _mapException(e);
+    } on DioException catch (e) {
+      throw _mapDio(e);
     }
   }
 
   @override
-  Future<void> confirmSignUp({required String email, required String code}) async {
-    final user = CognitoUser(email.trim().toLowerCase(), _pool);
+  Future<AuthTokens> confirmSignUp({
+    required String pendingAuthenticationToken,
+    required String code,
+  }) async {
     try {
-      await user.confirmRegistration(code.trim());
-    } on CognitoClientException catch (e) {
-      throw _mapException(e);
+      final res = await _dio.post('/v1/auth/verify-email', data: {
+        'pendingAuthenticationToken': pendingAuthenticationToken,
+        'code': code.trim(),
+      });
+      return _tokensFromData(_data(res));
+    } on DioException catch (e) {
+      throw _mapDio(e);
     }
   }
 
   @override
-  Future<void> resendConfirmationCode(String email) async {
-    final user = CognitoUser(email.trim().toLowerCase(), _pool);
+  Future<String?> resendConfirmationCode({
+    required String email,
+    required String password,
+  }) async {
+    // Re-authenticate: the backend re-sends the verification code and returns a
+    // fresh pending token when the email is still unverified.
     try {
-      await user.resendConfirmationCode();
-    } on CognitoClientException catch (e) {
-      throw _mapException(e);
+      final res = await _dio.post('/v1/auth/login',
+          data: {'email': email.trim().toLowerCase(), 'password': password});
+      final data = _data(res);
+      if (data['status'] == 'verification_required') {
+        return data['pendingAuthenticationToken'] as String?;
+      }
+      return null; // already verified
+    } on DioException catch (e) {
+      throw _mapDio(e);
     }
   }
 
   @override
   Future<AuthTokens> signIn({required String email, required String password}) async {
     final normalized = email.trim().toLowerCase();
-    final user = CognitoUser(normalized, _pool);
-    final details = AuthenticationDetails(username: normalized, password: password);
     try {
-      final session = await user.authenticateUser(details);
-      if (session == null) {
-        throw const AuthException('Could not sign in. Please try again.');
+      final res = await _dio.post('/v1/auth/login',
+          data: {'email': normalized, 'password': password});
+      final data = _data(res);
+      if (data['status'] == 'verification_required') {
+        throw AuthException(
+          'Please verify your email to continue.',
+          code: 'UserNotConfirmedException',
+          pendingAuthenticationToken: data['pendingAuthenticationToken'] as String?,
+        );
       }
       await storage.write(key: _kEmail, value: normalized);
-      return _tokensFromSession(session);
-    } on CognitoClientException catch (e) {
-      throw _mapException(e);
-    } on CognitoUserException catch (e) {
-      throw AuthException(e.message ?? 'Could not sign in. Please try again.');
+      return _tokensFromData(data);
+    } on DioException catch (e) {
+      throw _mapDio(e);
     }
   }
 
   @override
   Future<void> forgotPassword(String email) async {
-    final user = CognitoUser(email.trim().toLowerCase(), _pool);
     try {
-      await user.forgotPassword();
-    } on CognitoClientException catch (e) {
-      throw _mapException(e);
+      await _dio.post('/v1/auth/forgot-password',
+          data: {'email': email.trim().toLowerCase()});
+    } on DioException catch (e) {
+      throw _mapDio(e);
     }
   }
 
   @override
-  Future<void> confirmForgotPassword({
+  Future<AuthTokens> resetPassword({
     required String email,
     required String code,
     required String newPassword,
   }) async {
-    final user = CognitoUser(email.trim().toLowerCase(), _pool);
     try {
-      await user.confirmPassword(code.trim(), newPassword);
-    } on CognitoClientException catch (e) {
-      throw _mapException(e);
+      final res = await _dio.post('/v1/auth/reset-password', data: {
+        'email': email.trim().toLowerCase(),
+        'code': code.trim(),
+        'newPassword': newPassword,
+      });
+      return _tokensFromData(_data(res));
+    } on DioException catch (e) {
+      throw _mapDio(e);
     }
   }
 
-  // Single-flight guard: on startup several requests can 401 at once (the
-  // session provider's /v1/me plus the push device-token registration), and
-  // firing concurrent refreshes races on the same refresh token — which can
-  // wedge the app on the splash. Concurrent callers share one in-flight refresh.
+  // Single-flight guard: startup can 401 several requests at once; concurrent
+  // callers share one in-flight refresh so they don't race the refresh token.
   Future<AuthTokens?>? _refreshInFlight;
 
   @override
@@ -204,26 +252,11 @@ class CognitoAuthRepository implements AuthRepository {
   }
 
   Future<AuthTokens?> _doRefreshSession() async {
-    final email = await storage.read(key: _kEmail);
     final refresh = await storage.read(key: _kRefreshToken);
-    if (email == null || refresh == null) return null;
-
-    final user = CognitoUser(email, _pool);
+    if (refresh == null) return null;
     try {
-      // The Cognito client has no built-in timeout; without this a stalled
-      // network call would hang the splash indefinitely.
-      final session = await user
-          .refreshSession(CognitoRefreshToken(refresh))
-          .timeout(const Duration(seconds: 12));
-      if (session == null) return null;
-      final refreshed = _tokensFromSession(session);
-      // A refresh response usually omits the refresh token; keep the stored one
-      // so we can refresh again next time.
-      final tokens = AuthTokens(
-        accessToken: refreshed.accessToken,
-        idToken: refreshed.idToken,
-        refreshToken: refreshed.refreshToken ?? refresh,
-      );
+      final res = await _dio.post('/v1/auth/refresh', data: {'refreshToken': refresh});
+      final tokens = _tokensFromData(_data(res));
       await saveTokens(tokens);
       return tokens;
     } catch (_) {
@@ -233,57 +266,59 @@ class CognitoAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> changePassword({required String oldPassword, required String newPassword}) async {
-    final email = await storage.read(key: _kEmail);
-    if (email == null) throw const AuthException('Not signed in');
-    final user = CognitoUser(email, _pool);
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
     try {
-      // Re-authenticate with the current password to obtain a live session bound
-      // to this user, then change the password.
-      final session = await user.authenticateUser(
-        AuthenticationDetails(username: email, password: oldPassword),
+      await _dio.post(
+        '/v1/auth/change-password',
+        data: {'currentPassword': oldPassword, 'newPassword': newPassword},
+        options: await _authedOptions(),
       );
-      if (session == null) {
-        throw const AuthException('Could not verify your current password.');
-      }
-      await user.changePassword(oldPassword, newPassword);
-    } on CognitoClientException catch (e) {
-      throw _mapException(e);
-    } on CognitoUserException catch (e) {
-      throw AuthException(e.message ?? 'Could not change password.');
+    } on DioException catch (e) {
+      throw _mapDio(e);
     }
   }
 
   @override
-  Future<void> deleteCognitoUser() async {
-    final email = await storage.read(key: _kEmail);
-    final refresh = await storage.read(key: _kRefreshToken);
-    if (email == null || refresh == null) return;
-    final user = CognitoUser(email, _pool);
+  Future<void> deleteAccount() async {
     try {
-      // Establish a valid session for this user, then delete it from Cognito.
-      await user.refreshSession(CognitoRefreshToken(refresh));
-      await user.deleteUser();
-    } on CognitoClientException catch (e) {
-      throw _mapException(e);
+      await _dio.delete('/v1/auth/account', options: await _authedOptions());
+    } on DioException catch (e) {
+      throw _mapDio(e);
     }
   }
 
-  AuthTokens _tokensFromSession(CognitoUserSession session) {
-    final access = session.getAccessToken().getJwtToken();
-    if (access == null) {
-      throw const AuthException('Missing access token');
-    }
+  Future<Options> _authedOptions() async {
+    final access = await storage.read(key: _kAccessToken);
+    return Options(headers: {
+      if (access != null) 'Authorization': 'Bearer $access',
+    });
+  }
+
+  AuthTokens _tokensFromData(Map<String, dynamic> data) {
+    final access = data['accessToken'] as String?;
+    if (access == null) throw const AuthException('Missing access token');
     return AuthTokens(
       accessToken: access,
-      idToken: session.getIdToken().getJwtToken(),
-      // A refresh response does not re-issue a refresh token; keep the prior
-      // one if absent so the stored value isn't wiped.
-      refreshToken: session.getRefreshToken()?.getToken(),
+      refreshToken: data['refreshToken'] as String?,
     );
   }
 
-  AuthException _mapException(CognitoClientException e) {
-    return AuthException(e.message ?? 'Something went wrong. Please try again.', code: e.code);
+  AuthException _mapDio(DioException e) {
+    final body = e.response?.data;
+    String? message;
+    if (body is Map) {
+      final err = body['error'];
+      if (err is Map && err['message'] is String) {
+        message = err['message'] as String;
+      } else if (err is String) {
+        message = err;
+      } else if (body['message'] is String) {
+        message = body['message'] as String;
+      }
+    }
+    return AuthException(message ?? 'Something went wrong. Please try again.');
   }
 }

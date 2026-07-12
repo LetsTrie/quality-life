@@ -92,59 +92,9 @@ resource "aws_db_instance" "postgres" {
   tags                      = { Name = "${var.name_prefix}-postgres" }
 }
 
-# --- Cognito (Hosted UI auth baseline) ---
-resource "aws_cognito_user_pool" "users" {
-  name = "${var.name_prefix}-users"
-
-  username_attributes      = ["email"]
-  auto_verified_attributes = ["email"]
-
-  password_policy {
-    minimum_length    = 12
-    require_lowercase = true
-    require_numbers   = true
-    require_symbols   = true
-    require_uppercase = true
-  }
-
-  tags = { Name = "${var.name_prefix}-users" }
-}
-
-resource "aws_cognito_user_pool_client" "mobile" {
-  name         = "${var.name_prefix}-mobile"
-  user_pool_id = aws_cognito_user_pool.users.id
-
-  generate_secret = false
-
-  # SDK auth (amazon_cognito_identity_dart_2): the app talks to the Cognito
-  # user-pool API directly instead of the hosted UI.
-  #  - USER_SRP_AUTH      → sign-in (the SDK's authenticateUser uses SRP)
-  #  - REFRESH_TOKEN_AUTH → silent token refresh
-  #  - USER_PASSWORD_AUTH → plain username/password fallback
-  explicit_auth_flows = [
-    "ALLOW_USER_SRP_AUTH",
-    "ALLOW_REFRESH_TOKEN_AUTH",
-    "ALLOW_USER_PASSWORD_AUTH",
-  ]
-
-  # Hosted-UI OAuth flows are retained for now as a fallback / transition aid;
-  # the client no longer uses them. Safe to remove once SDK auth is fully
-  # rolled out (also drop the aws_cognito_user_pool_domain below).
-  allowed_oauth_flows_user_pool_client = true
-  allowed_oauth_flows                  = ["code"]
-  allowed_oauth_scopes                 = ["email", "openid", "profile"]
-
-  supported_identity_providers = ["COGNITO"]
-
-  # Configure these per environment / app scheme.
-  callback_urls = ["qlife://auth/callback"]
-  logout_urls   = ["qlife://auth/logout"]
-}
-
-resource "aws_cognito_user_pool_domain" "hosted_ui" {
-  domain       = "${var.name_prefix}-auth"
-  user_pool_id = aws_cognito_user_pool.users.id
-}
+# Authentication is handled by WorkOS (User Management), configured in the
+# WorkOS dashboard and wired via the server's WORKOS_* env vars — there is no
+# auth infrastructure to provision here.
 
 # --- IAM: Elastic Beanstalk instance role ---
 resource "aws_iam_role" "eb_ec2" {
@@ -288,20 +238,14 @@ resource "aws_elastic_beanstalk_environment" "server" {
 
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
-    name      = "COGNITO_REGION"
-    value     = var.aws_region
+    name      = "WORKOS_API_KEY"
+    value     = var.workos_api_key
   }
 
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
-    name      = "COGNITO_USER_POOL_ID"
-    value     = aws_cognito_user_pool.users.id
-  }
-
-  setting {
-    namespace = "aws:elasticbeanstalk:application:environment"
-    name      = "COGNITO_APP_CLIENT_ID"
-    value     = aws_cognito_user_pool_client.mobile.id
+    name      = "WORKOS_CLIENT_ID"
+    value     = var.workos_client_id
   }
 
   # Health check path (used by EB internal checks, not an ALB target group).

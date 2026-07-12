@@ -1,4 +1,4 @@
-import { clearToken, getToken } from "./cognito";
+import { clearToken, getToken } from "./admin-auth";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:5012";
 
@@ -188,6 +188,69 @@ export interface AssessmentQuestion {
   valueNumeric: number | null;
   valueText: string | null;
   options: AssessmentQuestionOption[];
+}
+
+// --- Scale (instrument) management ---
+export interface AdminInstrumentSummary {
+  id: string;
+  slug: string;
+  name: string;
+  nameBn: string | null;
+  category: string;
+  isActive: boolean;
+  isSelfAssessable: boolean;
+  version: { versionNumber: number; status: string; scoringMethod: string } | null;
+  questionCount: number;
+  bandCount: number;
+  responseCount: number;
+}
+
+export interface ScaleOption {
+  position?: number;
+  label: string;
+  value: number;
+  weight: number | null;
+}
+export interface ScaleQuestion {
+  position?: number;
+  prompt: string;
+  domain: string | null;
+  isReverseScored: boolean;
+  options: ScaleOption[];
+}
+export interface ScaleBand {
+  position?: number;
+  label: string;
+  severityRank: number;
+  minScore: number | null;
+  maxScore: number | null;
+  colorHex: string | null;
+  advice: string | null;
+  recommendedAction: string;
+  recommendedContentId: string | null;
+}
+export interface AdminInstrumentDetail {
+  id: string;
+  slug: string;
+  name: string;
+  nameBn: string | null;
+  category: string;
+  description: string | null;
+  isActive: boolean;
+  isSelfAssessable: boolean;
+  version: {
+    versionNumber: number;
+    status: string;
+    locale: string;
+    scoringMethod: string;
+    normalizationMax: number | null;
+    attribution: string | null;
+    instructions: string | null;
+  } | null;
+  responseCount: number;
+  questions: ScaleQuestion[];
+  bands: ScaleBand[];
+  contentOptions: { id: string; title: string; contentKey: string }[];
 }
 
 export interface AssessmentDetail {

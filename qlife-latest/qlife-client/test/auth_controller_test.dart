@@ -27,24 +27,33 @@ class FakeAuthRepo implements AuthRepository {
       const SignUpOutcome(userConfirmed: false);
 
   @override
-  Future<void> confirmSignUp({required String email, required String code}) async {}
+  Future<AuthTokens> confirmSignUp({
+    required String pendingAuthenticationToken,
+    required String code,
+  }) async =>
+      const AuthTokens(accessToken: 'a', refreshToken: 'r');
 
   @override
-  Future<void> resendConfirmationCode(String email) async {}
+  Future<String?> resendConfirmationCode({
+    required String email,
+    required String password,
+  }) async =>
+      null;
 
   @override
   Future<AuthTokens> signIn({required String email, required String password}) async =>
-      const AuthTokens(accessToken: 'a', refreshToken: 'r', idToken: 'i');
+      const AuthTokens(accessToken: 'a', refreshToken: 'r');
 
   @override
   Future<void> forgotPassword(String email) async {}
 
   @override
-  Future<void> confirmForgotPassword({
+  Future<AuthTokens> resetPassword({
     required String email,
     required String code,
     required String newPassword,
-  }) async {}
+  }) async =>
+      const AuthTokens(accessToken: 'a', refreshToken: 'r');
 
   @override
   Future<AuthTokens?> refreshSession() async => tokens;
@@ -54,7 +63,7 @@ class FakeAuthRepo implements AuthRepository {
       {required String oldPassword, required String newPassword}) async {}
 
   @override
-  Future<void> deleteCognitoUser() async {}
+  Future<void> deleteAccount() async {}
 }
 
 // No-op session services so init/logout don't touch Firebase or open sockets.
@@ -91,7 +100,7 @@ ProviderContainer _container(FakeAuthRepo repo) {
 void main() {
   test('initialize sets authenticated when token exists', () async {
     final repo = FakeAuthRepo()
-      ..tokens = const AuthTokens(accessToken: 'a', refreshToken: null, idToken: null);
+      ..tokens = const AuthTokens(accessToken: 'a', refreshToken: null);
     final controller = _container(repo).read(authStateProvider.notifier);
 
     await controller.initialize();
@@ -101,7 +110,7 @@ void main() {
 
   test('signOut clears auth', () async {
     final repo = FakeAuthRepo()
-      ..tokens = const AuthTokens(accessToken: 'a', refreshToken: null, idToken: null);
+      ..tokens = const AuthTokens(accessToken: 'a', refreshToken: null);
     final controller = _container(repo).read(authStateProvider.notifier);
 
     await controller.initialize();

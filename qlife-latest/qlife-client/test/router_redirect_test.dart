@@ -40,24 +40,33 @@ class _FakeAuthRepo implements AuthRepository {
       const SignUpOutcome(userConfirmed: false);
 
   @override
-  Future<void> confirmSignUp({required String email, required String code}) async {}
+  Future<AuthTokens> confirmSignUp({
+    required String pendingAuthenticationToken,
+    required String code,
+  }) async =>
+      const AuthTokens(accessToken: 'a', refreshToken: 'r');
 
   @override
-  Future<void> resendConfirmationCode(String email) async {}
+  Future<String?> resendConfirmationCode({
+    required String email,
+    required String password,
+  }) async =>
+      null;
 
   @override
   Future<AuthTokens> signIn({required String email, required String password}) async =>
-      const AuthTokens(accessToken: 'a', refreshToken: 'r', idToken: 'i');
+      const AuthTokens(accessToken: 'a', refreshToken: 'r');
 
   @override
   Future<void> forgotPassword(String email) async {}
 
   @override
-  Future<void> confirmForgotPassword({
+  Future<AuthTokens> resetPassword({
     required String email,
     required String code,
     required String newPassword,
-  }) async {}
+  }) async =>
+      const AuthTokens(accessToken: 'a', refreshToken: 'r');
 
   @override
   Future<AuthTokens?> refreshSession() async => _stored;
@@ -67,7 +76,7 @@ class _FakeAuthRepo implements AuthRepository {
       {required String oldPassword, required String newPassword}) async {}
 
   @override
-  Future<void> deleteCognitoUser() async {}
+  Future<void> deleteAccount() async {}
 }
 
 // No-op session services so init/logout don't touch Firebase or open sockets
@@ -150,7 +159,7 @@ void main() {
       await _bootApp(
         tester,
         storedTokens:
-            const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+            const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: null,
       );
       expect(find.byType(SignInScreen), findsOneWidget);
@@ -163,7 +172,7 @@ void main() {
       await _bootApp(
         tester,
         storedTokens:
-            const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+            const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: null,
       );
       expect(find.byType(SignInScreen), findsOneWidget);
@@ -187,7 +196,7 @@ void main() {
       await _bootApp(
         tester,
         storedTokens:
-            const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+            const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: null,
       );
       expect(find.byType(SignInScreen), findsOneWidget);
@@ -207,7 +216,7 @@ void main() {
         (tester) async {
       await _bootApp(
         tester,
-        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: const AppSession(role: 'USER', isUserProfileComplete: true),
         extra: [pendingProfessionalRegistrationProvider.overrideWith((_) => true)],
       );
@@ -218,7 +227,7 @@ void main() {
         (tester) async {
       await _bootApp(
         tester,
-        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: const AppSession(role: 'USER', isUserProfileComplete: false),
       );
       expect(find.byType(UserProfileCompletionScreen), findsOneWidget);
@@ -227,7 +236,7 @@ void main() {
     testWidgets('USER with complete profile lands on HomeScreen', (tester) async {
       await _bootApp(
         tester,
-        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: const AppSession(role: 'USER', isUserProfileComplete: true),
       );
       expect(find.byType(HomeScreen), findsOneWidget);
@@ -238,7 +247,7 @@ void main() {
         (tester) async {
       await _bootApp(
         tester,
-        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: const AppSession(role: 'PROFESSIONAL', isProfessionalOnboardingComplete: false),
       );
       expect(find.byType(ProfessionalOnboardingScreen), findsOneWidget);
@@ -248,7 +257,7 @@ void main() {
         (tester) async {
       await _bootApp(
         tester,
-        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: const AppSession(role: 'PROFESSIONAL', isProfessionalOnboardingComplete: true),
       );
       expect(find.byType(ProfessionalHomeScreen), findsOneWidget);
@@ -259,7 +268,7 @@ void main() {
         (tester) async {
       await _bootApp(
         tester,
-        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: const AppSession(
           role: 'PROFESSIONAL',
           isProfessionalOnboardingComplete: true,
@@ -273,7 +282,7 @@ void main() {
     testWidgets('rejected PROFESSIONAL cannot reach the dashboard', (tester) async {
       await _bootApp(
         tester,
-        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: const AppSession(
           role: 'PROFESSIONAL',
           isProfessionalOnboardingComplete: true,
@@ -293,7 +302,7 @@ void main() {
     testWidgets('ADMIN lands on HomeScreen', (tester) async {
       await _bootApp(
         tester,
-        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: const AppSession(role: 'ADMIN'),
       );
       expect(find.byType(HomeScreen), findsOneWidget);
@@ -302,7 +311,7 @@ void main() {
     testWidgets('PROFESSIONAL with incomplete onboarding cannot reach HomeScreen', (tester) async {
       await _bootApp(
         tester,
-        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null, idToken: null),
+        storedTokens: const AuthTokens(accessToken: 'tok', refreshToken: null),
         session: const AppSession(role: 'PROFESSIONAL', isProfessionalOnboardingComplete: false),
       );
       expect(find.byType(ProfessionalOnboardingScreen), findsOneWidget);

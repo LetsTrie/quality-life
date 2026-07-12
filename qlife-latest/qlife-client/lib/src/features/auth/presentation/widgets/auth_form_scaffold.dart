@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/locale/locale_controller.dart';
 import '../../../../shared/theme/app_colors.dart';
 import '../../../../shared/theme/app_decorations.dart';
 import '../../../../shared/theme/app_spacing.dart';
@@ -52,15 +54,22 @@ class AuthFormScaffold extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (onBack != null)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      onPressed: onBack,
-                      icon: const Icon(Icons.arrow_back_rounded),
-                      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-                    ),
-                  ),
+                // Top row: optional back button + a language switcher so the
+                // login/register flow can be read in Bangla or English before
+                // signing in.
+                Row(
+                  children: [
+                    if (onBack != null)
+                      IconButton(
+                        onPressed: onBack,
+                        icon: const Icon(Icons.arrow_back_rounded),
+                        tooltip:
+                            MaterialLocalizations.of(context).backButtonTooltip,
+                      ),
+                    const Spacer(),
+                    const _AuthLanguageToggle(),
+                  ],
+                ),
                 const Gap(AppSpacing.sm),
                 const Center(child: AppIllustration(AppArt.brandMark, height: 88)),
                 const Gap(AppSpacing.xl),
@@ -92,9 +101,32 @@ class AuthFormScaffold extends StatelessWidget {
   }
 }
 
-/// Email regex good enough for client-side validation; Cognito is the final
+/// Compact Bangla/English switcher shown on the auth screens. Drives
+/// [localeControllerProvider], which the whole app watches, so the choice
+/// takes effect immediately and persists after sign-in.
+class _AuthLanguageToggle extends ConsumerWidget {
+  const _AuthLanguageToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final code = ref.watch(localeControllerProvider).languageCode;
+    final controller = ref.read(localeControllerProvider.notifier);
+    return SegmentedButton<String>(
+      showSelectedIcon: false,
+      style: const ButtonStyle(visualDensity: VisualDensity.compact),
+      segments: const [
+        ButtonSegment(value: 'bn', label: Text('বাংলা')),
+        ButtonSegment(value: 'en', label: Text('English')),
+      ],
+      selected: {code == 'en' ? 'en' : 'bn'},
+      onSelectionChanged: (s) => controller.setLocale(Locale(s.first)),
+    );
+  }
+}
+
+/// Email regex good enough for client-side validation; the backend is the final
 /// authority.
 final RegExp authEmailRegExp = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');
 
-/// Client-side minimum; Cognito enforces upper/lower/number/symbol server-side.
+/// Client-side minimum; WorkOS enforces its password policy server-side.
 const int authMinPasswordLength = 6;

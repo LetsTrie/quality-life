@@ -7,18 +7,19 @@
 //
 //  DESIGN PRINCIPLES (built to outlive any one application generation)
 //  ---------------------------------------------------------------------------
-//  1. Identity vs. domain separation. Authentication itself is FEDERATED to a
-//     managed identity provider (AWS Cognito): the mobile app logs in against
-//     Cognito and the backend trusts a verified JWT (signature + issuer +
-//     audience) on every request — there is NO server-side session lookup and
+//  1. Identity vs. domain separation. Authentication is FEDERATED to a managed
+//     identity provider (WorkOS User Management): the mobile app authenticates
+//     through the backend (backend-for-frontend), which brokers WorkOS and
+//     returns WorkOS tokens; the backend trusts a verified JWT (signature via
+//     WorkOS JWKS) on every request — there is NO server-side session lookup and
 //     no local password store. `accounts` is the local *product identity*: it
-//     maps a Cognito user (`cognito_sub`) to our domain and owns domain-specific
+//     maps a WorkOS user (external subject, stored in `cognito_sub`) to our domain and owns domain-specific
 //     authorization (`role`, `status`, approval/suspension/verification flows).
 //     Role-specific clinical data lives in `user_profiles` and
 //     `professional_profiles`. Clinical tables reference the *profile*; consent,
 //     audit, notifications reference the *account*.
-//     - Email verification, password reset and MFA are handled by Cognito
-//       (Hosted UI / managed flows), NOT by a local `verification_tokens` table.
+//     - Email verification, password reset and MFA are handled by WorkOS,
+//       NOT by a local `verification_tokens` table.
 //     - Refresh tokens live on the device keychain/keystore, NOT in our DB.
 //  2. Instruments are first-class and *versioned*. A questionnaire's wording and
 //     scoring change over decades; every response is bound to the exact
@@ -317,24 +318,24 @@ enum LegalDocumentType {
 //  IDENTITY & AUTHENTICATION
 // =============================================================================
 
-/// Local product identity for one Cognito user. Exactly one of user_profile /
-/// professional_profile is populated according to `role` (ADMIN accounts have
-/// neither).
+/// Local product identity for one identity-provider user. Exactly one of
+/// user_profile / professional_profile is populated according to `role` (ADMIN
+/// accounts have neither).
 ///
 /// STATELESS AUTH: the backend never checks a server-side session. On each
-/// request it verifies the Cognito access/ID JWT (signature + issuer +
-/// audience) and resolves this row by `cognitoSub` (preferred) or `email`.
+/// request it verifies the WorkOS access-token JWT (signature via WorkOS JWKS)
+/// and resolves this row by the external subject id (preferred) or `email`.
 /// Credentials, refresh tokens, email verification, password reset and MFA are
-/// all owned by Cognito — only domain authorization (`role`, `status`) is local.
+/// all owned by WorkOS — only domain authorization (`role`, `status`) is local.
 model Account {
   id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  // Cognito subject (the `sub` claim). The stable link to the IdP user; the
-  // primary key the backend maps a verified token to. Nullable only to allow
-  // back-office/seed accounts created before their first Cognito login.
+  // External IdP subject (the token `sub`). The stable link to the WorkOS user;
+  // the key the backend maps a verified token to. Physical column is
+  // `cognito_sub` (retained from the Cognito era to avoid a rename migration).
+  // Nullable only to allow back-office/seed accounts created before first login.
   cognitoSub   String? @unique @map("cognito_sub")
-  // Identity provider that owns this account's credentials. Defaults to Cognito;
-  // kept as a column so future providers can coexist without a schema change.
-  authProvider String  @default("cognito") @map("auth_provider")
+  // Identity provider that owns this account's credentials ("workos").
+  authProvider String  @default("workos") @map("auth_provider")
 
   email           String        @unique @db.Citext
   role            AccountRole

@@ -17,17 +17,25 @@ import 'widgets/auth_form_scaffold.dart';
 class VerifyEmailArgs {
   final String email;
   final String? password;
-  const VerifyEmailArgs({required this.email, this.password});
+  // WorkOS pending-authentication token that the OTP code is verified against.
+  final String? pendingAuthenticationToken;
+  const VerifyEmailArgs({
+    required this.email,
+    this.password,
+    this.pendingAuthenticationToken,
+  });
 }
 
 class EmailVerificationScreen extends ConsumerStatefulWidget {
   final String email;
   final String? password;
+  final String? pendingAuthenticationToken;
 
   const EmailVerificationScreen({
     super.key,
     required this.email,
     this.password,
+    this.pendingAuthenticationToken,
   });
 
   @override
@@ -40,11 +48,17 @@ class _EmailVerificationScreenState
   String _otpValue = '';
   bool _busy = false;
   String? _error;
+  // Refreshed by _resend (the pending token is short-lived).
+  late String? _pendingToken = widget.pendingAuthenticationToken;
 
   Future<void> _verify() async {
     final l = context.l10n;
     if (_otpValue.length < 6) {
       setState(() => _error = l.authErrCodeRequired);
+      return;
+    }
+    if (_pendingToken == null) {
+      setState(() => _error = l.authErrGeneric);
       return;
     }
     FocusScope.of(context).unfocus();
@@ -55,29 +69,23 @@ class _EmailVerificationScreenState
 
     try {
       final repo = ref.read(authRepositoryProvider);
-      await repo.confirmSignUp(email: widget.email, code: _otpValue);
+      // Verifying returns the session tokens directly (auto sign-in).
+      final tokens = await repo.confirmSignUp(
+        pendingAuthenticationToken: _pendingToken!,
+        code: _otpValue,
+      );
+      await ref.read(authStateProvider.notifier).onAuthenticated(tokens);
 
-      // Auto sign-in when we still hold the password from the sign-up step.
-      if (widget.password != null) {
-        await ref
-            .read(authStateProvider.notifier)
-            .signInWithPassword(widget.email, widget.password!);
-
-        // Silent server health check — not shown in UI, only surfaces on failure.
-        try {
-          await ref.read(healthRepositoryProvider).check();
-        } catch (_) {
-          if (mounted) {
-            setState(() => _error = l.serverUnavailable);
-          }
-          return;
-        }
-
-        ref.invalidate(appSessionProvider);
-        if (mounted) context.go(const SplashRoute().location);
-      } else if (mounted) {
-        context.go(const SignInRoute().location);
+      // Silent server health check — not shown in UI, only surfaces on failure.
+      try {
+        await ref.read(healthRepositoryProvider).check();
+      } catch (_) {
+        if (mounted) setState(() => _error = l.serverUnavailable);
+        return;
       }
+
+      ref.invalidate(appSessionProvider);
+      if (mounted) context.go(const SplashRoute().location);
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
@@ -89,8 +97,13 @@ class _EmailVerificationScreenState
 
   Future<void> _resend() async {
     final l = context.l10n;
+    final password = widget.password;
+    if (password == null) return; // can't re-auth without the password
     try {
-      await ref.read(authRepositoryProvider).resendConfirmationCode(widget.email);
+      final token = await ref
+          .read(authRepositoryProvider)
+          .resendConfirmationCode(email: widget.email, password: password);
+      if (token != null) _pendingToken = token;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l.authCodeResent)),

@@ -12,9 +12,8 @@ import '../../../firebase_options.dart';
 import '../../app/router.dart';
 import '../../features/notifications/data/notifications_repository.dart';
 
-// Secure-storage keys — MUST match CognitoAuthRepository so the background
-// isolate (which has no Riverpod) can read the session directly.
-const _kIdTokenKey = 'auth.id_token';
+// Secure-storage key — MUST match HttpAuthRepository so the background isolate
+// (which has no Riverpod) can read the session directly.
 const _kAccessTokenKey = 'auth.access_token';
 
 // The Android channel created in MainActivity.kt. The client supplies it when
@@ -28,8 +27,6 @@ const _channelDescription = 'Appointment and account updates';
 /// token still delivers a message (offline-logout race).
 Future<bool> _hasSession() async {
   const storage = FlutterSecureStorage();
-  final id = await storage.read(key: _kIdTokenKey);
-  if (id != null) return true;
   final access = await storage.read(key: _kAccessTokenKey);
   return access != null;
 }

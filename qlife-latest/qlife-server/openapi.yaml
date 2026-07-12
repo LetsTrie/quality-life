@@ -7,7 +7,7 @@ info:
     - **PROFESSIONAL** – a verified mental-health professional
     - **ADMIN** – a platform administrator
 
-    All protected endpoints require a Bearer JWT obtained from the Cognito-backed
+    All protected endpoints require a Bearer JWT obtained from the WorkOS-backed
     authentication flow. The token is passed in the `Authorization` header as
     `Bearer <token>`.
 
@@ -87,7 +87,7 @@ paths:
       summary: Get current account
       description: |
         Returns the authenticated account's identity record including `id`,
-        `email`, `role`, `status`, `cognitoSub`, and `authProvider`.
+        `email`, `role`, `status`, and `authProvider`.
         Available to any authenticated role.
       responses:
         '200':
@@ -109,8 +109,7 @@ paths:
                     email: "user@example.com"
                     role: "USER"
                     status: "ACTIVE"
-                    cognitoSub: "us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                    authProvider: "COGNITO"
+                    authProvider: "workos"
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -1453,7 +1452,7 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        JWT issued by Amazon Cognito. Pass as Authorization: Bearer <token>.
+        JWT issued by WorkOS. Pass as Authorization: Bearer <token>.
 
   parameters:
     PageQuery:
@@ -1590,12 +1589,9 @@ components:
           type: string
           enum: [ACTIVE, SUSPENDED, DELETED]
           example: "ACTIVE"
-        cognitoSub:
-          type: string
-          example: "us-east-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
         authProvider:
           type: string
-          example: "COGNITO"
+          example: "workos"
 
     # ---- User profile -------------------------------------------------------
     UserProfile:

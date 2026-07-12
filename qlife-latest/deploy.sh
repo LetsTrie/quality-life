@@ -260,14 +260,9 @@ write_admin_env() {
       api_base="http://$(tf_out_raw eb_cname)"
     fi
   fi
-  user_pool="$(tf_out_raw cognito_user_pool_id)"
-  client_id="$(tf_out_raw cognito_app_client_id)"
-
   log "Writing admin env to qlife-admin/.env.production.local"
   cat >"$ADMIN_DIR/.env.production.local" <<EOF
 NEXT_PUBLIC_API_BASE_URL=$api_base
-NEXT_PUBLIC_COGNITO_USER_POOL_ID=$user_pool
-NEXT_PUBLIC_COGNITO_CLIENT_ID=$client_id
 EOF
 }
 

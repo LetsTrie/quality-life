@@ -4,10 +4,10 @@ import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
-import { CognitoJwtService } from '../src/auth/cognito-jwt.service';
+import { WorkosJwtService } from '../src/auth/workos-jwt.service';
 import { resetDb } from './db-reset';
 
-// The mock CognitoJwtService treats the bearer token value as the Cognito sub.
+// The mock WorkosJwtService treats the bearer token value as the Cognito sub.
 // This lets tests control which "user" they are by simply switching the header.
 const mockCognito = {
   verifyBearerToken: async (token: string) => ({
@@ -53,7 +53,7 @@ describe('User / Professional / Admin flows (e2e)', () => {
   beforeAll(async () => {
     prisma = new PrismaClient();
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(CognitoJwtService)
+      .overrideProvider(WorkosJwtService)
       .useValue(mockCognito)
       .compile();
 

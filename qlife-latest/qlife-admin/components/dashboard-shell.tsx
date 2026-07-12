@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import {
+  ClipboardList,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -24,13 +25,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getAdminEmail, signOut } from "@/lib/cognito";
+import { getAdminEmail, signOut } from "@/lib/admin-auth";
 import { cn, initials } from "@/lib/utils";
 
 const NAV = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/professionals", label: "Professionals", icon: Stethoscope },
   { href: "/users", label: "Users", icon: Users },
+  { href: "/scales", label: "Scales", icon: ClipboardList },
 ];
 
 function useIsActive() {

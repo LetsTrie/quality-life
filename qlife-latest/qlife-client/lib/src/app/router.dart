@@ -253,6 +253,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return EmailVerificationScreen(
             email: args?.email ?? '',
             password: args?.password,
+            pendingAuthenticationToken: args?.pendingAuthenticationToken,
           );
         },
       ),

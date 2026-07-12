@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { DashboardShell } from "@/components/dashboard-shell";
-import { getToken } from "@/lib/cognito";
+import { getToken } from "@/lib/admin-auth";
 
 export default function DashboardLayout({
   children,

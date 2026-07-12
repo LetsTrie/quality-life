@@ -219,16 +219,14 @@ deploy_client() {
 
   load_env_file "$CLIENT_DIR/.env.production"
   : "${API_BASE_URL:?API_BASE_URL missing in qlife-client/.env.production}"
-  : "${COGNITO_USER_POOL_ID:?COGNITO_USER_POOL_ID missing in qlife-client/.env.production}"
-  : "${COGNITO_CLIENT_ID:?COGNITO_CLIENT_ID missing in qlife-client/.env.production}"
 
+  # Auth is backend-for-frontend (WorkOS lives on the server); the client only
+  # needs the API base URL.
   (
     cd "$CLIENT_DIR"
     flutter pub get
     flutter build apk --release \
-      --dart-define="API_BASE_URL=${API_BASE_URL}" \
-      --dart-define="COGNITO_USER_POOL_ID=${COGNITO_USER_POOL_ID}" \
-      --dart-define="COGNITO_CLIENT_ID=${COGNITO_CLIENT_ID}"
+      --dart-define="API_BASE_URL=${API_BASE_URL}"
 
     local apk="build/app/outputs/flutter-apk/app-release.apk"
     [[ -f "$apk" ]] || die "APK not found at $apk"

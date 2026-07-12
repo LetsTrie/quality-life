@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module';
-import { CognitoJwtService } from '../src/auth/cognito-jwt.service';
+import { WorkosJwtService } from '../src/auth/workos-jwt.service';
 import { resetDb } from './db-reset';
 
 describe('DB-backed flows (e2e)', () => {
@@ -16,7 +16,7 @@ describe('DB-backed flows (e2e)', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     })
-      .overrideProvider(CognitoJwtService)
+      .overrideProvider(WorkosJwtService)
       .useValue({
         verifyBearerToken: async (token: string) => ({
           sub: token,

@@ -32,7 +32,7 @@ export class AuthGuard implements CanActivate {
     const token = authHeader.slice('Bearer '.length).trim();
     // Shared resolver: identical token→context logic for HTTP and WebSocket.
     const ctx = await this.resolver.resolve(token);
-    (req as any).auth = { cognito: ctx.cognito, account: ctx.account };
+    (req as any).auth = { identity: ctx.identity, account: ctx.account };
 
     return true;
   }

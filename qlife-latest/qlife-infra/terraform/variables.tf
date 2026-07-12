@@ -111,3 +111,14 @@ variable "eb_max_instances" {
   description = "Maximum EC2 instances in the Elastic Beanstalk auto-scaling group. Capped at 1 to prevent runaway scale-out cost."
   default     = 1
 }
+
+variable "workos_api_key" {
+  type        = string
+  description = "WorkOS API key (server-side, secret)."
+  sensitive   = true
+}
+
+variable "workos_client_id" {
+  type        = string
+  description = "WorkOS client id (used for auth + JWKS verification)."
+}

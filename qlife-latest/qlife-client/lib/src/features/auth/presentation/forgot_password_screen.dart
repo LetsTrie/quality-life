@@ -6,8 +6,11 @@ import '../../../app/router.dart';
 import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../data/auth_repository.dart';
+import '../state/auth_state.dart';
 import 'widgets/auth_form_scaffold.dart';
 
+/// Fully in-app password reset: request a one-time code by email, then enter
+/// the code + a new password. On success the user is signed in.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -63,17 +66,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       _error = null;
     });
     try {
-      await ref.read(authRepositoryProvider).confirmForgotPassword(
+      final tokens = await ref.read(authRepositoryProvider).resetPassword(
             email: _email.text.trim(),
             code: _code.text,
             newPassword: _newPassword.text,
           );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l.authResetDone)),
-        );
-        context.go(const SignInRoute().location);
-      }
+      // The reset signs the user in — establish the session and go home.
+      await ref.read(authStateProvider.notifier).onAuthenticated(tokens);
+      ref.invalidate(appSessionProvider);
+      if (mounted) context.go(const SplashRoute().location);
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
@@ -175,7 +176,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               const Gap(AppSpacing.sm),
               TextButton(
-                onPressed: _busy ? null : () => context.go(const SignInRoute().location),
+                onPressed: _busy
+                    ? null
+                    : () => context.go(const SignInRoute().location),
                 child: Text(l.authBackToSignIn),
               ),
             ],

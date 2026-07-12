@@ -2,48 +2,41 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 import jwkToPem from 'jwk-to-pem';
 
-export type CognitoClaims = JwtPayload & {
+export type WorkosClaims = JwtPayload & {
   sub: string;
-  iss: string;
-  aud?: string | string[];
-  client_id?: string;
-  token_use?: 'id' | 'access';
-  scope?: string;
+  sid?: string;
+  iss?: string;
   email?: string;
-  email_verified?: boolean;
+  role?: string;
+  permissions?: string[];
+  org_id?: string;
 };
 
+/**
+ * Verifies WorkOS User Management access tokens (RS256) against the WorkOS
+ * JWKS. Mirrors the previous Cognito verifier's JWKS-fetch + per-kid PEM cache
+ * with rotation fallback; only the JWKS URL differs and there is no audience
+ * (WorkOS access tokens carry no `aud`). Signature validity alone proves the
+ * token was issued by WorkOS.
+ */
 @Injectable()
-export class CognitoJwtService {
+export class WorkosJwtService {
   private readonly pemByKid = new Map<string, { pem: string; fetchedAtMs: number }>();
   private jwksFetchedAtMs: number | null = null;
   private jwksKeys: Array<any> = [];
 
   private jwksUri() {
-    const region = process.env.COGNITO_REGION;
-    const userPoolId = process.env.COGNITO_USER_POOL_ID;
-    if (!region || !userPoolId) {
-      // The service is still constructible for tests, but verification will fail.
-      return 'http://invalid/.well-known/jwks.json';
-    }
-    return `https://cognito-idp.${region}.amazonaws.com/${userPoolId}/.well-known/jwks.json`;
-  }
-
-  private issuer() {
-    const region = process.env.COGNITO_REGION;
-    const userPoolId = process.env.COGNITO_USER_POOL_ID;
-    if (!region || !userPoolId) return '';
-    return `https://cognito-idp.${region}.amazonaws.com/${userPoolId}`;
+    const clientId = process.env.WORKOS_CLIENT_ID;
+    if (!clientId) return 'http://invalid/.well-known/jwks.json';
+    return `https://api.workos.com/sso/jwks/${clientId}`;
   }
 
   private async refreshJwksIfNeeded() {
     const ttlMs = 60 * 60 * 1000;
     const now = Date.now();
-
     if (this.jwksFetchedAtMs != null && now - this.jwksFetchedAtMs < ttlMs) return;
 
-    const uri = this.jwksUri();
-    const res = await fetch(uri);
+    const res = await fetch(this.jwksUri());
     if (!res.ok) throw new UnauthorizedException('Invalid token');
 
     const body = (await res.json()) as { keys?: any[] };
@@ -60,16 +53,13 @@ export class CognitoJwtService {
 
     await this.refreshJwksIfNeeded();
 
-    const jwk = this.jwksKeys.find((k) => k.kid === kid);
+    let jwk = this.jwksKeys.find((k) => k.kid === kid);
     if (!jwk) {
       // JWKS may have rotated since last fetch; refresh once.
       this.jwksFetchedAtMs = null;
       await this.refreshJwksIfNeeded();
-      const jwk2 = this.jwksKeys.find((k) => k.kid === kid);
-      if (!jwk2) throw new UnauthorizedException('Invalid token');
-      const pem2 = jwkToPem(jwk2);
-      this.pemByKid.set(kid, { pem: pem2, fetchedAtMs: now });
-      return pem2;
+      jwk = this.jwksKeys.find((k) => k.kid === kid);
+      if (!jwk) throw new UnauthorizedException('Invalid token');
     }
 
     const pem = jwkToPem(jwk);
@@ -77,10 +67,8 @@ export class CognitoJwtService {
     return pem;
   }
 
-  async verifyBearerToken(token: string): Promise<CognitoClaims> {
-    const issuer = this.issuer();
-    const audience = process.env.COGNITO_APP_CLIENT_ID;
-    if (!issuer || !audience) {
+  async verifyBearerToken(token: string): Promise<WorkosClaims> {
+    if (!process.env.WORKOS_CLIENT_ID) {
       throw new UnauthorizedException('Auth not configured');
     }
 
@@ -92,16 +80,9 @@ export class CognitoJwtService {
 
     const pem = await this.pemForKid(kid);
 
-    const decoded = jwt.verify(token, pem, {
-      algorithms: ['RS256'],
-      issuer,
-      audience,
-    }) as CognitoClaims;
-
+    const decoded = jwt.verify(token, pem, { algorithms: ['RS256'] }) as WorkosClaims;
     if (!decoded?.sub) throw new UnauthorizedException('Invalid token');
-    if (decoded.iss !== issuer) throw new UnauthorizedException('Invalid token');
 
     return decoded;
   }
 }
-

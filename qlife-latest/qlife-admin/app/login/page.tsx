@@ -8,7 +8,7 @@ import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { adminSignIn, setToken } from "@/lib/cognito";
+import { adminSignIn, setToken } from "@/lib/admin-auth";
 
 export default function LoginPage() {
   const router = useRouter();

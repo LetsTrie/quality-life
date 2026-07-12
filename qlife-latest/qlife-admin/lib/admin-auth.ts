@@ -1,7 +1,6 @@
-// Admin auth. Cognito is intentionally NOT used here — the backend exposes a
+// Admin auth. Separate from end-user auth (WorkOS) — the backend exposes a
 // single hardcoded admin login (POST /v1/admin/login) that returns a signed
-// session token. The function names are kept for backwards compatibility with
-// existing imports.
+// HS256 session token stored in localStorage.
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:5012";
 

@@ -3,6 +3,7 @@ import type { Request } from 'express';
 
 import { Roles } from '../auth/roles.decorator';
 import { AdminCreateProfessionalDto } from './dto/create-professional.dto';
+import { UpsertInstrumentDto } from './dto/upsert-instrument.dto';
 import { AdminService } from './admin.service';
 
 @Controller('/v1/admin')
@@ -65,6 +66,32 @@ export class AdminController {
   async userDetail(@Param('id') id: string) {
     const result = await this.admin.getUserDetail(id);
     return { data: result };
+  }
+
+  // --- Scale (instrument) management ---
+  @Get('/instruments')
+  async instruments() {
+    return { data: await this.admin.listInstruments() };
+  }
+
+  @Get('/content')
+  async content() {
+    return { data: await this.admin.listContent() };
+  }
+
+  @Post('/instruments')
+  async createInstrument(@Body() body: UpsertInstrumentDto) {
+    return { data: await this.admin.createInstrument(body) };
+  }
+
+  @Get('/instruments/:id')
+  async instrumentDetail(@Param('id') id: string) {
+    return { data: await this.admin.getInstrumentDetail(id) };
+  }
+
+  @Patch('/instruments/:id')
+  async updateInstrument(@Param('id') id: string, @Body() body: UpsertInstrumentDto) {
+    return { data: await this.admin.updateInstrument(id, body) };
   }
 
   // Suspend or reactivate an account.

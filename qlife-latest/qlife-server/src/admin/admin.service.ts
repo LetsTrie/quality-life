@@ -1,8 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, ProfessionalVerificationStatus } from '@prisma/client';
 
+import { InstrumentAuthoringService } from '../instruments/instrument-authoring.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdminCreateProfessionalDto } from './dto/create-professional.dto';
+import { UpsertInstrumentDto } from './dto/upsert-instrument.dto';
 
 const PAGE_SIZE = 20;
 
@@ -22,7 +24,10 @@ function pageMeta(page: number, total: number) {
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly authoring: InstrumentAuthoringService,
+  ) {}
 
   /// Suspend or reactivate a user/professional account. Only these two
   /// transitions are allowed here (delete/deactivate are self-service flows).
@@ -604,7 +609,7 @@ export class AdminService {
   /**
    * Create a professional from minimal info. No Cognito user exists yet — the
    * account is linked by email on the professional's first SDK login
-   * (see AccountsService.resolveAccountFromCognitoClaims). Pre-approved since an
+   * (see AccountsService.resolveAccountFromWorkosClaims). Pre-approved since an
    * admin is vouching for them.
    */
   async createProfessional(adminAccountId: string, dto: AdminCreateProfessionalDto) {
@@ -618,7 +623,10 @@ export class AdminService {
           email,
           role: 'PROFESSIONAL',
           status: 'ACTIVE',
-          authProvider: 'cognito',
+          // No IdP user exists yet — it links on the professional's first WorkOS
+          // login (by email). Stamp the current provider so the column is
+          // correct in the meantime.
+          authProvider: 'workos',
         },
       });
 
@@ -647,5 +655,215 @@ export class AdminService {
 
       return { account, professionalProfile: profile, verification };
     });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Scale (instrument) management
+  // ---------------------------------------------------------------------------
+
+  /** List every instrument with a summary of its latest published version. */
+  async listInstruments() {
+    const instruments = await this.prisma.instrument.findMany({
+      orderBy: [{ category: 'asc' }, { name: 'asc' }],
+      include: {
+        versions: {
+          orderBy: [{ versionNumber: 'desc' }],
+          take: 1,
+          include: {
+            _count: { select: { questions: true, scoringBands: true, assessments: true } },
+          },
+        },
+      },
+    });
+
+    return instruments.map((i) => {
+      const v = i.versions[0];
+      return {
+        id: i.id,
+        slug: i.slug,
+        name: i.name,
+        nameBn: i.nameBn ?? null,
+        category: i.category,
+        isActive: i.isActive,
+        isSelfAssessable: i.isSelfAssessable,
+        version: v
+          ? { versionNumber: v.versionNumber, status: v.status, scoringMethod: v.scoringMethod }
+          : null,
+        questionCount: v?._count.questions ?? 0,
+        bandCount: v?._count.scoringBands ?? 0,
+        responseCount: v?._count.assessments ?? 0,
+      };
+    });
+  }
+
+  /** Full editor payload for one instrument (latest published version). */
+  async getInstrumentDetail(id: string) {
+    const instrument = await this.prisma.instrument.findUnique({
+      where: { id },
+      include: {
+        versions: {
+          orderBy: [{ versionNumber: 'desc' }],
+          take: 1,
+          include: {
+            questions: {
+              orderBy: [{ position: 'asc' }],
+              include: { options: { orderBy: [{ position: 'asc' }] } },
+            },
+            scoringBands: { orderBy: [{ position: 'asc' }] },
+            _count: { select: { assessments: true } },
+          },
+        },
+      },
+    });
+    if (!instrument) throw new NotFoundException('Instrument not found');
+
+    const v = instrument.versions[0] ?? null;
+    const contentOptions = await this.listContent();
+
+    return {
+      id: instrument.id,
+      slug: instrument.slug,
+      name: instrument.name,
+      nameBn: instrument.nameBn ?? null,
+      category: instrument.category,
+      description: instrument.description ?? null,
+      isActive: instrument.isActive,
+      isSelfAssessable: instrument.isSelfAssessable,
+      version: v
+        ? {
+            versionNumber: v.versionNumber,
+            status: v.status,
+            locale: v.locale,
+            scoringMethod: v.scoringMethod,
+            normalizationMax: decToNumber(v.normalizationMax),
+            attribution: v.attribution ?? null,
+            instructions: v.instructions ?? null,
+          }
+        : null,
+      responseCount: v?._count.assessments ?? 0,
+      // Weights ARE exposed here (admin-only) — the public instruments endpoint
+      // deliberately omits them.
+      questions: (v?.questions ?? []).map((q) => ({
+        position: q.position,
+        prompt: q.prompt,
+        domain: q.domain ?? null,
+        isReverseScored: q.isReverseScored,
+        options: q.options.map((o) => ({
+          position: o.position,
+          label: o.label,
+          value: o.value,
+          weight: decToNumber(o.weight),
+        })),
+      })),
+      bands: (v?.scoringBands ?? []).map((b) => ({
+        position: b.position,
+        label: b.label,
+        severityRank: b.severityRank,
+        minScore: decToNumber(b.minScore),
+        maxScore: decToNumber(b.maxScore),
+        colorHex: b.colorHex ?? null,
+        advice: b.advice ?? null,
+        recommendedAction: b.recommendedAction,
+        recommendedContentId: b.recommendedContentId ?? null,
+      })),
+      contentOptions,
+    };
+  }
+
+  /** Educational content options for the band "recommended resource" picker. */
+  async listContent() {
+    const items = await this.prisma.educationalContent.findMany({
+      where: { isActive: true },
+      orderBy: [{ displayOrder: 'asc' }, { title: 'asc' }],
+      select: { id: true, title: true, contentKey: true },
+    });
+    return items;
+  }
+
+  private toDesiredVersion(dto: UpsertInstrumentDto) {
+    if (dto.scoringMethod === 'NORMALIZED_PERCENT' && (dto.normalizationMax == null || dto.normalizationMax <= 0)) {
+      throw new BadRequestException('normalizationMax is required for NORMALIZED_PERCENT scoring');
+    }
+    for (const b of dto.bands) {
+      if (b.minScore > b.maxScore) {
+        throw new BadRequestException(`Band "${b.label}" has minScore greater than maxScore`);
+      }
+    }
+    return {
+      scoringMethod: dto.scoringMethod,
+      normalizationMax: dto.normalizationMax ?? null,
+      attribution: dto.attribution ?? null,
+      instructions: dto.instructions ?? null,
+      questions: dto.questions.map((q) => ({
+        prompt: q.prompt,
+        type: 'SINGLE_CHOICE' as const,
+        domain: q.domain ?? null,
+        isReverseScored: q.isReverseScored ?? false,
+        options: q.options.map((o) => ({ label: o.label, value: o.value, weight: o.weight })),
+      })),
+      bands: dto.bands.map((b) => ({
+        label: b.label,
+        severityRank: b.severityRank,
+        minScore: b.minScore,
+        maxScore: b.maxScore,
+        colorHex: b.colorHex ?? null,
+        advice: b.advice ?? null,
+        recommendedAction: b.recommendedAction,
+        recommendedContentId: b.recommendedContentId ?? null,
+      })),
+    };
+  }
+
+  /** Create a new scale (instrument + published version 1). */
+  async createInstrument(dto: UpsertInstrumentDto) {
+    const slug = dto.slug?.trim();
+    if (!slug) throw new BadRequestException('slug is required to create a scale');
+    const existing = await this.prisma.instrument.findUnique({ where: { slug } });
+    if (existing) throw new BadRequestException('A scale with this slug already exists');
+
+    const instrument = await this.prisma.instrument.create({
+      data: {
+        slug,
+        name: dto.name,
+        nameBn: dto.nameBn ?? null,
+        category: dto.category,
+        description: dto.description ?? null,
+        isActive: dto.isActive ?? true,
+        isSelfAssessable: dto.isSelfAssessable ?? true,
+      },
+    });
+
+    const result = await this.authoring.writeVersion(
+      instrument.id,
+      dto.locale?.trim() || 'bn',
+      this.toDesiredVersion(dto),
+    );
+    return { id: instrument.id, versionNumber: result.versionNumber, newVersionCreated: result.newVersionCreated };
+  }
+
+  /** Update a scale's metadata + version content (auto-versions when locked). */
+  async updateInstrument(id: string, dto: UpsertInstrumentDto) {
+    const instrument = await this.prisma.instrument.findUnique({ where: { id } });
+    if (!instrument) throw new NotFoundException('Instrument not found');
+
+    // slug is immutable; metadata is updated in place.
+    await this.prisma.instrument.update({
+      where: { id },
+      data: {
+        name: dto.name,
+        nameBn: dto.nameBn ?? null,
+        category: dto.category,
+        description: dto.description ?? null,
+        ...(dto.isActive === undefined ? {} : { isActive: dto.isActive }),
+        ...(dto.isSelfAssessable === undefined ? {} : { isSelfAssessable: dto.isSelfAssessable }),
+      },
+    });
+
+    const result = await this.authoring.writeVersion(
+      id,
+      dto.locale?.trim() || 'bn',
+      this.toDesiredVersion(dto),
+    );
+    return { id, versionNumber: result.versionNumber, newVersionCreated: result.newVersionCreated };
   }
 }

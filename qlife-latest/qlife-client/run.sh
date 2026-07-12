@@ -6,7 +6,7 @@
 #   ./run.sh --release       # pass extra args to flutter run
 #   QLIFE_API_BASE_URL=http://192.168.0.104:5012 ./run.sh
 #
-# Production APK (real API + Cognito): use ../deploy-production.sh --client
+# Production APK (real API + WorkOS auth): use ../deploy-production.sh --client
 #   or copy .env.production.example → .env.production and run flutter build apk --release …
 #
 set -euo pipefail

@@ -3,7 +3,7 @@
 //
 // These mirror the widget tests in test/router_redirect_test.dart but run on a
 // real device or emulator so the full Flutter engine and platform channels are
-// exercised. Auth is bypassed via provider overrides — no real Cognito calls.
+// exercised. Auth is bypassed via provider overrides — no real WorkOS calls.
 
 import 'package:integration_test/integration_test.dart';
 

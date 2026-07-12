@@ -175,14 +175,9 @@ class AccountScreen extends ConsumerWidget {
                     message: l.deleteConfirm,
                     confirmLabel: l.deleteAccount,
                     action: () async {
-                      // Anonymize the local record (while the JWT is valid),
-                      // then remove the Cognito login (best-effort).
-                      await ref.read(accountRepositoryProvider).deleteAccount();
-                      try {
-                        await ref
-                            .read(authRepositoryProvider)
-                            .deleteCognitoUser();
-                      } catch (_) {}
+                      // Single call: the backend removes the WorkOS user, then
+                      // soft-deletes + anonymizes the local record.
+                      await ref.read(authRepositoryProvider).deleteAccount();
                     },
                     successMessage: l.deleted,
                   ),

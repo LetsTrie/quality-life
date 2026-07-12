@@ -20,7 +20,6 @@ dependencies:
   go_router: ^14.8.1
   intl: any
   url_launcher: ^6.3.2
-  amazon_cognito_identity_dart_2: ^4.0.0
   youtube_player_iframe: ^6.0.2
   firebase_core: ^3.15.2
   firebase_messaging: ^15.2.10

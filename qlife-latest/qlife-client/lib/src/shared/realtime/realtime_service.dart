@@ -31,7 +31,7 @@ class RealtimeService {
     if (_socket != null) return; // already connected
 
     final tokens = await _ref.read(authRepositoryProvider).loadTokens();
-    final token = tokens?.idToken ?? tokens?.accessToken;
+    final token = tokens?.accessToken;
     if (token == null) return; // not authenticated → nothing to connect
 
     final socket = io.io(
@@ -69,7 +69,7 @@ class RealtimeService {
       await disconnect();
       // Only reconnect if a session still exists (avoids loops after logout).
       final tokens = await _ref.read(authRepositoryProvider).loadTokens();
-      if ((tokens?.idToken ?? tokens?.accessToken) == null) return;
+      if (tokens?.accessToken == null) return;
       await connect();
     } catch (e) {
       debugPrint('Socket reconnect failed: $e');

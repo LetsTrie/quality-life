@@ -20,6 +20,10 @@ const TONE: Record<string, Variant> = {
   IN_PROGRESS: "info",
   REQUESTED: "info",
   VIEWED: "info",
+  // instrument/scale version lifecycle
+  PUBLISHED: "success",
+  DRAFT: "warning",
+  RETIRED: "muted",
   // negative
   REJECTED: "destructive",
   SUSPENDED: "destructive",

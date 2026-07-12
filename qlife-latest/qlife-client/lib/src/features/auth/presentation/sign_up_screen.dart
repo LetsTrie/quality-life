@@ -7,6 +7,7 @@ import '../../../shared/l10n/l10n_extension.dart';
 import '../../../shared/theme/app_spacing.dart';
 import '../data/auth_repository.dart';
 import '../state/auth_intent.dart';
+import '../state/auth_state.dart';
 import 'email_verification_screen.dart';
 import 'widgets/auth_form_scaffold.dart';
 
@@ -56,13 +57,25 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         widget.professional;
 
     try {
-      await ref.read(authRepositoryProvider).signUp(email: email, password: password);
-      if (mounted) {
-        context.go(
-          const VerifyEmailRoute().location,
-          extra: VerifyEmailArgs(email: email, password: password),
-        );
+      final outcome = await ref
+          .read(authRepositoryProvider)
+          .signUp(email: email, password: password);
+      if (!mounted) return;
+      // Verification disabled → tokens issued immediately; go straight in.
+      if (outcome.userConfirmed && outcome.tokens != null) {
+        await ref.read(authStateProvider.notifier).onAuthenticated(outcome.tokens!);
+        ref.invalidate(appSessionProvider);
+        if (mounted) context.go(const SplashRoute().location);
+        return;
       }
+      context.go(
+        const VerifyEmailRoute().location,
+        extra: VerifyEmailArgs(
+          email: email,
+          password: password,
+          pendingAuthenticationToken: outcome.pendingAuthenticationToken,
+        ),
+      );
     } on AuthException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {

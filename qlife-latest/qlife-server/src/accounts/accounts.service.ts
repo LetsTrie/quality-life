@@ -4,7 +4,7 @@ import type { Account } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 type ResolveArgs = {
-  cognitoSub: string;
+  workosUserId: string;
   email?: string;
   emailVerified?: boolean;
 };
@@ -22,9 +22,13 @@ export class AccountsService {
     });
   }
 
-  async resolveAccountFromCognitoClaims(args: ResolveArgs): Promise<Account> {
+  /// Resolve (and lazily link/create) the local Account for a WorkOS user.
+  /// The WorkOS user id is stored in the (provider-agnostic) `cognitoSub`
+  /// column. Existing accounts relink by email on first WorkOS sign-in so
+  /// their data (assessments, appointments) is preserved across the migration.
+  async resolveAccountFromWorkosClaims(args: ResolveArgs): Promise<Account> {
     const bySub = await this.prisma.account.findUnique({
-      where: { cognitoSub: args.cognitoSub },
+      where: { cognitoSub: args.workosUserId },
     });
     if (bySub) {
       await this.ensureUserProfile(bySub);
@@ -37,14 +41,19 @@ export class AccountsService {
       });
 
       if (byEmail) {
-        // First login linking flow.
+        // First WorkOS login — link the existing account. Promote a still-
+        // pending account to ACTIVE once WorkOS confirms the email is verified
+        // (WorkOS only issues tokens post-verification), but never override an
+        // admin state like SUSPENDED/DEACTIVATED/DELETED.
+        const promote = args.emailVerified && byEmail.status === 'PENDING_VERIFICATION';
         const updated = await this.prisma.account.update({
           where: { id: byEmail.id },
           data: {
-            cognitoSub: args.cognitoSub,
-            authProvider: 'cognito',
+            cognitoSub: args.workosUserId,
+            authProvider: 'workos',
             emailVerifiedAt: args.emailVerified ? new Date() : byEmail.emailVerifiedAt,
             lastLoginAt: new Date(),
+            ...(promote ? { status: 'ACTIVE' } : {}),
           },
         });
         await this.ensureUserProfile(updated);
@@ -52,12 +61,12 @@ export class AccountsService {
       }
     }
 
-    // New Cognito user — create local product identity with conservative defaults.
+    // New WorkOS user — create local product identity with conservative defaults.
     const created = await this.prisma.account.create({
       data: {
-        cognitoSub: args.cognitoSub,
-        authProvider: 'cognito',
-        email: args.email ?? `unknown+${args.cognitoSub}@invalid`,
+        cognitoSub: args.workosUserId,
+        authProvider: 'workos',
+        email: args.email ?? `unknown+${args.workosUserId}@invalid`,
         role: 'USER',
         status: args.emailVerified ? 'ACTIVE' : 'PENDING_VERIFICATION',
         emailVerifiedAt: args.emailVerified ? new Date() : null,

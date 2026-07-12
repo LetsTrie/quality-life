@@ -61,7 +61,6 @@ export class AccountsController {
               email: account.email,
               role: account.role,
               status: account.status,
-              cognitoSub: account.cognitoSub,
               authProvider: account.authProvider,
             }
           : null,

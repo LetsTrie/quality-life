@@ -38,7 +38,7 @@ describe('RealtimeGateway', () => {
     const resolver = {
       resolve: jest.fn().mockResolvedValue({
         account: { id: 'acc-1', role: 'USER', status: 'ACTIVE' },
-        cognito: null,
+        identity: null,
       }),
     };
     const gateway = new RealtimeGateway(resolver as never, { attachServer: jest.fn() } as never);
@@ -55,7 +55,7 @@ describe('RealtimeGateway', () => {
     const resolver = {
       resolve: jest.fn().mockResolvedValue({
         account: { id: 'acc-1', role: 'USER', status: 'SUSPENDED' },
-        cognito: null,
+        identity: null,
       }),
     };
     const gateway = new RealtimeGateway(resolver as never, { attachServer: jest.fn() } as never);

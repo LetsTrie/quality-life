@@ -63,7 +63,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       if (e.code == 'UserNotConfirmedException' && mounted) {
         context.go(
           const VerifyEmailRoute().location,
-          extra: VerifyEmailArgs(email: email, password: _password.text),
+          extra: VerifyEmailArgs(
+            email: email,
+            password: _password.text,
+            pendingAuthenticationToken: e.pendingAuthenticationToken,
+          ),
         );
         return;
       }

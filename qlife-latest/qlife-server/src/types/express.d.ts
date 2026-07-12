@@ -4,13 +4,13 @@ declare global {
   namespace Express {
     interface Request {
       auth?: {
-        cognito: {
+        // Identity provider (WorkOS) claims for the request's token; null for
+        // the self-issued admin token.
+        identity: {
           sub: string;
           email?: string;
-          emailVerified?: boolean;
-          issuer: string;
-          audience?: string | string[];
-        };
+          issuer?: string;
+        } | null;
         account: {
           id: string;
           role: AccountRole;
